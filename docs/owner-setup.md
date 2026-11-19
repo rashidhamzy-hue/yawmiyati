@@ -1,0 +1,4 @@
+# Owner setup (staging only)
+Create the designated owner in Supabase Authentication > Users using a private password or invitation. Verify the identity in the dashboard before granting the user UUID membership in each of the five markets. Never grant access based solely on a client-supplied email. No self-service signup on the owner interface; disable public signup in project settings.
+Configure VITE_YAWMIYATI_SUPABASE_URL and VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY in the protected staging environment. Never use a service-role key in VITE variables.
+The /admin route uses password authentication and user-token RPC calls. Its initial session is memory-only; ending the local session does not revoke a server token. Before public deployment implement verified session revocation, MFA, rate limits, access protection and end-to-end authenticated tests. No owner is provisioned by this commit.
