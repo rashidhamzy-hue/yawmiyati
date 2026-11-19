@@ -12,7 +12,7 @@ export function CommercialReview({client,token,market}:{client:Client;token:stri
  return <section className="space-y-4 rounded-xl border p-5"><h2 className="text-xl font-bold">Supplier candidate review</h2><p className="text-sm text-muted-foreground">Supplier prices are observations, not acquisition costs. A shortlist is not publication approval.</p>
  <div className="flex flex-wrap gap-2"><input className="rounded border p-2" aria-label="Search candidates" placeholder="Search name or SKU" value={query} onChange={e=>setQuery(e.target.value)}/><button className="rounded border px-3" onClick={()=>setAttempt(a=>a+1)}>Reload (discards unsaved edits)</button></div>
  {error?<p role="alert">{error}</p>:rows===null?<p role="status">Loading candidates…</p>:<p>{rows.length} imported candidates</p>}
- <div className="grid gap-4 lg:grid-cols-2">{rows?.filter(r=>(r.title+" "+r.supplier_sku).toLowerCase().includes(query.toLowerCase())).map(row=><ReviewCard key={market+":"+row.woo_product_id} row={row} market={market} save={x=>client.saveCandidate(token,market,row.woo_product_id,x)}/>)}</div>
+ <div className="grid gap-4 lg:grid-cols-2">{rows?.map(row=><div key={market+":"+row.woo_product_id} hidden={!(row.title+" "+row.supplier_sku).toLowerCase().includes(query.toLowerCase())}><ReviewCard row={row} market={market} save={x=>client.saveCandidate(token,market,row.woo_product_id,x)}/></div>)}</div>
  </section>
 }
 type SaveInput=Parameters<Client["saveCandidate"]>[3];
