@@ -25,6 +25,7 @@ begin
  listing:=public.create_candidate_draft('sa',900000000001,review_time,revision);
  replay:=public.create_candidate_draft('sa',900000000001,review_time,revision);
  if listing is distinct from replay then raise exception 'Assertion: replay mismatch'; end if;
+ if public.dashboard_candidate_content('sa',900000000001)->'draft'->>'listing_id' is distinct from listing::text then raise exception 'Assertion: draft recovery'; end if;
  select count(*) into n from public.country_listings l join public.listing_variants v on (v.store_code,v.listing_id)=(l.store_code,l.id) join public.supplier_variant_mappings m on (m.store_code,m.variant_id)=(v.store_code,v.id) where l.id=listing and l.store_code='sa' and l.status='draft' and v.stock_state='unknown' and v.price_minor=5000 and m.woo_product_id=900000000001;
  if n<>1 then raise exception 'Assertion: inconsistent draft'; end if;
  if exists(select 1 from public.public_catalog('sa',100,0) where listing_id=listing) then raise exception 'Assertion: draft visible'; end if;
