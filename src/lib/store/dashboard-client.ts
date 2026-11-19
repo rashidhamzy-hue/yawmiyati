@@ -1,5 +1,6 @@
 import type { MarketCode } from "./markets";
 export interface CatalogRow { listing_id:string; slug:string; title:string; listing_status:string; variant_count:number; available_count:number; }
+export interface Recommendation {id:string;kind:string;rationale:string;state:string;proposal:unknown;created_at:string;}
 export interface DashboardSummary {
  store: MarketCode; currency: string; orders: number; customers: number;
  order_statuses: Record<string,number>; recorded_net_minor: string;
@@ -13,6 +14,7 @@ export function dashboardClient(origin: string, publicKey: string, request: type
      body:JSON.stringify(body),cache:"no-store",redirect:"error",signal:AbortSignal.timeout(15000),
    });
    if (!response.ok) throw new Error(response.status===401||response.status===403?"Access denied":"Dashboard request failed");
+   if (response.status===204) return undefined;
    return response.json();
  }
  return {
@@ -20,6 +22,12 @@ export function dashboardClient(origin: string, publicKey: string, request: type
      const data=await call("/auth/v1/token?grant_type=password",{email,password});
      if(typeof data.access_token!=="string") throw new Error("Authentication failed");
      return data.access_token;
+   },
+   async recommendations(token:string,market:MarketCode):Promise<Recommendation[]> {
+     return call("/rest/v1/rpc/dashboard_recommendations",{p_store:market},token);
+   },
+   async review(token:string,market:MarketCode,id:string,decision:"approved"|"rejected"):Promise<void> {
+     await call("/rest/v1/rpc/review_recommendation",{p_store:market,p_id:id,p_decision:decision},token);
    },
    async catalog(token:string,market:MarketCode,offset=0):Promise<CatalogRow[]> {
      return call("/rest/v1/rpc/dashboard_catalog",{p_store:market,p_limit:50,p_offset:offset},token);
