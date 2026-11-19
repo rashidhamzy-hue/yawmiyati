@@ -10,33 +10,144 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SaRouteImport } from './routes/sa'
+import { Route as SaIndexRouteImport } from './routes/sa.index'
+import { Route as SaCartRouteImport } from './routes/sa.cart'
+import { Route as SaCheckoutRouteImport } from './routes/sa.checkout'
+import { Route as SaHelpRouteImport } from './routes/sa.help'
+import { Route as SaSearchRouteImport } from './routes/sa.search'
+import { Route as SaCSlugRouteImport } from './routes/sa.c.$slug'
+import { Route as SaOrderIdRouteImport } from './routes/sa.order.$id'
+import { Route as SaPSlugRouteImport } from './routes/sa.p.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SaRoute = SaRouteImport.update({
+  id: '/sa',
+  path: '/sa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SaIndexRoute = SaIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SaRoute,
+} as any)
+const SaCartRoute = SaCartRouteImport.update({
+  id: '/cart',
+  path: '/cart',
+  getParentRoute: () => SaRoute,
+} as any)
+const SaCheckoutRoute = SaCheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => SaRoute,
+} as any)
+const SaHelpRoute = SaHelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => SaRoute,
+} as any)
+const SaSearchRoute = SaSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => SaRoute,
+} as any)
+const SaCSlugRoute = SaCSlugRouteImport.update({
+  id: '/c/$slug',
+  path: '/c/$slug',
+  getParentRoute: () => SaRoute,
+} as any)
+const SaOrderIdRoute = SaOrderIdRouteImport.update({
+  id: '/order/$id',
+  path: '/order/$id',
+  getParentRoute: () => SaRoute,
+} as any)
+const SaPSlugRoute = SaPSlugRouteImport.update({
+  id: '/p/$slug',
+  path: '/p/$slug',
+  getParentRoute: () => SaRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/sa': typeof SaRouteWithChildren
+  '/sa/cart': typeof SaCartRoute
+  '/sa/checkout': typeof SaCheckoutRoute
+  '/sa/help': typeof SaHelpRoute
+  '/sa/search': typeof SaSearchRoute
+  '/sa/': typeof SaIndexRoute
+  '/sa/c/$slug': typeof SaCSlugRoute
+  '/sa/order/$id': typeof SaOrderIdRoute
+  '/sa/p/$slug': typeof SaPSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/sa/cart': typeof SaCartRoute
+  '/sa/checkout': typeof SaCheckoutRoute
+  '/sa/help': typeof SaHelpRoute
+  '/sa/search': typeof SaSearchRoute
+  '/sa': typeof SaIndexRoute
+  '/sa/c/$slug': typeof SaCSlugRoute
+  '/sa/order/$id': typeof SaOrderIdRoute
+  '/sa/p/$slug': typeof SaPSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/sa': typeof SaRouteWithChildren
+  '/sa/cart': typeof SaCartRoute
+  '/sa/checkout': typeof SaCheckoutRoute
+  '/sa/help': typeof SaHelpRoute
+  '/sa/search': typeof SaSearchRoute
+  '/sa/': typeof SaIndexRoute
+  '/sa/c/$slug': typeof SaCSlugRoute
+  '/sa/order/$id': typeof SaOrderIdRoute
+  '/sa/p/$slug': typeof SaPSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/sa'
+    | '/sa/cart'
+    | '/sa/checkout'
+    | '/sa/help'
+    | '/sa/search'
+    | '/sa/'
+    | '/sa/c/$slug'
+    | '/sa/order/$id'
+    | '/sa/p/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/sa/cart'
+    | '/sa/checkout'
+    | '/sa/help'
+    | '/sa/search'
+    | '/sa'
+    | '/sa/c/$slug'
+    | '/sa/order/$id'
+    | '/sa/p/$slug'
+  id:
+    | '__root__'
+    | '/'
+    | '/sa'
+    | '/sa/cart'
+    | '/sa/checkout'
+    | '/sa/help'
+    | '/sa/search'
+    | '/sa/'
+    | '/sa/c/$slug'
+    | '/sa/order/$id'
+    | '/sa/p/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SaRoute: typeof SaRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +159,99 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sa': {
+      id: '/sa'
+      path: '/sa'
+      fullPath: '/sa'
+      preLoaderRoute: typeof SaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sa/': {
+      id: '/sa/'
+      path: '/'
+      fullPath: '/sa/'
+      preLoaderRoute: typeof SaIndexRouteImport
+      parentRoute: typeof SaRoute
+    }
+    '/sa/cart': {
+      id: '/sa/cart'
+      path: '/cart'
+      fullPath: '/sa/cart'
+      preLoaderRoute: typeof SaCartRouteImport
+      parentRoute: typeof SaRoute
+    }
+    '/sa/checkout': {
+      id: '/sa/checkout'
+      path: '/checkout'
+      fullPath: '/sa/checkout'
+      preLoaderRoute: typeof SaCheckoutRouteImport
+      parentRoute: typeof SaRoute
+    }
+    '/sa/help': {
+      id: '/sa/help'
+      path: '/help'
+      fullPath: '/sa/help'
+      preLoaderRoute: typeof SaHelpRouteImport
+      parentRoute: typeof SaRoute
+    }
+    '/sa/search': {
+      id: '/sa/search'
+      path: '/search'
+      fullPath: '/sa/search'
+      preLoaderRoute: typeof SaSearchRouteImport
+      parentRoute: typeof SaRoute
+    }
+    '/sa/c/$slug': {
+      id: '/sa/c/$slug'
+      path: '/c/$slug'
+      fullPath: '/sa/c/$slug'
+      preLoaderRoute: typeof SaCSlugRouteImport
+      parentRoute: typeof SaRoute
+    }
+    '/sa/order/$id': {
+      id: '/sa/order/$id'
+      path: '/order/$id'
+      fullPath: '/sa/order/$id'
+      preLoaderRoute: typeof SaOrderIdRouteImport
+      parentRoute: typeof SaRoute
+    }
+    '/sa/p/$slug': {
+      id: '/sa/p/$slug'
+      path: '/p/$slug'
+      fullPath: '/sa/p/$slug'
+      preLoaderRoute: typeof SaPSlugRouteImport
+      parentRoute: typeof SaRoute
+    }
   }
 }
 
+interface SaRouteChildren {
+  SaCartRoute: typeof SaCartRoute
+  SaCheckoutRoute: typeof SaCheckoutRoute
+  SaHelpRoute: typeof SaHelpRoute
+  SaSearchRoute: typeof SaSearchRoute
+  SaIndexRoute: typeof SaIndexRoute
+  SaCSlugRoute: typeof SaCSlugRoute
+  SaOrderIdRoute: typeof SaOrderIdRoute
+  SaPSlugRoute: typeof SaPSlugRoute
+}
+
+const SaRouteChildren: SaRouteChildren = {
+  SaCartRoute: SaCartRoute,
+  SaCheckoutRoute: SaCheckoutRoute,
+  SaHelpRoute: SaHelpRoute,
+  SaSearchRoute: SaSearchRoute,
+  SaIndexRoute: SaIndexRoute,
+  SaCSlugRoute: SaCSlugRoute,
+  SaOrderIdRoute: SaOrderIdRoute,
+  SaPSlugRoute: SaPSlugRoute,
+}
+
+const SaRouteWithChildren = SaRoute._addFileChildren(SaRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SaRoute: SaRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
