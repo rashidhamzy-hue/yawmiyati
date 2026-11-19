@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef, type FormEvent } from "react";
-import { dashboardClient, type DashboardSummary, type CatalogRow } from "../lib/store/dashboard-client";
+import { dashboardClient, type DashboardSummary, type CatalogRow, type Recommendation } from "../lib/store/dashboard-client";
 import { markets, type MarketCode } from "../lib/store/markets";
 export const Route = createFileRoute("/admin")({
  head:()=>({meta:[{title:"Yawmiyati OS | Owner"},{name:"robots",content:"noindex,nofollow"}]}),
@@ -13,6 +13,7 @@ function OwnerDashboard(){
  const [token,setToken]=useState("");
  const [market,setMarket]=useState<MarketCode>("sa");
  const [data,setData]=useState<DashboardSummary|null>(null);
+ const [recommendations,setRecommendations]=useState<Recommendation[]>([]);
  const [catalog,setCatalog]=useState<CatalogRow[]>([]);
  const [error,setError]=useState("");
  const [busy,setBusy]=useState(false);
@@ -20,8 +21,8 @@ function OwnerDashboard(){
  const origin=import.meta.env.VITE_YAWMIYATI_SUPABASE_URL;
  const key=import.meta.env.VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY;
  async function load(next:MarketCode,access:string){
-  const id=++generation.current;setBusy(true);setError("");setData(null);setCatalog([]);
-  try{const client=dashboardClient(origin,key);const [result,rows]=await Promise.all([client.summary(access,next),client.catalog(access,next)]);if(id===generation.current){setData(result);setCatalog(rows);}}
+  const id=++generation.current;setBusy(true);setError("");setData(null);setCatalog([]);setRecommendations([]);
+  try{const client=dashboardClient(origin,key);const [result,rows,recs]=await Promise.all([client.summary(access,next),client.catalog(access,next),client.recommendations(access,next)]);if(id===generation.current){setData(result);setCatalog(rows);setRecommendations(recs);}}
   catch{if(id===generation.current)setError("Unable to load this market. Verify access or sign in again.");}
   finally{if(id===generation.current)setBusy(false);}
  }
@@ -30,6 +31,11 @@ function OwnerDashboard(){
   try{const access=await dashboardClient(origin,key).signIn(email,password);setToken(access);await load(market,access);}
   catch{setError("Sign-in failed. Check your credentials and staging configuration.");setBusy(false);}
   finally{setPassword("");}
+ }
+ async function review(id:string,decision:"approved"|"rejected"){
+  setBusy(true);setError("");
+  try{await dashboardClient(origin,key).review(token,market,id,decision);await load(market,token);}
+  catch{setError("Decision could not be recorded. Reload before retrying.");setBusy(false);}
  }
  function signOut(){generation.current++;setToken("");setData(null);setCatalog([]);setError("");setBusy(false);}
  return <main dir="ltr" className="min-h-screen bg-background text-foreground p-4 md:p-8">
@@ -46,6 +52,7 @@ function OwnerDashboard(){
  {busy&&<p role="status">Loading verified database totals…</p>}
  {data&&<><div className="grid grid-cols-1 gap-4 sm:grid-cols-3">{[["Recorded orders",String(data.orders)],["Customers",String(data.customers)],["Recorded net (minor units)",data.recorded_net_minor+" "+data.currency]].map(([label,value])=><section key={label} className="rounded-xl border p-5"><h2 className="text-sm text-muted-foreground">{label}</h2><p className="mt-2 break-all text-2xl font-bold">{value}</p></section>)}</div><section className="rounded-xl border p-5"><h2 className="font-bold">Order status</h2>{Object.entries(data.order_statuses).map(([status,count])=><p key={status}>{status}: {count}</p>)}{!Object.keys(data.order_statuses).length&&<p>No orders yet.</p>}</section></>}
  {data&&<section className="rounded-xl border p-5"><h2 className="text-xl font-bold">Product catalog</h2><p className="text-sm text-muted-foreground">First 50 listings · Read only</p>{catalog.length===0?<p className="mt-4">No supplier listings imported yet.</p>:<div className="overflow-x-auto"><table className="mt-4 w-full text-left text-sm"><thead><tr><th>Product</th><th>Status</th><th>Variants</th><th>Recently available</th></tr></thead><tbody>{catalog.map(row=><tr key={row.listing_id} className="border-t"><td className="py-3">{row.title}</td><td>{row.listing_status}</td><td>{row.variant_count}</td><td>{row.available_count}</td></tr>)}</tbody></table></div>}</section>}
+ {data&&<section className="rounded-xl border p-5 space-y-3"><h2 className="text-xl font-bold">Owner approvals</h2><p className="text-sm text-muted-foreground">Decisions are recorded only; nothing is published automatically.</p>{recommendations.length===0&&<p>No recommendations yet.</p>}{recommendations.map(r=><article key={r.id} className="rounded border p-4 space-y-2"><h3 className="font-bold">{r.kind} · {r.state}</h3><p>{r.rationale}</p><pre className="whitespace-pre-wrap break-all text-xs">{JSON.stringify(r.proposal,null,2)}</pre>{r.state==="pending"&&<div className="flex gap-2"><button disabled={busy} className="rounded border p-3" onClick={()=>void review(r.id,"approved")}>Approve proposal</button><button disabled={busy} className="rounded border p-3" onClick={()=>void review(r.id,"rejected")}>Reject</button></div>}</article>)}</section>}
  <p className="text-sm text-muted-foreground">Recorded net is not verified settlement profit. Real fulfillment is disabled in staging.</p>
  </>}
  {error&&<p role="alert" className="rounded border p-3">{error}</p>}
