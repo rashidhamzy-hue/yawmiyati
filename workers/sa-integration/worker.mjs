@@ -1,3 +1,5 @@
+function timeoutSignal(ms){const controller=new AbortController();setTimeout(()=>controller.abort(),ms);return controller.signal;}
+function failureKind(e){return e?.name==="AbortError"||e?.name==="TimeoutError"?"timeout":e?.name==="TypeError"?"network-or-runtime":e?.name==="SyntaxError"?"invalid-response":"runtime";}
 const db="https://skhtunkknshvolturqlm.supabase.co";
 const woo="https://logwave.s6-tastewp.com";
 const headers={"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow","Content-Type":"application/json"};
@@ -15,7 +17,7 @@ async function boundedJson(response){
  const reader=response.body?.getReader();if(!reader)throw Error("Missing body");const decoder=new TextDecoder();let size=0,text="";
  try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>1500000){await reader.cancel();throw Error("Response too large");}text+=decoder.decode(value,{stream:true});}return JSON.parse(text+decoder.decode());}finally{reader.releaseLock();}
 }
-export async function handle(request,env,send=fetch){
+export async function handle(request,env,send=(input,init)=>globalThis.fetch(input,init)){
  const u=new URL(request.url);
  if(request.method!=="POST"||u.pathname!=="/sync")return reply(404,{error:"Not found"});
  const bearer=request.headers.get("Authorization");
@@ -23,20 +25,21 @@ export async function handle(request,env,send=fetch){
  if(!env.SUPABASE_PUBLISHABLE_KEY||!env.WOO_SA_CONSUMER_KEY||!env.WOO_SA_CONSUMER_SECRET||env.WOO_SA_ORIGIN!==woo)return reply(503,{error:"Integration not configured"});
  const page=Number(u.searchParams.get("page")??"1");
  if(!Number.isInteger(page)||page<1||page>20)return reply(400,{error:"Invalid page"});
- const rpc=(name,body)=>send(db+"/rest/v1/rpc/"+name,{method:"POST",headers:{apikey:env.SUPABASE_PUBLISHABLE_KEY,Authorization:bearer,"Content-Type":"application/json"},body:JSON.stringify(body),redirect:"error",signal:AbortSignal.timeout(15000)});
+ const rpc=(name,body)=>send(db+"/rest/v1/rpc/"+name,{method:"POST",headers:{apikey:env.SUPABASE_PUBLISHABLE_KEY,Authorization:bearer,"Content-Type":"application/json"},body:JSON.stringify(body),redirect:"error",signal:timeoutSignal(15000)});
+ let step="owner-membership";
  try{
  const membership=await rpc("dashboard_ai_policy",{p_store:"sa"});
  if(!membership.ok)return reply(403,{error:"Saudi owner access required"});
  const policy=await boundedJson(membership);if(!policy||policy.store_code!=="sa")return reply(403,{error:"Saudi owner access required"});
- const upstream=await send(woo+"/wp-json/wc/v3/products?per_page=20&page="+page,{headers:{Authorization:"Basic "+btoa(env.WOO_SA_CONSUMER_KEY+":"+env.WOO_SA_CONSUMER_SECRET)},redirect:"error",signal:AbortSignal.timeout(15000)});
+ step="woo-read";const upstream=await send(woo+"/wp-json/wc/v3/products?per_page=20&page="+page,{headers:{Authorization:"Basic "+btoa(env.WOO_SA_CONSUMER_KEY+":"+env.WOO_SA_CONSUMER_SECRET)},redirect:"error",signal:AbortSignal.timeout(15000)});
  if(!upstream.ok)return reply(502,{error:"WooCommerce request failed",upstream_status:upstream.status});
  const products=await boundedJson(upstream);if(!Array.isArray(products)||products.length>20)return reply(502,{error:"Invalid supplier response"});
  const at=new Date().toISOString(),rows=products.map(p=>normalize(p,at)).filter(Boolean);
  if(!rows.length)return reply(200,{received:products.length,staged:0,skipped:products.length,page});
- const saved=await rpc("stage_sa_supplier_candidates",{p_rows:rows});
+ step="candidate-write";const saved=await rpc("stage_sa_supplier_candidates",{p_rows:rows});
  if(!saved.ok)return reply(502,{error:"Candidate persistence failed"});
  const staged=await boundedJson(saved);if(!Number.isInteger(staged)||staged<0||staged>rows.length)return reply(502,{error:"Invalid persistence response"});
  return reply(200,{received:products.length,staged,skipped:products.length-rows.length,page});
- }catch{return reply(502,{error:"Supplier integration failed"});}
+ }catch(e){return reply(502,{error:"Supplier integration failed: "+step+" ("+failureKind(e)+")"});}
 }
 export default {fetch(request,env){return handle(request,env)}};
