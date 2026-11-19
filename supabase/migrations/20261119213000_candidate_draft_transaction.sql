@@ -3,7 +3,8 @@ create table public.candidate_content_approvals (
  store_code text not null, woo_product_id bigint not null, woo_variation_id bigint not null default 0,
  revision_id uuid not null default gen_random_uuid(), title text not null check(length(btrim(title)) between 1 and 500),
  description text not null check(length(btrim(description)) between 1 and 10000),
- source_observed_at timestamptz not null, approved_by uuid not null references auth.users(id), approved_at timestamptz not null default now(),
+ source_observed_at timestamptz not null, approved_by uuid not null references auth.users(id), approved_at timestamptz not null default clock_timestamp(),
+ approval_sequence bigint generated always as identity,
  primary key(store_code,woo_product_id,woo_variation_id,revision_id),
  foreign key(store_code,woo_product_id,woo_variation_id) references public.catalog_import_candidates(store_code,woo_product_id,woo_variation_id)
 );
@@ -18,6 +19,7 @@ create table public.candidate_draft_links (
 alter table public.candidate_content_approvals enable row level security;
 alter table public.candidate_draft_links enable row level security;
 revoke all on public.candidate_content_approvals,public.candidate_draft_links from public,anon,authenticated;
+create index candidate_content_latest_idx on public.candidate_content_approvals(store_code,woo_product_id,woo_variation_id,approval_sequence desc);
 
 create function public.approve_candidate_content(p_store text,p_product bigint,p_observed_at timestamptz,p_title text,p_description text)
 returns uuid language plpgsql security definer set search_path='' as $$
@@ -47,7 +49,7 @@ begin
  select * into r from public.candidate_commercial_review where store_code=p_store and woo_product_id=p_product and woo_variation_id=0 for update;
  if not found or r.updated_at is distinct from p_review_at or r.decision<>'shortlisted' or r.supplier_cost_minor is null or r.delivery_cost_minor is null or r.other_cost_minor is null or r.proposed_price_minor is null then raise exception 'Commercial review incomplete or changed'; end if;
  select * into a from public.candidate_content_approvals where store_code=p_store and woo_product_id=p_product and woo_variation_id=0 and revision_id=p_revision;
- if not found or a.source_observed_at is distinct from c.observed_at or exists(select 1 from public.candidate_content_approvals n where n.store_code=p_store and n.woo_product_id=p_product and n.woo_variation_id=0 and (n.approved_at,n.revision_id)>(a.approved_at,a.revision_id)) then raise exception 'Content approval missing or superseded'; end if;
+ if not found or a.source_observed_at is distinct from c.observed_at or exists(select 1 from public.candidate_content_approvals n where n.store_code=p_store and n.woo_product_id=p_product and n.woo_variation_id=0 and n.approval_sequence>a.approval_sequence) then raise exception 'Content approval missing or superseded'; end if;
  insert into public.catalog_products default values returning id into v_product;
  insert into public.country_listings(store_code,product_id,slug,title,status) values(p_store,v_product,'supplier-'||p_product::text,a.title,'draft') returning id into v_listing;
  insert into public.listing_variants(store_code,listing_id,sku,price_minor,stock_state) values(p_store,v_listing,c.supplier_sku,r.proposed_price_minor,'unknown') returning id into v_variant;
