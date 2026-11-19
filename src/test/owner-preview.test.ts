@@ -14,3 +14,12 @@ it("forwards authorized sync only to the private service",async()=>{
 const sync=vi.fn(async(r:Request)=>{expect(r.headers.get("Authorization")).toBe("Bearer a.b.c");return Response.json({received:9,staged:9,skipped:0});});
 const send=vi.fn(async()=>Response.json({store_code:"sa"}));const r=await handle(req("/api/sync","Bearer a.b.c"),{...env,SA_INTEGRATION:{fetch:sync}},send);expect(r.status).toBe(200);expect((await r.json()).staged).toBe(9);
 });
+
+it("restricts remote image origins and serves syntactically valid browser script",async()=>{
+ const html=await handle(new Request("https://owner.example/"),env);
+ expect(html.headers.get("Content-Security-Policy")).toContain("img-src https://logwave.s6-tastewp.com;");
+ const script=await handle(new Request("https://owner.example/app.js"),env);
+ const source=await script.text();
+ expect(()=>new Function(source)).not.toThrow();
+ expect(source).toContain('$("search").oninput=applyFilter');
+});
