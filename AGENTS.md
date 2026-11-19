@@ -28,3 +28,6 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Yawmiyati owner-approved architecture (19 November 2026)
+The external Supabase project skhtunkknshvolturqlm is independently managed; Lovable cloud database is disabled. For this project's external database only, versioned SQL migrations under supabase/migrations are managed through GitHub and the external Supabase deployment workflow. This is the owner-approved exception to the Lovable-managed database instruction above. Lovable remains frontend-only. External server-side Anthropic calls require explicit budget reservations and server secrets; do not use browser keys or provision a second database. All other Lovable protections remain in effect. Never modify other projects.
