@@ -16,6 +16,12 @@ begin
  perform public.dashboard_save_candidate_review('sa',900000000001,2000,500,100,5000,'shortlisted');
  select updated_at into review_time from public.candidate_commercial_review where store_code='sa' and woo_product_id=900000000001;
  revision:=public.approve_candidate_content('sa',900000000001,at_time,'Fixture approved','Test only');
+ revision2:=public.approve_candidate_content('sa',900000000001,at_time,'Fixture newest','Test only');
+ begin
+  perform public.create_candidate_draft('sa',900000000001,review_time,revision);
+  raise exception 'Assertion: superseded approval accepted';
+ exception when others then if sqlerrm like 'Assertion:%' then raise; end if; if sqlerrm<>'Content approval missing or superseded' then raise; end if; end;
+ revision:=revision2;
  listing:=public.create_candidate_draft('sa',900000000001,review_time,revision);
  replay:=public.create_candidate_draft('sa',900000000001,review_time,revision);
  if listing is distinct from replay then raise exception 'Assertion: replay mismatch'; end if;
