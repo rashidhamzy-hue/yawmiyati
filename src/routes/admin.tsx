@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useRef, type FormEvent } from "react";
+import { useState, useRef, useMemo, type FormEvent } from "react";
 import { dashboardClient, type DashboardSummary, type CatalogRow, type Recommendation, type AiPolicy } from "../lib/store/dashboard-client";
+import { CommercialReview } from "@/components/store/CommercialReview";
 import { markets, type MarketCode } from "../lib/store/markets";
 export const Route = createFileRoute("/admin")({
  head:()=>({meta:[{title:"Yawmiyati OS | Owner"},{name:"robots",content:"noindex,nofollow"}]}),
@@ -21,6 +22,7 @@ function OwnerDashboard(){
  const generation=useRef(0);
  const origin=import.meta.env.VITE_YAWMIYATI_SUPABASE_URL;
  const key=import.meta.env.VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY;
+ const reviewClient=useMemo(()=>{try{return dashboardClient(origin,key)}catch{return null}},[origin,key]);
  async function load(next:MarketCode,access:string){
   const id=++generation.current;setBusy(true);setError("");setData(null);setCatalog([]);setRecommendations([]);setPolicy(null);
   try{const client=dashboardClient(origin,key);const [result,rows,recs,ai]=await Promise.all([client.summary(access,next),client.catalog(access,next),client.recommendations(access,next),client.policy(access,next)]);if(id===generation.current){setData(result);setCatalog(rows);setRecommendations(recs);setPolicy(ai);}}
@@ -57,6 +59,7 @@ function OwnerDashboard(){
  <label className="block">Market<select disabled={busy} className="ml-3 rounded border p-3" value={market} onChange={e=>{const next=e.target.value as MarketCode;setMarket(next);void load(next,token);}}>{Object.keys(markets).map(m=><option key={m} value={m}>{names[m as MarketCode]}</option>)}</select></label>
  {busy&&<p role="status">Loading verified database totals…</p>}
  {data&&<><div className="grid grid-cols-1 gap-4 sm:grid-cols-3">{[["Recorded orders",String(data.orders)],["Customers",String(data.customers)],["Recorded net (minor units)",data.recorded_net_minor+" "+data.currency]].map(([label,value])=><section key={label} className="rounded-xl border p-5"><h2 className="text-sm text-muted-foreground">{label}</h2><p className="mt-2 break-all text-2xl font-bold">{value}</p></section>)}</div><section className="rounded-xl border p-5"><h2 className="font-bold">Order status</h2>{Object.entries(data.order_statuses).map(([status,count])=><p key={status}>{status}: {count}</p>)}{!Object.keys(data.order_statuses).length&&<p>No orders yet.</p>}</section></>}
+ {data&&reviewClient&&<CommercialReview key={market} client={reviewClient} token={token} market={market}/>}
  {data&&<section className="rounded-xl border p-5"><h2 className="text-xl font-bold">Product catalog</h2><p className="text-sm text-muted-foreground">First 50 listings · Read only</p>{catalog.length===0?<p className="mt-4">No supplier listings imported yet.</p>:<div className="overflow-x-auto"><table className="mt-4 w-full text-left text-sm"><thead><tr><th>Product</th><th>Status</th><th>Variants</th><th>Recently available</th></tr></thead><tbody>{catalog.map(row=><tr key={row.listing_id} className="border-t"><td className="py-3">{row.title}</td><td>{row.listing_status}</td><td>{row.variant_count}</td><td>{row.available_count}</td></tr>)}</tbody></table></div>}</section>}
  {data&&<section className="rounded-xl border p-5 space-y-3"><h2 className="text-xl font-bold">Owner approvals</h2><p className="text-sm text-muted-foreground">Decisions are recorded only; nothing is published automatically.</p>{recommendations.length===0&&<p>No recommendations yet.</p>}{recommendations.map(r=><article key={r.id} className="rounded border p-4 space-y-2"><h3 className="font-bold">{r.kind} · {r.state}</h3><p>{r.rationale}</p><pre className="whitespace-pre-wrap break-all text-xs">{JSON.stringify(r.proposal,null,2)}</pre>{r.state==="pending"&&<div className="flex gap-2"><button disabled={busy} className="rounded border p-3" onClick={()=>void review(r.id,"approved")}>Approve proposal</button><button disabled={busy} className="rounded border p-3" onClick={()=>void review(r.id,"rejected")}>Reject</button></div>}</article>)}</section>}
  {policy&&<section className="rounded-xl border p-5 space-y-2"><h2 className="font-bold">Automation safety</h2><p>AI: {policy.enabled?"Enabled":"Disabled"} · Daily limit: ${(policy.daily_budget_microusd/1000000).toFixed(2)} USD</p><p>Automatic pricing: {policy.auto_pricing_enabled?"On":"Off"} · Publishing: {policy.auto_publish_enabled?"On":"Off"}</p><button disabled={busy} onClick={()=>void pauseAi()} className="rounded border p-3">Pause market automation</button></section>}
