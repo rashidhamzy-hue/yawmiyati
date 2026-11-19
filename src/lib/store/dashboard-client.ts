@@ -1,4 +1,5 @@
 import type { MarketCode } from "./markets";
+export interface CatalogRow { listing_id:string; slug:string; title:string; listing_status:string; variant_count:number; available_count:number; }
 export interface DashboardSummary {
  store: MarketCode; currency: string; orders: number; customers: number;
  order_statuses: Record<string,number>; recorded_net_minor: string;
@@ -19,6 +20,9 @@ export function dashboardClient(origin: string, publicKey: string, request: type
      const data=await call("/auth/v1/token?grant_type=password",{email,password});
      if(typeof data.access_token!=="string") throw new Error("Authentication failed");
      return data.access_token;
+   },
+   async catalog(token:string,market:MarketCode,offset=0):Promise<CatalogRow[]> {
+     return call("/rest/v1/rpc/dashboard_catalog",{p_store:market,p_limit:50,p_offset:offset},token);
    },
    async summary(token:string,market:MarketCode):Promise<DashboardSummary> {
      return call("/rest/v1/rpc/dashboard_summary",{p_store:market},token);
