@@ -1,5 +1,6 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { useState } from "react";
+import {catalogMode} from "@/components/store/LiveCatalog";
 import { Search, ShoppingBag, Truck, Banknote, RotateCcw, MapPin, Menu, X } from "lucide-react";
 import { Toaster } from "sonner";
 import { CartProvider, useCart } from "@/lib/store/cart";
@@ -11,6 +12,7 @@ export const Route = createFileRoute("/sa")({
 });
 
 function SaLayout() {
+  if(catalogMode()!=="demo")return <div dir="rtl" className="min-h-screen bg-background text-foreground"><header className="border-b"><div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4"><Link to="/sa" className="font-display text-2xl font-bold text-primary">يومياتي السعودية</Link><Link to="/sa/search" search={{q:""}} className="btn-outline">بحث</Link></div></header><main><Outlet/></main><footer className="mt-10 border-t p-6 text-center text-sm text-muted-foreground">يومياتي — نسخة اختبارية، الطلب غير متاح.</footer></div>;
   return (
     <CartProvider>
       <div className="min-h-screen bg-background text-foreground">

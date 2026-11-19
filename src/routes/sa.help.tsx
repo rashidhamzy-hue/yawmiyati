@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import {catalogMode} from "@/components/store/LiveCatalog";
 import { country } from "@/lib/store/catalog";
 
 export const Route = createFileRoute("/sa/help")({
@@ -7,6 +8,7 @@ export const Route = createFileRoute("/sa/help")({
 });
 
 function Help() {
+  if(catalogMode()!=="demo")return <section className="mx-auto max-w-3xl space-y-4 px-4 py-8"><h1 className="text-2xl font-bold">المساعدة</h1><p>المتجر في مرحلة الاختبار. سيتم الإعلان عن شروط التوصيل والدفع والاسترجاع عند الإطلاق.</p></section>;
   return (
     <div className="mx-auto max-w-3xl space-y-8 px-4 pt-8">
       <h1 className="font-display text-3xl font-extrabold">المساعدة</h1>

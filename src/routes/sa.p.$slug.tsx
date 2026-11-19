@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import {LiveCatalog,catalogMode} from "@/components/store/LiveCatalog";
 import { Banknote, Check, ChevronLeft, Minus, Plus, Truck, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { country, formatPrice, getCategory, getProduct, imageOf, products } from "@/lib/store/catalog";
@@ -9,7 +10,8 @@ import { img } from "@/lib/store/images";
 
 export const Route = createFileRoute("/sa/p/$slug")({
   loader: ({ params }) => {
-    const product = getProduct(params.slug);
+    const product = catalogMode()==="demo"?getProduct(params.slug):undefined;
+    if(catalogMode()!=="demo")return {product:undefined};
     if (!product) throw notFound();
     return { product };
   },
@@ -23,11 +25,11 @@ export const Route = createFileRoute("/sa/p/$slug")({
       { property: "og:image", content: img[p.image] }, { name: "twitter:image", content: img[p.image] },
     ] };
   },
-  component: ProductPage,
+  component: ProductRoute,
 });
 
-function ProductPage() {
-  const { product: p } = Route.useLoaderData();
+function ProductRoute(){const {product}=Route.useLoaderData();const {slug}=Route.useParams();return product?<ProductPage p={product}/>:<LiveCatalog slug={slug}/>;}
+function ProductPage({p}:{p:NonNullable<ReturnType<typeof getProduct>>}) {
   const cat = getCategory(p.category);
   const [active, setActive] = useState(0);
   const [variant, setVariant] = useState(p.variants?.options[0]);

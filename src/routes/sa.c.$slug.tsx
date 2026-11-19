@@ -1,11 +1,13 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import {catalogMode} from "@/components/store/LiveCatalog";
 import { ChevronLeft, SlidersHorizontal } from "lucide-react";
 import { getCategory, products } from "@/lib/store/catalog";
 import { ProductCard } from "@/components/store/ProductCard";
 
 export const Route = createFileRoute("/sa/c/$slug")({
   loader: ({ params }) => {
+    if(catalogMode()!=="demo")throw redirect({to:"/sa"});
     const category = getCategory(params.slug);
     if (!category) throw notFound();
     return { category };

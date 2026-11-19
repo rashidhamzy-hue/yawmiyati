@@ -1,10 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import {catalogMode} from "@/components/store/LiveCatalog";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { country, formatPrice, getProduct, imageOf, orderTotals } from "@/lib/store/catalog";
 import { useCart } from "@/lib/store/cart";
 
 export const Route = createFileRoute("/sa/cart")({
   head: () => ({ meta: [{ title: "سلة التسوق | يومياتي" }, { name: "description", content: "راجعي منتجاتك قبل إتمام الطلب." }, { property: "og:title", content: "سلة التسوق | يومياتي" }, { property: "og:description", content: "راجعي منتجاتك قبل إتمام الطلب." }] }),
+  beforeLoad:()=>{if(catalogMode()!=="demo")throw redirect({to:"/sa"});},
   component: CartPage,
 });
 

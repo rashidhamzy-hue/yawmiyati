@@ -1,5 +1,4 @@
-import {useEffect,useState} from "react";
-import {fetchPublicCatalog,type PublicListing} from "@/lib/store/public-catalog";
+import {LiveCatalog,catalogMode} from "@/components/store/LiveCatalog";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Banknote, Truck, ShieldCheck, Headphones, ArrowLeft, Sparkles } from "lucide-react";
 import { categories, products, imageOf, formatPrice } from "@/lib/store/catalog";
@@ -9,10 +8,10 @@ import { img } from "@/lib/store/images";
 export const Route = createFileRoute("/sa/")({
   head: () => ({
     meta: [
-      { title: "يومياتي السعودية — اطلبي الآن وادفعي عند الاستلام" },
-      { name: "description", content: "منتجات منزلية وجمال وإكسسوارات مختارة تجعل يومك أسهل، توصيل لجميع مدن المملكة والدفع عند الاستلام." },
+      { title: "يومياتي السعودية — نسخة اختبارية" },
+      { name: "description", content: "معاينة متجر يومياتي السعودية. الطلب غير متاح حالياً." },
       { property: "og:title", content: "يومياتي السعودية" },
-      { property: "og:description", content: "اجعلي روتينك اليومي أسهل — الدفع عند الاستلام." },
+      { property: "og:description", content: "معاينة متجر يومياتي السعودية." },
       { property: "og:image", content: img.hero },
       { name: "twitter:image", content: img.hero },
     ],
@@ -122,12 +121,4 @@ function Shelf({ title, items }: { title: string; items: typeof products }) {
   );
 }
 
-function CatalogHome(){
- const origin=import.meta.env.VITE_YAWMIYATI_SUPABASE_URL;
- const key=import.meta.env.VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY;
- const [rows,setRows]=useState<PublicListing[]|null>(null);
- const [error,setError]=useState(false);
- useEffect(()=>{if(!origin||!key)return;let active=true;fetchPublicCatalog(origin,key,"sa").then(r=>{if(active)setRows(r)}).catch(()=>{if(active)setError(true)});return()=>{active=false}},[origin,key]);
- if(!origin||!key)return <Home/>;
- return <main className="mx-auto max-w-6xl space-y-6 p-6"><h1 className="text-3xl font-bold">يومياتي السعودية</h1><p>نسخة اختبارية — الطلب غير متاح حالياً</p>{error?<p role="alert">تعذر تحميل المنتجات</p>:rows===null?<p role="status">جاري تحميل المنتجات...</p>:rows.length===0?<p>لا توجد منتجات متاحة حالياً</p>:<div className="grid grid-cols-2 gap-4 md:grid-cols-4">{rows.map(r=><article key={r.listing_id} className="rounded-xl border p-4"><h2 className="font-bold">{r.title}</h2><p>{(Number(r.price_minor)/100).toFixed(2)} {r.currency}</p></article>)}</div>}</main>;
-}
+function CatalogHome(){return catalogMode()==="demo"?<Home/>:<LiveCatalog/>;}
