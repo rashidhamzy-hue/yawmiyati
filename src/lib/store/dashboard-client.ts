@@ -1,6 +1,7 @@
 import type { MarketCode } from "./markets";
 export interface CatalogRow { listing_id:string; slug:string; title:string; listing_status:string; variant_count:number; available_count:number; }
 export interface Recommendation {id:string;kind:string;rationale:string;state:string;proposal:unknown;created_at:string;}
+export interface AiPolicy {enabled:boolean;daily_budget_microusd:number;auto_pricing_enabled:boolean;auto_publish_enabled:boolean;}
 export interface DashboardSummary {
  store: MarketCode; currency: string; orders: number; customers: number;
  order_statuses: Record<string,number>; recorded_net_minor: string;
@@ -23,6 +24,8 @@ export function dashboardClient(origin: string, publicKey: string, request: type
      if(typeof data.access_token!=="string") throw new Error("Authentication failed");
      return data.access_token;
    },
+   async policy(token:string,market:MarketCode):Promise<AiPolicy>{return call("/rest/v1/rpc/dashboard_ai_policy",{p_store:market},token);},
+   async pauseAi(token:string,market:MarketCode):Promise<void>{await call("/rest/v1/rpc/pause_market_ai",{p_store:market},token);},
    async recommendations(token:string,market:MarketCode):Promise<Recommendation[]> {
      return call("/rest/v1/rpc/dashboard_recommendations",{p_store:market},token);
    },
