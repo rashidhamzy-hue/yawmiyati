@@ -2,6 +2,7 @@ import type { MarketCode } from "./markets";
 export type ReviewDecision="pending"|"shortlisted"|"rejected";
 export interface CommercialReview {supplier_cost_minor:number|null;delivery_cost_minor:number|null;other_cost_minor:number|null;proposed_price_minor:number|null;decision:ReviewDecision;updated_at:string;}
 export interface CandidateRow {woo_product_id:number;supplier_sku:string;title:string;observed_price_minor:string|null;source_stock_status:string|null;observed_at:string;images:unknown;categories:unknown;review:CommercialReview|null;}
+export interface CandidateContentState {approval:{revision_id:string;title:string;description:string;source_observed_at:string;approved_at:string}|null;draft:{listing_id:string;revision_id:string;review_at:string}|null;}
 export interface CatalogRow { listing_id:string; slug:string; title:string; listing_status:string; variant_count:number; available_count:number; }
 export interface Recommendation {id:string;kind:string;rationale:string;state:string;proposal:unknown;created_at:string;}
 export interface AiPolicy {enabled:boolean;daily_budget_microusd:number;auto_pricing_enabled:boolean;auto_publish_enabled:boolean;}
@@ -45,6 +46,19 @@ export function dashboardClient(origin: string, publicKey: string, request: type
      for(const amount of [x.supplier,x.delivery,x.other,x.price])if(amount!==null&&(!Number.isSafeInteger(amount)||amount<0||amount>1000000000))throw Error("Invalid commercial amount");
      if(x.price===0)throw Error("Invalid proposed price");
      await call("/rest/v1/rpc/dashboard_save_candidate_review",{p_store:market,p_product:product,p_supplier:x.supplier,p_delivery:x.delivery,p_other:x.other,p_price:x.price,p_decision:x.decision},token);
+   },
+   async candidateContent(token:string,market:MarketCode,product:number):Promise<CandidateContentState>{
+     return call("/rest/v1/rpc/dashboard_candidate_content",{p_store:market,p_product:product},token);
+   },
+   async approveContent(token:string,market:MarketCode,product:number,observedAt:string,title:string,description:string):Promise<string>{
+     if(!title.trim()||title.trim().length>500||!description.trim()||description.trim().length>10000||!Number.isFinite(Date.parse(observedAt)))throw Error("Invalid content");
+     const result=await call("/rest/v1/rpc/approve_candidate_content",{p_store:market,p_product:product,p_observed_at:observedAt,p_title:title.trim(),p_description:description.trim()},token);
+     if(typeof result!=="string"||!result)throw Error("Invalid approval response");return result;
+   },
+   async createDraft(token:string,market:MarketCode,product:number,reviewAt:string,revision:string):Promise<string>{
+     if(!Number.isFinite(Date.parse(reviewAt))||!revision)throw Error("Invalid review revision");
+     const result=await call("/rest/v1/rpc/create_candidate_draft",{p_store:market,p_product:product,p_review_at:reviewAt,p_revision:revision},token);
+     if(typeof result!=="string"||!result)throw Error("Invalid draft response");return result;
    },
    async catalog(token:string,market:MarketCode,offset=0):Promise<CatalogRow[]> {
      return call("/rest/v1/rpc/dashboard_catalog",{p_store:market,p_limit:50,p_offset:offset},token);
