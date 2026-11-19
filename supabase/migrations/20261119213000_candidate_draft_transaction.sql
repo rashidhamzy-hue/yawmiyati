@@ -59,3 +59,17 @@ begin
 end $$;
 revoke all on function public.approve_candidate_content(text,bigint,timestamptz,text,text),public.create_candidate_draft(text,bigint,timestamptz,uuid) from public,anon;
 grant execute on function public.approve_candidate_content(text,bigint,timestamptz,text,text),public.create_candidate_draft(text,bigint,timestamptz,uuid) to authenticated;
+
+-- Recover approved content and existing draft links after a browser reload.
+create function public.dashboard_candidate_content(p_store text,p_product bigint)
+returns jsonb language plpgsql stable security definer set search_path='' as $$
+declare a public.candidate_content_approvals%rowtype; d public.candidate_draft_links%rowtype;
+begin
+ if auth.uid() is null or not exists(select 1 from public.dashboard_members m where m.user_id=auth.uid() and m.store_code=p_store) then raise exception using errcode='42501',message='Access denied'; end if;
+ select * into a from public.candidate_content_approvals where store_code=p_store and woo_product_id=p_product and woo_variation_id=0 order by approval_sequence desc limit 1;
+ select * into d from public.candidate_draft_links where store_code=p_store and woo_product_id=p_product and woo_variation_id=0;
+ return jsonb_build_object('approval',case when a.revision_id is null then null else jsonb_build_object('revision_id',a.revision_id,'title',a.title,'description',a.description,'source_observed_at',a.source_observed_at,'approved_at',a.approved_at) end,
+ 'draft',case when d.listing_id is null then null else jsonb_build_object('listing_id',d.listing_id,'revision_id',d.revision_id,'review_at',d.review_at) end);
+end $$;
+revoke all on function public.dashboard_candidate_content(text,bigint) from public,anon;
+grant execute on function public.dashboard_candidate_content(text,bigint) to authenticated;
