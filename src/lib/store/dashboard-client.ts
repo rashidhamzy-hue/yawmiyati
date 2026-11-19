@@ -24,8 +24,8 @@ export function dashboardClient(origin: string, publicKey: string, request: type
      if(typeof data.access_token!=="string") throw new Error("Authentication failed");
      return data.access_token;
    },
-   async policy(token:string,market:MarketCode):Promise<AiPolicy>{return call("/rest/v1/rpc/dashboard_ai_policy",{p_store:market},token);}
-   async pauseAi(token:string,market:MarketCode):Promise<void>{await call("/rest/v1/rpc/pause_market_ai",{p_store:market},token);}
+   async policy(token:string,market:MarketCode):Promise<AiPolicy>{return call("/rest/v1/rpc/dashboard_ai_policy",{p_store:market},token);},
+   async pauseAi(token:string,market:MarketCode):Promise<void>{await call("/rest/v1/rpc/pause_market_ai",{p_store:market},token);},
    async recommendations(token:string,market:MarketCode):Promise<Recommendation[]> {
      return call("/rest/v1/rpc/dashboard_recommendations",{p_store:market},token);
    },
