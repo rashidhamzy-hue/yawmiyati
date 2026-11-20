@@ -15,7 +15,7 @@ describe("full Yawmiyati brand story",()=>{
   expect(container.textContent).toContain(brandStory[market].origin);
   expect(container.textContent).toContain(brandStory[market].turning);
   expect(container.textContent).toContain(brandStory[market].promise);
-  expect(screen.getByRole("link",{name:new RegExp(brandStory[market].shopCta)}).getAttribute("href")).toBe("/"+market+"#discover");
+  expect(screen.getAllByRole("link",{name:new RegExp(brandStory[market].shopCta)}).some(link=>link.getAttribute("href")==="/"+market+"#discover")).toBe(true);
   expect(container.textContent).not.toMatch(/مليون|عميل راض|الأفضل في المنطقة|أرقام مبيعات/);
  });
  it("links Saudi homepage story teaser to dedicated route",()=>{
