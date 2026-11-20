@@ -3,6 +3,7 @@ export type ReviewDecision="pending"|"shortlisted"|"rejected";
 export interface CommercialReview {supplier_cost_minor:number|null;delivery_cost_minor:number|null;other_cost_minor:number|null;proposed_price_minor:number|null;decision:ReviewDecision;updated_at:string;}
 export interface CandidateRow {woo_product_id:number;supplier_sku:string;title:string;observed_price_minor:string|null;source_stock_status:string|null;observed_at:string;images:unknown;categories:unknown;review:CommercialReview|null;}
 export interface CandidateContentState {approval:{revision_id:string;title:string;description:string;source_observed_at:string;approved_at:string}|null;draft:{listing_id:string;revision_id:string;review_at:string}|null;}
+export interface CatalogReadiness {woo_product_id:number;listing_id:string|null;listing_status:string|null;blockers:string[];}
 export interface CatalogRow { listing_id:string; slug:string; title:string; listing_status:string; variant_count:number; available_count:number; }
 export interface Recommendation {id:string;kind:string;rationale:string;state:string;proposal:unknown;created_at:string;}
 export interface AiPolicy {enabled:boolean;daily_budget_microusd:number;auto_pricing_enabled:boolean;auto_publish_enabled:boolean;}
@@ -35,6 +36,11 @@ export function dashboardClient(origin: string, publicKey: string, request: type
    },
    async review(token:string,market:MarketCode,id:string,decision:"approved"|"rejected"):Promise<void> {
      await call("/rest/v1/rpc/review_recommendation",{p_store:market,p_id:id,p_decision:decision},token);
+   },
+   async readiness(token:string,market:MarketCode):Promise<CatalogReadiness[]>{
+     const result=await call("/rest/v1/rpc/dashboard_catalog_readiness",{p_store:market},token);
+     if(!Array.isArray(result)||result.some(r=>!r||!Number.isSafeInteger(r.woo_product_id)||!Array.isArray(r.blockers)))throw Error("Invalid readiness response");
+     return result;
    },
    async candidates(token:string,market:MarketCode):Promise<CandidateRow[]>{
      const rows=await call("/rest/v1/rpc/dashboard_candidate_review",{p_store:market,p_limit:100},token);
