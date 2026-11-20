@@ -1,4 +1,4 @@
-import {render,screen,fireEvent} from "@testing-library/react";
+import {render,screen,fireEvent,within} from "@testing-library/react";
 import {expect,it} from "vitest";
 import {StoreHeader,StoreFooter,StoreFrame} from "../components/store/StoreChrome";
 import {marketIdentity} from "../lib/store/market-identity";
@@ -15,7 +15,7 @@ it("provides mobile-menu navigation with real section links",()=>{
  render(<StoreHeader market="sa"/>);
  fireEvent.click(screen.getByRole("button",{name:"فتح القائمة"}));
  expect(screen.getByRole("navigation",{name:"قائمة الجوال"})).toBeTruthy();
- expect(screen.getByRole("link",{name:"الأقسام"}).getAttribute("href")).toBe("/sa#discover");
+ expect(within(screen.getByRole("navigation",{name:"قائمة الجوال"})).getByRole("link",{name:"الأقسام"}).getAttribute("href")).toBe("/sa#discover");
 });
 it("keeps all five flags and local currencies independent",()=>{
  expect(Object.keys(marketIdentity)).toEqual(["sa","ae","om","eg","iq"]);
