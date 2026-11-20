@@ -1,3 +1,6 @@
-import {createFileRoute,Link} from "@tanstack/react-router";
-export const Route=createFileRoute("/sa/checkout")({head:()=>({meta:[{title:"الطلب | يومياتي"},{name:"robots",content:"noindex,nofollow"}]}),component:Checkout});
-function Checkout(){return <main dir="rtl" className="mx-auto max-w-lg space-y-5 px-4 py-16 text-center"><h1 className="font-display text-3xl font-extrabold">لا توجد سلة قابلة للطلب</h1><p className="leading-8 text-muted-foreground">إتمام الطلب يحتاج إلى منتجات متاحة ومعلومات دفع وتوصيل معتمدة. يمكنك متابعة استكشاف يومياتي.</p><Link to="/sa" className="btn-primary">استكشفي يومياتي</Link></main>;}
+import {createFileRoute} from "@tanstack/react-router";
+import {StoreCommerceGuard} from "@/components/store/StoreCommerceGuard";
+export const Route=createFileRoute("/sa/checkout")({
+ head:()=>({meta:[{title:"إتمام الطلب | يومياتي السعودية"},{name:"robots",content:"noindex,nofollow"}]}),
+ component:()=> <StoreCommerceGuard market="sa" type="checkout"/>
+});
