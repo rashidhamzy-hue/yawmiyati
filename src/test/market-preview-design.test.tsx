@@ -1,5 +1,6 @@
 import {render,screen,fireEvent} from "@testing-library/react";
-import {describe,it,expect} from "vitest";
+import {describe,it,expect,vi} from "vitest";
+vi.mock("../lib/store/staging-public-config",()=>({publicBrowserConfig:()=>({origin:"",key:""})}));
 import {MarketPreview} from "../components/store/MarketPreview";
 describe("Yawmiyati premium storefront",()=>{
  it("shows original brand identity, clear prelaunch states and real-country selector",()=>{

@@ -1,3 +1,4 @@
+import {publicBrowserConfig} from "@/lib/store/staging-public-config";
 import {useEffect,useRef,useState,type FormEvent} from "react";
 import {Bot,MessageCircle,Send,ShieldCheck,Sparkles,X} from "lucide-react";
 import type {MarketCode} from "@/lib/store/markets";
@@ -5,8 +6,7 @@ import type {PublicListing} from "@/lib/store/public-catalog";
 import {countryName,greeting,localShopAnswer,SHOP_ASSISTANT_SUGGESTIONS,type ShopMessage} from "@/lib/store/shop-assistant";
 
 const apiEnabled=import.meta.env.VITE_YAWMIYATI_SHOP_ASSISTANT_API_ENABLED==="true";
-const supabaseUrl=import.meta.env.VITE_YAWMIYATI_SUPABASE_URL;
-const publishableKey=import.meta.env.VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY;
+const {origin:supabaseUrl,key:publishableKey}=publicBrowserConfig(import.meta.env.VITE_YAWMIYATI_SUPABASE_URL,import.meta.env.VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY);
 async function requestAssistance(question:string,market:MarketCode,history:ShopMessage[],signal:AbortSignal):Promise<string>{
  if(!apiEnabled||!supabaseUrl||!publishableKey)throw Error("Server assistant not enabled");
  const base=new URL(supabaseUrl);

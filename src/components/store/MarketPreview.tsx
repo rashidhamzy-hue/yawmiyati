@@ -1,3 +1,4 @@
+import {publicBrowserConfig} from "@/lib/store/staging-public-config";
 import {useEffect,useState} from "react";
 import {ArrowLeft,ArrowUpLeft,ChevronDown,Check,Heart,Instagram,Menu,Package,Search,ShieldCheck,Sparkles,X, type LucideIcon} from "lucide-react";
 import {img} from "@/lib/store/images";
@@ -8,8 +9,7 @@ import {markets,type MarketCode} from "@/lib/store/markets";
 import {fetchPublicCatalog,fetchPublicDetail,formatListingPrice,type PublicListing,type PublicDetail} from "@/lib/store/public-catalog";
 
 const names:Record<MarketCode,string>={sa:"السعودية",ae:"الإمارات",om:"عُمان",eg:"مصر",iq:"العراق"};
-const origin=import.meta.env.VITE_YAWMIYATI_SUPABASE_URL;
-const key=import.meta.env.VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY;
+const {origin,key}=publicBrowserConfig(import.meta.env.VITE_YAWMIYATI_SUPABASE_URL,import.meta.env.VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY);
 const categories=[
  {name:"المنزل والديكور",caption:"لأجواء تشبهك",picture:img["cat-home"]},
  {name:"المطبخ والقهوة",caption:"لحظات تستحق التذوّق",picture:img["cat-kitchen"]},
