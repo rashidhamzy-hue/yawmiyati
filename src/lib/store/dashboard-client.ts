@@ -76,6 +76,10 @@ export function dashboardClient(origin: string, publicKey: string, request: type
      const result=await call("/rest/v1/rpc/create_candidate_draft",{p_store:market,p_product:product,p_review_at:reviewAt,p_revision:revision},token);
      if(typeof result!=="string"||!result)throw Error("Invalid draft response");return result;
    },
+   async publishDraft(token:string,market:MarketCode,product:number,listing:string):Promise<void>{
+     if(!Number.isSafeInteger(product)||product<=0||!listing.trim())throw Error("Invalid publication target");
+     await call("/rest/v1/rpc/publish_candidate_draft",{p_store:market,p_product:product,p_listing:listing},token);
+   },
    async catalog(token:string,market:MarketCode,offset=0):Promise<CatalogRow[]> {
      return call("/rest/v1/rpc/dashboard_catalog",{p_store:market,p_limit:50,p_offset:offset},token);
    },
