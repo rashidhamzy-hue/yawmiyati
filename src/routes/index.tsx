@@ -5,9 +5,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "يومياتي — متجر أسلوب الحياة" },
-      { name: "description", content: "يومياتي: منتجات منزلية وجمال وإكسسوارات مختارة، والدفع عند الاستلام." },
+      { name: "description", content: "يومياتي: أفكار واختيارات للمنزل والجمال والعناية، بتجربة عربية سهلة." },
       { property: "og:title", content: "يومياتي — متجر أسلوب الحياة" },
-      { property: "og:description", content: "منتجات مختارة للمرأة، والدفع عند الاستلام." },
+      { property: "og:description", content: "اكتشفي عالم يومياتي للبيت والجمال والعناية." },
     ],
   }),
 });
