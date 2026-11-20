@@ -15,15 +15,15 @@ it("shows evidence-qualified Saudi shipping and COD with protected navigation",(
  const {container}=render(<StoreInfoPage market="sa" topic="shipping-returns"/>);
  expect(container.querySelectorAll("img").length).toBeGreaterThanOrEqual(3);
  expect(screen.getByRole("link",{name:"الخصوصية"}).getAttribute("href")).toBe("/sa/info/privacy");
- expect(screen.getByText(/٢٨ ريالاً سعودياً/)).toBeTruthy();
- expect(screen.getByText(/الدفع نقداً عند الاستلام فقط/)).toBeTruthy();
- expect(screen.getByText(/٧ أيام/)).toBeTruthy();
+ expect(screen.getByText(/لم تُعتمد رسوم شحن نهائية/)).toBeTruthy();
+ expect(screen.getByText(/الدفع نقداً عند الاستلام هو الخيار المخطط له/)).toBeTruthy();
+ expect(screen.getByText(/سياسة استرجاع واستبدال يراجعها المختصون/)).toBeTruthy();
  expect(screen.getByText(/حقوقك النظامية/)).toBeTruthy();
- expect(container.textContent).not.toMatch(/عند تفعيل|المورّد|الطلبات غير مفعّلة|معلومات تشغيلية/);
+ expect(container.textContent).not.toMatch(/٢٨ ريالاً سعودياً|٢–٣ أيام|٤–٥ أيام|مورد Taager/);
 });
 
 it("keeps unverified Egypt delivery fees unspecified",()=>{
  render(<StoreInfoPage market="eg" topic="shipping-returns"/>);
- expect(screen.getByText(/مصاريف الشحن بتختلف حسب المحافظة/)).toBeTruthy();
+ expect(screen.getByText(/مصاريف الشحن حسب المحافظة والعنوان/)).toBeTruthy();
  expect(screen.queryByText(/٢٨ ريالاً سعودياً/)).toBeNull();
 });
