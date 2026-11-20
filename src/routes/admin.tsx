@@ -1,3 +1,4 @@
+import {publicBrowserConfig} from "@/lib/store/staging-public-config";
 import { createFileRoute } from "@tanstack/react-router";
 import {BarChart3,Boxes,ClipboardCheck,ShieldCheck,Settings2,ChartNoAxesCombined,Store,LockKeyhole,ExternalLink,Sparkles,PackageSearch,Wallet,MapPin} from "lucide-react";
 import { useState, useRef, useMemo, type FormEvent } from "react";
@@ -22,8 +23,7 @@ function OwnerDashboard(){
  const [error,setError]=useState("");
  const [busy,setBusy]=useState(false);
  const generation=useRef(0);
- const origin=import.meta.env.VITE_YAWMIYATI_SUPABASE_URL;
- const key=import.meta.env.VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY;
+ const {origin,key}=publicBrowserConfig(import.meta.env.VITE_YAWMIYATI_SUPABASE_URL,import.meta.env.VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY);
  const reviewClient=useMemo(()=>{try{return dashboardClient(origin,key)}catch{return null}},[origin,key]);
  async function load(next:MarketCode,access:string){
   const id=++generation.current;setBusy(true);setError("");setData(null);setPerformance(null);setCatalog([]);setRecommendations([]);setPolicy(null);
