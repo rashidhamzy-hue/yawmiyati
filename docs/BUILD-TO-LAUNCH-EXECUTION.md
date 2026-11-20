@@ -7,7 +7,7 @@
 - Database inspection on 20 November: 0 catalog products, 0 country listings, 0 variants, 0 import candidates, 0 orders. All five `catalog_release_enabled`, `checkout_enabled`, and `fulfillment_enabled` are **false**.
 - Old TasteWP test supplier retired. Current Woo reader/import adapter is read-only, not a verified new supplier contract. Paid assistant budgets remain disabled.
 - `src/lib/store/catalog-approval.ts` and `src/lib/store/supplier-evidence.ts` are advisory; server-side authorization, provenance, locks, and release gates must independently enforce approval.
-- PRs #70–#71 fixed inline search entry points and editorial CTAs, added localized four-country homepage descriptions. PR #72 introduces viewport/browser QA (track its CI and visual evidence; do not claim pass before confirmation).
+- PRs #70–#71 fixed inline search entry points and editorial CTAs, added localized four-country homepage descriptions. PR #72 merged after passing 20 five-market/four-viewport functional browser checks and commerce CI. **Visual sign-off remains blocked:** its standalone Vite screenshot artifact shows hero/category photos absent because `images.ts` uses Lovable-only `/__l5e` asset pointers. See issue #75.
 
 ## Parallel work lanes and acceptance
 
