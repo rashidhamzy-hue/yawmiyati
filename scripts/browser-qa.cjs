@@ -5,6 +5,7 @@ const path=require("node:path");
 const assert=require("node:assert/strict");
 const base=process.env.QA_BASE_URL||"http://127.0.0.1:4173";
 const markets=["sa","ae","om","eg","iq"];
+const searchLabels={sa:"دوّري على اللي يعجبك",ae:"شو ودّج تلاقين؟",om:"وش في بالك اليوم؟",eg:"بتدوّري على إيه؟",iq:"شنو ببالچ اليوم؟"};
 const viewports=[320,390,768,1440];
 const output=path.join(process.cwd(),"artifacts","browser-qa");
 fs.mkdirSync(output,{recursive:true});
@@ -39,7 +40,7 @@ async function main(){
        console.warn("ASSET WARNING "+label+": "+lovProxyImages+" editorial images depend on Lovable asset proxy; see issue #75");
        if(process.env.QA_REQUIRE_PORTABLE_IMAGES==="true")throw Error(label+": non-portable editorial assets");
      }
-     const heroSearch=page.getByRole("button",{name:"دوّري على اللي يعجبك"});
+     const heroSearch=page.getByRole("button",{name:searchLabels[market]});
      await heroSearch.click();
      const dialog=page.getByRole("dialog",{name:"بحث يومياتي الذكي"});
      await dialog.waitFor({state:"visible"});
@@ -55,6 +56,15 @@ async function main(){
        await dialog.waitFor({state:"hidden"});
      }
      await page.screenshot({path:path.join(output,label+".png"),fullPage:true,animations:"disabled"});
+     if(width===390){
+       const policyResponse=await page.goto(base+"/"+market+"/info/shipping-returns",{waitUntil:"domcontentloaded",timeout:30000});
+       assert.equal(policyResponse?.status(),200,label+": country policy HTTP error");
+       await page.locator("h1").first().waitFor({state:"visible"});
+       const text=await page.locator("main").innerText();
+       assert.ok(text.includes("الاستلام")||text.includes("كاش"),label+": local COD guidance missing");
+       assert.ok(!text.includes("تاجر"),label+": supplier name leaked into customer policy");
+       await page.screenshot({path:path.join(output,label+"-shipping.png"),fullPage:true,animations:"disabled"});
+     }
      console.log("PASS "+label+" storefront, overflow, inline search, Escape");
     }catch(e){
      failures.push(label+": "+e.message);
