@@ -4,7 +4,7 @@ Date: 20 November 2026. GitHub-only, $0 spend. Branch based on `main` after M3A 
 
 ## What this adds
 
-- `src/lib/store/simulation/failure-rehearsal.ts`: seven controlled, deterministic fault-injection scenarios × five markets = **35 offline cases**. Reuses existing, already-tested pure contracts: `assessSupplierEvidence`, `evaluateCodEvidence`, `createOfflineCommerceSandbox`, `createSimulatedOutbox`, `compareOrderSnapshots` and the synthetic signed-webhook harness.
+- `src/lib/store/simulation/failure-rehearsal.ts`: six browser-safe scenarios × five markets = **30 offline cases**, plus five real HMAC signature-tamper tests in the Node-only CI suite = **35 offline cases**. Reuses existing, already-tested pure contracts: `assessSupplierEvidence`, `evaluateCodEvidence`, `createOfflineCommerceSandbox`, `createSimulatedOutbox`, `compareOrderSnapshots` and the synthetic signed-webhook harness.
 - `src/test/m3b-failure-rehearsal-panel.tsx`: read-only local owner review of detected synthetic faults and a JSON report; no controls for publishing, dispatch, payments or provider activation.
 - `src/test/m2d-owner-review-workspace.tsx`: mounts the panel ONLY within M2D's localhost-only, credential-protected review harness (not `/admin` or the public site).
 - `src/test/m3b-failure-rehearsal.test.tsx`: reproducibility, 35 fault detections, all-five-market containment, no live authorization and no outbound fetch.
@@ -17,7 +17,7 @@ Date: 20 November 2026. GitHub-only, $0 spend. Branch based on `main` after M3A 
 4. **Failed order:** rejects premature shipment and attempted delivery from `failed`; duplicate event cannot create a second status transition or payment.
 5. **Outbox retries:** verifies attempt fencing, 3 failures → dead letter, deduplication, no late lease and cross-market denial. This uses the existing **in-memory emulator**, not a durable production queue.
 6. **Reconciliation exceptions:** finds absent counterpart orders, conflicting states, unrecognized remote orders and duplicate local records in **synthetic snapshots only**.
-7. **Tampered signed event:** alters a synthetic signed webhook body, expects signature rejection, confirms no outbox job was queued. It does not authenticate any actual provider.
+7. **Tampered signed event (Node CI only):** five separate tests alter a synthetic signed webhook body and verify real HMAC rejection and zero queued jobs. Node cryptography is deliberately never bundled into the browser owner review. It does not authenticate any actual provider.
 
 ## Meaning of a pass
 
