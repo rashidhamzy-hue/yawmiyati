@@ -38,7 +38,7 @@ export function filterApprovedListings(rows: readonly PublicListing[], market: M
   const seen = new Set<string>();
   const valid = rows.map(row => {
     if (!row || !row.listing_id || !row.slug || !row.title || row.currency !== markets[market].currency ||
-        !/^\\d+$/.test(row.price_minor) || !Number.isSafeInteger(Number(row.price_minor)) || Number(row.price_minor) <= 0 ||
+        !/^\d+$/.test(row.price_minor) || !Number.isSafeInteger(Number(row.price_minor)) || Number(row.price_minor) <= 0 ||
         seen.has(row.slug)) throw Error("invalid_approved_listing");
     seen.add(row.slug);
     return row;
@@ -55,7 +55,7 @@ export function filterApprovedListings(rows: readonly PublicListing[], market: M
   return { total: products.length, pages: Math.ceil(products.length / pageSize), page, products: products.slice((page-1)*pageSize,page*pageSize) };
 }
 export function normalizeArabic(s:string):string {
-  return s.normalize("NFKC").replace(/[\\u064B-\\u065F\\u0670]/g,"").replace(/[إأآٱ]/g,"ا").replace(/ى/g,"ي").trim().toLocaleLowerCase("ar");
+  return s.normalize("NFKC").replace(/[\u064B-\u065F\u0670]/g,"").replace(/[إأآٱ]/g,"ا").replace(/ى/g,"ي").trim().toLocaleLowerCase("ar");
 }
 
 /**
