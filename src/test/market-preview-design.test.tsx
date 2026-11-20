@@ -10,6 +10,9 @@ describe("Yawmiyati premium storefront",()=>{
   expect(screen.getByLabelText("البلد والعملة: المملكة العربية السعودية، ريال سعودي")).toBeTruthy();
   expect(screen.getByRole("link",{name:/تخطي إلى المحتوى/})).toBeTruthy();
   expect(screen.getByRole("heading",{name:"اختيارات تناسب يومك"})).toBeTruthy();
+  fireEvent.click(screen.getByRole("button",{name:"دوّري على اللي يعجبك"}));
+  expect(screen.getByRole("dialog",{name:"بحث يومياتي الذكي"})).toBeTruthy();
+  fireEvent.click(screen.getByRole("button",{name:"إغلاق البحث"}));
   expect(screen.getByRole("heading",{name:"أسئلة تتكرر كثيراً"})).toBeTruthy();
   expect(screen.queryByRole("button",{name:/أضيفي للسلة|شراء الآن|اطلبي الآن/})).toBeNull();
   expect(screen.queryByText(/قريباً|مرحلة التحضير|قبل الإطلاق/)).toBeNull();
