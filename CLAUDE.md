@@ -39,3 +39,11 @@ Read `AGENTS.md`, `docs/INTEGRATION-CONTRACT.md`, and `docs/HANDOFF-STATUS.md`. 
 
 ## Status discipline
 Status labels: VERIFIED LIVE, DATABASE-TESTED, CI-PASSED, SOURCE-ONLY, BLOCKED, NOT BUILT. Do not mark SOURCE-ONLY as production ready.
+
+## 20 November 2026 additional verified development
+- Read-only Arabic market preview routes now exist for all five markets, but only Saudi has an actual imported supplier proof; release flags are off and the four new market previews are empty. Product detail uses approved public content only.
+- Owner commercial review writes now use `dashboard_save_candidate_review_v2` with optimistic concurrency; old no-version RPC access revoked. Both React and standalone owner Worker source updated.
+- Owner content workspace includes private drafts, blocker report, and an explicit publication button that remains disabled until the server readiness gate reports zero blockers. Server independently rechecks publication.
+- Validated rollback-only smoke checks: `docs/commercial-review-concurrency-test.sql`, `docs/catalog-draft-test.sql`, `docs/catalog-release-test.sql`, `docs/ai-job-lifecycle-test.sql`, `docs/staging-security-smoke.sql`. Anon and nonmember owner access is denied. No release flags changed.
+- `bun run build` must run before `bun run test` because TanStack generates `src/routeTree.gen.ts` on build; CI now uses that order. Do not edit the generated route tree.
+- Latest merged source is not deployed to Cloudflare; do not conflate CI status with runtime verification.
