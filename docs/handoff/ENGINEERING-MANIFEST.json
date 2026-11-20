@@ -1,0 +1,185 @@
+{
+  "schemaVersion": 1,
+  "project": "Yawmiyati",
+  "repo": "tarikhtube-stack/saudi-store-spark",
+  "baselineMainCommit": "1a50db53ee78cbb2549cb9e53b9ac44209b053ab",
+  "generatedOn": "2026-11-20",
+  "intent": "Source-only engineering handoff; not proof of live infrastructure or launch readiness",
+  "markets": [
+    {
+      "code": "sa",
+      "currency": "SAR",
+      "minorDigits": 2
+    },
+    {
+      "code": "ae",
+      "currency": "AED",
+      "minorDigits": 2
+    },
+    {
+      "code": "om",
+      "currency": "OMR",
+      "minorDigits": 3
+    },
+    {
+      "code": "eg",
+      "currency": "EGP",
+      "minorDigits": 2
+    },
+    {
+      "code": "iq",
+      "currency": "IQD",
+      "minorDigits": 3
+    }
+  ],
+  "releaseFlags": {
+    "catalog": false,
+    "checkout": false,
+    "fulfillment": false,
+    "paidAI": false,
+    "providerCalls": false,
+    "productionDeployment": false
+  },
+  "note": "These flags record the source-only handoff safety rule and the 20 Nov blueprint assessment, not a live database query.",
+  "verifiedPaths": [
+    "docs/BLUEPRINT-ACCEPTANCE-STATUS.md",
+    "docs/SUPPLIER-POLICIES-2026-11-20.md",
+    "docs/M1-OFFLINE-SIMULATION.md",
+    "docs/M2-PRODUCT-EXPERIENCE.md",
+    "docs/M2B-APPROVED-PRODUCT-EXPERIENCE.md",
+    "docs/M2C-OFFLINE-COD-CHECKOUT.md",
+    "docs/M2D-LOCAL-OWNER-REVIEW-QA.md",
+    "docs/M3A-OFFLINE-LAUNCH-READINESS.md",
+    "docs/M3B-OFFLINE-FAILURE-RECOVERY.md",
+    "src/lib/store/markets.ts",
+    "src/lib/store/public-catalog.ts",
+    "src/lib/store/approved-product-experience.ts",
+    "src/lib/store/supplier-contracts.ts",
+    "src/lib/store/supplier-evidence.ts",
+    "src/lib/store/pricing.ts",
+    "src/lib/store/fulfillment-state.ts",
+    "src/lib/store/reconciliation.ts",
+    "src/lib/store/dashboard-client.ts",
+    "src/routes/admin.tsx",
+    "src/lib/store/catalog.ts",
+    "src/lib/store/simulation/fixtures.ts",
+    "src/lib/store/simulation/offline-commerce.ts",
+    "src/lib/store/simulation/outbox.ts",
+    "src/lib/store/simulation/addresses.ts",
+    "src/lib/store/simulation/product-experience.ts",
+    "src/lib/store/simulation/checkout-session.ts",
+    "src/lib/store/simulation/offline-launch-readiness.ts",
+    "src/lib/store/simulation/failure-rehearsal.ts",
+    "src/lib/store/simulation/signed-webhook.ts",
+    "src/test/m2d-owner-review-workspace.tsx",
+    "src/test/m3a-readiness-panel.tsx",
+    "src/test/m3b-failure-rehearsal-panel.tsx",
+    "scripts/check-simulation-boundary.mjs",
+    "scripts/m2d-local-preview.mjs",
+    "scripts/m2d-browser-qa.cjs",
+    ".github/workflows/commerce-checks.yml",
+    ".github/workflows/storefront-browser-qa.yml"
+  ],
+  "milestones": [
+    {
+      "name": "M1",
+      "status": "source_merged_ci_tested",
+      "description": "Synthetic data, five-country offline order and outbox contract, isolation guard"
+    },
+    {
+      "name": "M2A",
+      "status": "source_merged_ci_tested",
+      "description": "Local synthetic catalog presentation and discovery"
+    },
+    {
+      "name": "M2B",
+      "status": "source_merged_ci_tested",
+      "description": "Approved-only catalog UI building blocks not yet wired to real media"
+    },
+    {
+      "name": "M2C",
+      "status": "source_merged_ci_tested",
+      "description": "In-memory synthetic COD cart/address/receipt"
+    },
+    {
+      "name": "M2D",
+      "status": "source_merged_ci_browser_tested",
+      "description": "Local-only credential-gated owner QA at 5 markets x 4 viewports"
+    },
+    {
+      "name": "M3A",
+      "status": "source_merged_ci_tested",
+      "description": "40 fail-closed market release evidence gates"
+    },
+    {
+      "name": "M3B",
+      "status": "source_merged_ci_browser_tested",
+      "description": "30 browser-safe fault scenarios and 5 Node HMAC tests"
+    }
+  ],
+  "blockers": [
+    {
+      "id": "supplier_stock_cost",
+      "scope": "each_market",
+      "status": "unverified",
+      "requiresApproval": true
+    },
+    {
+      "id": "media_variants_categories",
+      "scope": "each_market",
+      "status": "unverified",
+      "requiresApproval": true
+    },
+    {
+      "id": "shipping_cod_returns_tax",
+      "scope": "each_market",
+      "status": "unverified",
+      "requiresApproval": true
+    },
+    {
+      "id": "real_order_checkout_courier",
+      "scope": "each_market",
+      "status": "not_implemented",
+      "requiresApproval": true
+    },
+    {
+      "id": "auth_browser_security",
+      "scope": "end_to_end",
+      "status": "not_verified",
+      "requiresApproval": true
+    },
+    {
+      "id": "legal_customer_contact",
+      "scope": "each_market",
+      "status": "unverified",
+      "requiresApproval": true
+    },
+    {
+      "id": "ai_marketing_spend",
+      "scope": "each_market",
+      "status": "off",
+      "requiresApproval": true
+    },
+    {
+      "id": "hosting_domains_transfer",
+      "scope": "global",
+      "status": "not_authorized",
+      "requiresApproval": true
+    }
+  ],
+  "commands": [
+    "bun install --frozen-lockfile",
+    "node scripts/check-simulation-boundary.mjs",
+    "node scripts/check-handoff-manifest.mjs",
+    "bun run build",
+    "bun run test"
+  ],
+  "forbiddenUntilOwnerApproval": [
+    "Connect or call Taager/Woo/other suppliers",
+    "Import real supplier listings or collect PII",
+    "Enable checkout, supplier dispatch, fulfillment or live payments",
+    "Enable paid AI, marketing campaigns or spend",
+    "Change production release flags, DNS, secrets or hosting",
+    "Transfer GitHub/Supabase ownership or touch unrelated projects"
+  ]
+}
