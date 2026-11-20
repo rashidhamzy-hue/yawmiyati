@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import {LiveCatalog,catalogMode} from "@/components/store/LiveCatalog";
+import {catalogMode} from "@/components/store/LiveCatalog";
+import {MarketPreview} from "@/components/store/MarketPreview";
 import { Banknote, Check, ChevronLeft, Minus, Plus, Truck, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { country, formatPrice, getCategory, getProduct, imageOf, products } from "@/lib/store/catalog";
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/sa/p/$slug")({
   component: ProductRoute,
 });
 
-function ProductRoute(){const {product}=Route.useLoaderData();const {slug}=Route.useParams();return product?<ProductPage p={product}/>:<LiveCatalog slug={slug}/>;}
+function ProductRoute(){const {product}=Route.useLoaderData();const {slug}=Route.useParams();return product?<ProductPage p={product}/>:<MarketPreview market="sa" slug={slug}/>;}
 function ProductPage({p}:{p:NonNullable<ReturnType<typeof getProduct>>}) {
   const cat = getCategory(p.category);
   const [active, setActive] = useState(0);
