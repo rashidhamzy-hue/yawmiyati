@@ -11,9 +11,18 @@ it("displays a photographic hero and supporting editorial photos in help",()=>{
  fireEvent.click(screen.getByRole("button",{name:/البحث في يومياتي/}));
  expect(eventSpy).toHaveBeenCalledTimes(1);
 });
-it("keeps styled policies with real navigation, without invented shipping promises",()=>{
+it("shows evidence-qualified Saudi shipping and COD with protected navigation",()=>{
  const {container}=render(<StoreInfoPage market="sa" topic="shipping-returns"/>);
  expect(container.querySelectorAll("img").length).toBeGreaterThanOrEqual(3);
  expect(screen.getByRole("link",{name:"الخصوصية"}).getAttribute("href")).toBe("/sa/info/privacy");
+ expect(screen.getByText(/٢٨ ريالاً سعودياً/)).toBeTruthy();
+ expect(screen.getByText(/الدفع نقداً عند الاستلام فقط/)).toBeTruthy();
+ expect(screen.getByText(/٧ أيام/)).toBeTruthy();
+ expect(screen.getByText(/ليست وعداً نهائياً/)).toBeTruthy();
+});
+
+it("keeps unverified Egypt delivery fees unspecified",()=>{
+ render(<StoreInfoPage market="eg" topic="shipping-returns"/>);
  expect(screen.getByText(/لا توجد حالياً رسوم أو مدد شحن مؤكدة/)).toBeTruthy();
+ expect(screen.queryByText(/٢٨ ريالاً سعودياً/)).toBeNull();
 });
