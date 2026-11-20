@@ -1,3 +1,5 @@
+> **Customer-facing design update 20 November:** PR #54 completed evergreen storefront copy and interactive five-market AI shopping assistant UI. Public API to Anthropic is not activated: function deployed with JWT verification, policies disabled with zero caps, no paid requests. All commerce release flags OFF, catalog empty. See `docs/SHOPPING-ASSISTANT.md` for explicit activation gates.
+
 > **Latest update 20 Nov 2026:** Legacy TasteWP/temporary Saudi Woo setup retired: old 9 import rows removed, Edge supplier sync returns 410, Cloudflare private supplier Worker deleted and service binding removed. The current staging catalogue is empty pending five new hosted stores. PR #47 restored branded Lovable storefront UI across all market previews. Statements below about the former live integration are historical evidence only, not current operational availability.
 
 # Yawmiyati engineering handoff — verified as of 20 November 2026
