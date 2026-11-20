@@ -36,9 +36,9 @@ function ShopCard({item,market}:{item:PublicListing;market:MarketCode}){
   <div className="flex flex-1 flex-col gap-3 p-4"><a href={`/${market}/p/${encodeURIComponent(item.slug)}`} className="font-bold leading-7 hover:text-primary">{item.title}</a><p className="mt-auto text-lg font-extrabold text-primary">{formatListingPrice(item,market)}</p><span className="text-xs text-muted-foreground">معاينة تفاصيل المنتج</span></div>
  </article>;
 }
-export function MarketPreview({market,slug}:{market:MarketCode;slug?:string}){
+export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{market:MarketCode;slug?:string;searchOnly?:boolean;initialSearch?:string}){
  const [rows,setRows]=useState<PublicListing[]|null>(null),[detail,setDetail]=useState<PublicDetail|null>(null);
- const [term,setTerm]=useState(""),[error,setError]=useState(false),[attempt,setAttempt]=useState(0);
+ const [term,setTerm]=useState(initialSearch),[error,setError]=useState(false),[attempt,setAttempt]=useState(0);
  const [menu,setMenu]=useState(false);
  const path="/"+market;
  const shopName="يومياتي "+names[market];
@@ -71,7 +71,7 @@ export function MarketPreview({market,slug}:{market:MarketCode;slug?:string}){
   </header>
 
   <main id="main-content">
-   {!slug&&<>
+   {!slug&&!searchOnly&&<>
     <section aria-label="مقدمة يومياتي" className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 sm:pt-6 lg:px-8">
      <div className="relative isolate min-h-[510px] overflow-hidden rounded-[2rem] bg-foreground sm:min-h-[560px] lg:min-h-[610px]">
       <img src={img.hero} alt="ركن منزلي بألوان هادئة وإضاءة دافئة" fetchPriority="high" width={1600} height={900} className="absolute inset-0 h-full w-full object-cover object-center"/>
@@ -99,7 +99,7 @@ export function MarketPreview({market,slug}:{market:MarketCode;slug?:string}){
     </section>
    </>}
    <section id="collection" className="mx-auto max-w-7xl scroll-mt-32 px-4 pb-16 pt-20 sm:px-6 lg:px-8">
-    <div className="flex flex-wrap items-end justify-between gap-5"><SectionIntro eyebrow={shopName} title={slug?"تفاصيل المنتج":"منتجاتنا المعتمدة"} description={slug?undefined:"هنا ستجدين منتجات يومياتي بعد التحقق من الأسعار والمعلومات والتوافر. نعرض الحقيقة فقط، وليس كتالوجاً تجريبياً."}/>{!slug&&<label className="relative block w-full sm:w-auto"><Search className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"/><input className="field w-full pr-12 sm:w-72" value={term} onChange={e=>setTerm(e.target.value)} placeholder="ابحثي بين المنتجات" aria-label="بحث المنتجات المعتمدة"/></label>}</div>
+    <div className="flex flex-wrap items-end justify-between gap-5"><SectionIntro eyebrow={shopName} title={slug?"تفاصيل المنتج":searchOnly?"ابحثي في منتجات يومياتي":"منتجاتنا المعتمدة"} description={slug?undefined:"هنا ستجدين منتجات يومياتي بعد التحقق من الأسعار والمعلومات والتوافر. نعرض الحقيقة فقط، وليس كتالوجاً تجريبياً."}/>{!slug&&<label className="relative block w-full sm:w-auto"><Search className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"/><input className="field w-full pr-12 sm:w-72" value={term} onChange={e=>setTerm(e.target.value)} placeholder="ابحثي بين المنتجات" aria-label="بحث المنتجات المعتمدة"/></label>}</div>
     {!origin||!key?<EmptyProducts title="اختياراتنا في الطريق" message="نجهز مجموعاتنا ونستكمل ربط المتجر بمصادر المنتجات المعتمدة."/>
     :error?<div role="alert" className="mt-8 rounded-3xl border bg-card p-8 text-center"><h3 className="font-bold">تعذّر تحميل المنتجات في الوقت الحالي</h3><button type="button" className="btn-outline mt-4" onClick={()=>setAttempt(v=>v+1)}>إعادة المحاولة</button></div>
     :rows===null?<div role="status" aria-live="polite" className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">{Array.from({length:4},(_,i)=><div key={i} className="animate-pulse rounded-2xl border bg-card p-3"><div className="aspect-square rounded-xl bg-muted"/><div className="mt-3 h-4 w-3/4 rounded bg-muted"/><div className="mt-3 h-4 w-1/2 rounded bg-muted"/></div>)}</div>
@@ -108,7 +108,7 @@ export function MarketPreview({market,slug}:{market:MarketCode;slug?:string}){
     :matching.length?<div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">{matching.map(item=><ShopCard key={item.listing_id} item={item} market={market}/>)}</div>
     :<EmptyProducts title={rows.length?"لم نجد منتجات مطابقة":"قريباً، اختيارات تستحق الانتظار"} message={rows.length?"جرّبي البحث بكلمة مختلفة.":"ما زلنا نراجع المنتجات ونجهّز المجموعة الأولى. ستظهر المنتجات هنا بعد اعتمادها."}/>}
    </section>
-   {!slug&&<>
+   {!slug&&!searchOnly&&<>
     <section className="bg-primary-soft"><div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8"><SectionIntro eyebrow="لماذا يومياتي؟" title="فكرة بسيطة… تجربة أجمل" description="تجربة مصممة لتجعل التصفح واضحاً، والاختيار أسهل عندما نفتح أبواب المتجر."/><div className="mt-8 grid gap-4 md:grid-cols-3">{values.map(({icon:Icon,title,description},i)=><div key={title} className="rounded-3xl border border-white/60 bg-card p-7"><span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-soft text-primary"><Icon className="h-6 w-6"/></span><h3 className="mt-5 text-lg font-extrabold">{title}</h3><p className="mt-2 text-sm leading-7 text-muted-foreground">{description}</p></div>)}</div></div></section>
     <section id="questions" className="mx-auto grid max-w-7xl scroll-mt-32 gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[.75fr_1.25fr] lg:px-8"><div><SectionIntro eyebrow="كل ما تحتاجين معرفته" title="أسئلة تتكرر كثيراً" description="نفضّل الإجابات الواضحة قبل بدء الطلبات. هذه هي حالة المتجر الآن."/><p className="mt-5 text-xs text-muted-foreground">سنحدّث الإجابات عندما تتوفر سياسات التشغيل المؤكدة لكل بلد.</p></div><div className="space-y-3">{questions.map((q,i)=><details key={q.question} className="group rounded-2xl border bg-card px-5 py-4" open={undefined}><summary className="flex min-h-8 cursor-pointer list-none items-center justify-between gap-3 font-extrabold marker:hidden">{q.question}<ChevronDown className="h-5 w-5 shrink-0 text-primary transition-transform group-open:rotate-180" aria-hidden="true"/></summary><p className="pb-2 pt-3 text-sm leading-8 text-muted-foreground">{q.answer}</p></details>)}</div></section>
    </>}
