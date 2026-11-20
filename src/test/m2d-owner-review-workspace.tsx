@@ -9,6 +9,7 @@ import { SIMULATION_MODE } from "../lib/store/simulation/fixtures";
 import { SyntheticProductExperience } from "../lib/store/simulation/SyntheticProductExperience";
 import { OfflineCodCheckoutDemo } from "../lib/store/simulation/OfflineCodCheckoutDemo";
 import { OfflineLaunchReadinessPanel } from "./m3a-readiness-panel";
+import { OfflineFailureRehearsalPanel } from "./m3b-failure-rehearsal-panel";
 
 type Surface = "catalog" | "cod";
 type Finding = "not_reviewed" | "pass" | "needs_fix";
@@ -107,6 +108,7 @@ export function LocalOwnerReviewWorkspace() {
         </label>}
       </section>
       <OfflineLaunchReadinessPanel/>
+      <OfflineFailureRehearsalPanel/>
       <section id="review-surface" aria-label="الواجهة قيد المراجعة" className="overflow-hidden rounded-3xl border bg-card" data-yawmiyati-market={market}>
         {surface==="catalog"?
           <SyntheticProductExperience key={`catalog-${market}`} initialMarket={market} lockedMarket/>:
