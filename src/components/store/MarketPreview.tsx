@@ -1,6 +1,7 @@
 import {useEffect,useState} from "react";
 import {ArrowLeft,ArrowUpLeft,ChevronDown,Check,Heart,Instagram,Menu,Package,Search,ShieldCheck,Sparkles,X, type LucideIcon} from "lucide-react";
 import {img} from "@/lib/store/images";
+import {ShoppingAssistant} from "@/components/store/ShoppingAssistant";
 import {markets,type MarketCode} from "@/lib/store/markets";
 import {fetchPublicCatalog,fetchPublicDetail,formatListingPrice,type PublicListing,type PublicDetail} from "@/lib/store/public-catalog";
 
@@ -33,7 +34,7 @@ function SectionIntro({eyebrow,title,description}:{eyebrow:string;title:string;d
 function ShopCard({item,market}:{item:PublicListing;market:MarketCode}){
  return <article className="group flex h-full flex-col overflow-hidden rounded-[1.4rem] border border-border/70 bg-card shadow-soft transition-transform duration-300 hover:-translate-y-1">
   <a href={`/${market}/p/${encodeURIComponent(item.slug)}`} className="grid aspect-[4/4.7] place-items-center bg-muted" aria-label={item.title}><Package className="h-12 w-12 text-primary/35" aria-hidden="true"/></a>
-  <div className="flex flex-1 flex-col gap-3 p-4"><a href={`/${market}/p/${encodeURIComponent(item.slug)}`} className="font-bold leading-7 hover:text-primary">{item.title}</a><p className="mt-auto text-lg font-extrabold text-primary">{formatListingPrice(item,market)}</p><span className="text-xs text-muted-foreground">معاينة تفاصيل المنتج</span></div>
+  <div className="flex flex-1 flex-col gap-3 p-4"><a href={`/${market}/p/${encodeURIComponent(item.slug)}`} className="font-bold leading-7 hover:text-primary">{item.title}</a><p className="mt-auto text-lg font-extrabold text-primary">{formatListingPrice(item,market)}</p><span className="text-xs text-muted-foreground">تفاصيل المنتج</span></div>
  </article>;
 }
 export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{market:MarketCode;slug?:string;searchOnly?:boolean;initialSearch?:string}){
@@ -113,6 +114,7 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
     <section id="questions" className="mx-auto grid max-w-7xl scroll-mt-32 gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[.75fr_1.25fr] lg:px-8"><div><SectionIntro eyebrow="كل ما تحتاجين معرفته" title="أسئلة تتكرر كثيراً" description="نفضّل الإجابات الواضحة قبل بدء الطلبات. هنا تجدين الإجابات الأساسية عن تجربة يومياتي."/><p className="mt-5 text-xs text-muted-foreground">معلومات الدفع والتوصيل تختلف حسب البلد وتظهر بعد التحقق منها.</p></div><div className="space-y-3">{questions.map((q,i)=><details key={q.question} className="group rounded-2xl border bg-card px-5 py-4" open={undefined}><summary className="flex min-h-8 cursor-pointer list-none items-center justify-between gap-3 font-extrabold marker:hidden">{q.question}<ChevronDown className="h-5 w-5 shrink-0 text-primary transition-transform group-open:rotate-180" aria-hidden="true"/></summary><p className="pb-2 pt-3 text-sm leading-8 text-muted-foreground">{q.answer}</p></details>)}</div></section>
    </>}
   </main>
+  <ShoppingAssistant market={market} products={rows??[]}/>
   <footer className="bg-foreground text-background"><div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.35fr_1fr_1fr] lg:px-8"><div><a href={path} className="font-display text-3xl font-extrabold">يومياتي<span className="text-gold">.</span></a><p className="mt-4 max-w-xs text-sm leading-8 text-white/70">من الإلهام إلى التفاصيل اليومية الجميلة. تجربة تسوّق عربية نعمل على تجهيزها بعناية.</p><span className="mt-4 inline-block rounded-full border border-white/20 px-4 py-2 text-xs text-white/80">اكتشفي يومياتي</span></div><nav aria-label="روابط المتجر"><h2 className="font-bold">استكشفي</h2><div className="mt-4 grid gap-3 text-sm text-white/70"><a href={path+"#discover"} className="hover:text-white">الأقسام</a><a href={path+"#collection"} className="hover:text-white">المنتجات</a><a href={path+"#story"} className="hover:text-white">حكايتنا</a><a href={path+"#questions"} className="hover:text-white">الأسئلة الشائعة</a></div></nav><nav aria-label="اختيار البلد"><h2 className="font-bold">بلدك</h2><div className="mt-4 grid grid-cols-2 gap-3 text-sm">{(Object.keys(names) as MarketCode[]).map(code=><a key={code} href={"/"+code} aria-current={code===market?"page":undefined} className={code===market?"font-extrabold text-white":"text-white/70 hover:text-white"}>{names[code]}</a>)}</div><p className="mt-5 text-xs text-white/60">العملة: {markets[market].currency}</p></nav></div><div className="border-t border-white/15 px-4 py-5 text-center text-xs text-white/60">© ٢٠٢٦ يومياتي · جميع الحقوق محفوظة.</div></footer>
  </div>;
 }
