@@ -8,7 +8,12 @@ it("uses Saudi flag and readable local riyal rather than orphan SAR badge",()=>{
  expect(chooser).toBeTruthy();
  expect(chooser.textContent).toContain("🇸🇦");
  expect(chooser.textContent).toContain("ر.س");
- expect(screen.getByRole("link",{name:"البحث في المنتجات"}).getAttribute("href")).toBe("/sa/search");
+ expect(screen.getByRole("button",{name:"افتح بحث يومياتي"})).toBeTruthy();
+ fireEvent.click(screen.getByRole("button",{name:"افتح بحث يومياتي"}));
+ expect(screen.getByRole("dialog",{name:"بحث يومياتي الذكي"})).toBeTruthy();
+ expect(screen.getByRole("searchbox",{name:"ابحثي في منتجات يومياتي"})).toBeTruthy();
+ fireEvent.click(screen.getByRole("button",{name:"إغلاق البحث"}));
+ expect(screen.queryByRole("dialog",{name:"بحث يومياتي الذكي"})).toBeNull();
  expect(screen.getByRole("navigation",{name:"التنقل الرئيسي"})).toBeTruthy();
 });
 it("provides mobile-menu navigation with real section links",()=>{
