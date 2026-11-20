@@ -55,6 +55,18 @@ async function main(){
        await dialog.getByRole("button",{name:"إغلاق البحث"}).click();
        await dialog.waitFor({state:"hidden"});
      }
+     if(width===390||width===1440){
+       const editorial=page.locator('main img[src^="https://images.unsplash.com/"]');
+       assert.ok(await editorial.count()>=6,label+": incomplete licensed editorial photo set");
+       for(const index of [0,1,2]){
+         const item=editorial.nth(index);
+         await item.evaluate(async(img)=>{
+           img.loading="eager";
+           await img.decode();
+         },{timeout:20000});
+         assert.ok(await item.evaluate(img=>img.naturalWidth>0),label+": editorial photo "+index+" could not decode");
+       }
+     }
      await page.screenshot({path:path.join(output,label+".png"),fullPage:true,animations:"disabled"});
      if(width===390){
        const policyResponse=await page.goto(base+"/"+market+"/info/shipping-returns",{waitUntil:"domcontentloaded",timeout:30000});
@@ -64,6 +76,15 @@ async function main(){
        assert.ok(text.includes("الاستلام")||text.includes("كاش"),label+": local COD guidance missing");
        assert.ok(!text.includes("تاجر"),label+": supplier name leaked into customer policy");
        await page.screenshot({path:path.join(output,label+"-shipping.png"),fullPage:true,animations:"disabled"});
+       const story=await page.goto(base+"/"+market+"/story",{waitUntil:"domcontentloaded",timeout:30000});
+       assert.equal(story?.status(),200,label+": story route HTTP error");
+       await page.locator('h1').first().waitFor({state:"visible"});
+       const storyCards=await page.locator("main article").count();
+       assert.ok(storyCards>=6,label+": story lacks full editorial sections");
+       const storyOverflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+       assert.ok(storyOverflow<=2,label+": story page horizontal overflow "+storyOverflow);
+       await page.screenshot({path:path.join(output,label+"-story.png"),fullPage:true,animations:"disabled"});
+
      }
      console.log("PASS "+label+" storefront, overflow, inline search, Escape");
     }catch(e){

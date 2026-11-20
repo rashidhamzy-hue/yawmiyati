@@ -3,6 +3,7 @@ import {StoreFrame} from "./StoreChrome";
 import type {MarketCode} from "@/lib/store/markets";
 import {ChevronDown,HelpCircle,ShieldCheck,Truck,FileText,ArrowLeft,Search,LockKeyhole,MessageCircle} from "lucide-react";
 import {img} from "@/lib/store/images";
+import {editorialSrcSet} from "@/lib/store/editorial-srcset";
 import {saudiShippingPage} from "@/lib/store/saudi-commerce-content";
 import {marketPolicyPages} from "@/lib/store/market-policy-pages";
 import {marketExperience} from "@/lib/store/market-experience";
@@ -67,7 +68,7 @@ export function StoreInfoPage({market,topic}:{market:MarketCode;topic:InfoTopic}
   <div className="mx-auto max-w-7xl px-4 pb-20 pt-6 sm:px-6 lg:px-8">
    <nav aria-label="مسار الصفحة" className="mb-5 text-sm text-muted-foreground"><a className="hover:text-primary" href={"/"+market}>يومياتي</a><span aria-hidden="true"> / </span>{page.title}</nav>
    <section className="relative isolate flex min-h-[285px] items-center overflow-hidden rounded-[2rem] bg-foreground sm:min-h-[350px]">
-    <img src={heroPhoto} alt={v.alt} className="absolute inset-0 h-full w-full object-cover" fetchPriority="high"/>
+    <img src={heroPhoto} srcSet={editorialSrcSet(heroPhoto)} sizes="100vw" alt={v.alt} className="absolute inset-0 h-full w-full object-cover" fetchPriority="high"/>
     <div className="absolute inset-0 bg-gradient-to-l from-black/80 via-black/50 to-black/20"/>
     <div className="relative max-w-2xl px-7 py-12 text-white sm:px-12">
      <p className="text-sm font-bold text-[#f5dab1]">{v.eyebrow}</p>
@@ -78,7 +79,7 @@ export function StoreInfoPage({market,topic}:{market:MarketCode;topic:InfoTopic}
    <div className="mt-7 grid gap-6 lg:grid-cols-[1fr_1.65fr] lg:gap-9">
     <aside className="self-start space-y-5">
      <div className="overflow-hidden rounded-[1.5rem] border bg-card">
-      <img src={v.accent} alt="" loading="lazy" className="aspect-[16/9] w-full object-cover"/>
+      <img src={v.accent} srcSet={editorialSrcSet(v.accent)} sizes="(max-width: 1024px) 100vw, 30vw" alt="" loading="lazy" className="aspect-[16/9] w-full object-cover"/>
       <div className="space-y-3 p-5">
        <h2 className="font-display text-xl font-extrabold">خلّينا نسهّل عليك الاختيار</h2>
        <p className="text-sm leading-7 text-muted-foreground">ابدئي باستكشاف الأقسام، أو استخدمي البحث للوصول إلى المنتج اللي يناسبك.</p>
@@ -86,7 +87,7 @@ export function StoreInfoPage({market,topic}:{market:MarketCode;topic:InfoTopic}
       </div>
      </div>
      <div className="relative overflow-hidden rounded-[1.5rem] bg-primary-soft p-5">
-      <img src={v.secondary} alt="" loading="lazy" className="mb-4 aspect-[2.5/1] w-full rounded-xl object-cover"/>
+      <img src={v.secondary} srcSet={editorialSrcSet(v.secondary)} sizes="(max-width: 1024px) 100vw, 30vw" alt="" loading="lazy" className="mb-4 aspect-[2.5/1] w-full rounded-xl object-cover"/>
       <h2 className="font-display text-lg font-extrabold">مساعدة تناسب سؤالك</h2>
       <p className="mt-2 text-sm leading-7 text-muted-foreground">اسألي مساعد يومياتي عن الأقسام والمنتجات المعروضة. الإجابات تعتمد على البيانات المتاحة.</p>
       <p className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-primary"><MessageCircle className="h-4 w-4"/> زر المساعد أسفل الشاشة</p>
