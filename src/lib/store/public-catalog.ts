@@ -48,3 +48,19 @@ export async function fetchPublicDetail(origin:string,key:string,market:MarketCo
  if(!response.ok)throw Error("Product unavailable");
  return parsePublicDetail(await response.json(),market,slug);
 }
+
+/** Search approved public product titles/descriptions on server. The returned rows obey current_catalog_release. */
+export async function fetchPublicSearch(origin:string,key:string,market:MarketCode,query:string,request:typeof fetch=fetch):Promise<PublicListing[]>{
+ if(query.trim().length<2||query.length>120)return [];
+ const url=new URL(origin);
+ if(url.protocol!=="https:"||url.username||url.password||url.pathname!=="/"||url.search||url.hash||!key)throw Error("Invalid search configuration");
+ const response=await request(new URL("/rest/v1/rpc/public_catalog_search",url),{
+  method:"POST",headers:{apikey:key,"Content-Type":"application/json"},
+  body:JSON.stringify({p_store:market,p_query:query.trim(),p_limit:40}),
+  cache:"no-store",redirect:"error",signal:AbortSignal.timeout(8000)
+ });
+ if(!response.ok)throw Error("Search temporarily unavailable");
+ const body=await response.json();
+ if(!Array.isArray(body)||body.length>60)throw Error("Invalid search response");
+ return parsePublicListings(body,market);
+}
