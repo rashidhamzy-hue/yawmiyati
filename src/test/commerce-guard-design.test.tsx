@@ -1,5 +1,5 @@
-import {render,screen,fireEvent,vi} from "@testing-library/react";
-import {expect,it} from "vitest";
+import {render,screen,fireEvent} from "@testing-library/react";
+import {expect,it,vi} from "vitest";
 vi.mock("../lib/store/staging-public-config",()=>({publicBrowserConfig:()=>({origin:"",key:""})}));
 import {StoreCommerceGuard} from "../components/store/StoreCommerceGuard";
 for(const type of ["cart","checkout","order"] as const){
