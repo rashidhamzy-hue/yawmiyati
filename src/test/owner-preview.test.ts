@@ -20,7 +20,7 @@ expect(send).not.toHaveBeenCalled();
 
 it("restricts remote image origins and serves syntactically valid browser script",async()=>{
  const html=await handle(new Request("https://owner.example/"),env);
- expect(html.headers.get("Content-Security-Policy")).toContain("img-src https://logwave.s6-tastewp.com;");
+ expect(html.headers.get("Content-Security-Policy")).toContain("img-src 'none';");
  const script=await handle(new Request("https://owner.example/app.js"),env);
  const source=await script.text();
  expect(()=>new Function(source)).not.toThrow();
