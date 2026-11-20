@@ -1,4 +1,4 @@
-import {render,screen,fireEvent,within} from "@testing-library/react";
+import {render,screen,fireEvent} from "@testing-library/react";
 import {describe,expect,it} from "vitest";
 import {createSyntheticCatalog} from "../lib/store/simulation/fixtures";
 import {demoListing,demoProduct,demoVariant,formatDemoMoney,normalizeDemoQuery} from "../lib/store/simulation/product-experience";
