@@ -34,6 +34,11 @@ async function main(){
      }));
      assert.ok(overflow.page<=overflow.viewport+2,label+": horizontal overflow "+JSON.stringify(overflow));
      assert.equal(await page.getByRole("heading",{level:1}).count(),1,label+": main heading count");
+     const lovProxyImages=await page.locator('main img[src^="/__l5e/"]').count();
+     if(lovProxyImages){
+       console.warn("ASSET WARNING "+label+": "+lovProxyImages+" editorial images depend on Lovable asset proxy; see issue #75");
+       if(process.env.QA_REQUIRE_PORTABLE_IMAGES==="true")throw Error(label+": non-portable editorial assets");
+     }
      const heroSearch=page.getByRole("button",{name:"دوّري على اللي يعجبك"});
      await heroSearch.click();
      const dialog=page.getByRole("dialog",{name:"بحث يومياتي الذكي"});
