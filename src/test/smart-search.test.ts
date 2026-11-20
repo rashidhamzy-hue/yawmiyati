@@ -15,6 +15,10 @@ it("searches typo-tolerantly with synonyms and preserves approved-only input",()
  expect(smartCatalogSearch("قهوة",products)[0].slug).toBe("dallah");
  expect(smartCatalogSearch("دله",products)[0].slug).toBe("dallah");
  expect(smartCatalogSearch("حقيبه",products)[0].slug).toBe("bag");
+ expect(smartCatalogSearch("شنطه",products)[0].slug).toBe("bag");
+ expect(smartCatalogSearch("شنطة",products)[0].slug).toBe("bag");
+ expect(smartCatalogSearch("دلة",products)[0].slug).toBe("dallah");
+ expect(smartCatalogSearch("coffee",products)[0].slug).toBe("dallah");
  expect(smartCatalogSearch("بشره",products)[0].slug).toBe("cream");
  expect(smartCatalogSearch("nonexistent-thing",products)).toEqual([]);
  expect(smartCatalogSearch("قهوة",[])).toEqual([]);
