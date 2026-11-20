@@ -1,4 +1,5 @@
-import {LiveCatalog,catalogMode} from "@/components/store/LiveCatalog";
+import {catalogMode} from "@/components/store/LiveCatalog";
+import {MarketPreview} from "@/components/store/MarketPreview";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Banknote, Truck, ShieldCheck, Headphones, ArrowLeft, Sparkles } from "lucide-react";
 import { categories, products, imageOf, formatPrice } from "@/lib/store/catalog";
@@ -121,4 +122,4 @@ function Shelf({ title, items }: { title: string; items: typeof products }) {
   );
 }
 
-function CatalogHome(){return catalogMode()==="demo"?<Home/>:<LiveCatalog/>;}
+function CatalogHome(){return catalogMode()==="demo"?<Home/>:<MarketPreview market="sa"/>;}
