@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * CI boundary check: simulation fixtures must never leak into public app code.
+ * CI boundary check: no simulation modules or demo screens may leak into public app code.
  * Only src/test and src/lib/store/simulation may import the simulator.
  * No third-party dependencies, and no modification of storefront routes.
  */
@@ -20,7 +20,7 @@ function visit(folder){
   // Catch both standard imports and dynamic import()/require() direct references.
   const specifiers=[...text.matchAll(/\b(?:from\s*|import\s*\(|require\s*\()\s*["']([^"']+)["']/g)].map(m=>m[1]);
   for(const spec of specifiers){
-   if(/(?:^|\/)simulation\/(?:fixtures|offline-commerce|outbox|signed-webhook|addresses)(?:\.[jt]s)?$/.test(spec)||/src\/lib\/store\/simulation\//.test(spec))violations.push(rel+" -> "+spec);
+   if(/(?:^|\/)simulation(?:\/|$)/.test(spec)||/src\/lib\/store\/simulation\//.test(spec))violations.push(rel+" -> "+spec);
   }
  }
 }
