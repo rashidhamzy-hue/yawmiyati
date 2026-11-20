@@ -6,6 +6,7 @@ import {ShoppingAssistant} from "@/components/store/ShoppingAssistant";
 import {StoreHeader,StoreFooter} from "@/components/store/StoreChrome";
 import {marketIdentity} from "@/lib/store/market-identity";
 import {relatedVerifiedProducts} from "@/lib/store/verified-merchandising";
+import {smartCatalogSearch,suggestEditorialCategories,SEARCH_GROUPS} from "@/lib/store/smart-search";
 import {markets,type MarketCode} from "@/lib/store/markets";
 import {fetchPublicCatalog,fetchPublicDetail,formatListingPrice,type PublicListing,type PublicDetail} from "@/lib/store/public-catalog";
 
@@ -54,7 +55,8 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
   task.catch(()=>{if(active)setError(true);});
   return()=>{active=false};
  },[market,slug,attempt]);
- const matching=rows?.filter(item=>item.title.toLocaleLowerCase().includes(term.trim().toLocaleLowerCase()))??[];
+ const matching=rows?smartCatalogSearch(term,rows):[];
+ const suggestions=suggestEditorialCategories(term);
  return <div dir="rtl" className="min-h-screen overflow-x-clip bg-background text-foreground">
   <a href="#main-content" className="skip-link">تخطي إلى المحتوى</a>
   <div className="bg-primary px-4 py-2.5 text-center text-[11px] font-bold tracking-wide text-primary-foreground sm:text-xs">تفاصيل صغيرة… تجعل يومك أجمل</div>
@@ -88,8 +90,19 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
      <div className="group relative min-h-[340px] overflow-hidden rounded-[1.75rem]"><img src={img["cat-home"]} alt="تفاصيل منزلية دافئة" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"/><div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"/><div className="absolute bottom-0 p-7 text-white"><p className="text-xs font-bold text-white/80">بيت يعكس ذوقك</p><h3 className="mt-2 font-display text-2xl font-extrabold">تفاصيل تعطي البيت روح</h3></div></div>
     </section>
    </>}
+   {searchOnly&&<section aria-label="اكتشفي المنتجات" className="mx-auto max-w-7xl px-4 pt-5 sm:px-6 lg:px-8">
+    <div className="relative isolate flex min-h-[200px] items-center overflow-hidden rounded-[1.75rem] bg-foreground sm:min-h-[260px]">
+     <img src={img["cat-home"]} alt="" className="absolute inset-0 h-full w-full object-cover object-center" fetchPriority="high"/>
+     <div className="absolute inset-0 bg-gradient-to-l from-black/80 via-black/45 to-black/15"/>
+     <div className="relative p-7 text-white sm:p-11"><span className="text-xs font-bold text-[#f5dab1]">البحث في يومياتي</span><h1 className="mt-3 font-display text-3xl font-extrabold sm:text-4xl">وش ودّك تكتشفين اليوم؟</h1><p className="mt-3 max-w-xl text-sm leading-7 text-white/85">ابحثي باسم المنتج، أو اكتشفي الأقسام والأفكار اللي تناسب ذوقك.</p></div>
+    </div>
+   </section>}
    <section id="collection" className={"mx-auto max-w-7xl scroll-mt-32 px-4 pb-16 sm:px-6 lg:px-8 "+(searchOnly||slug?"pt-8 sm:pt-12":"pt-20")}>
-    <div className="flex flex-wrap items-end justify-between gap-5"><SectionIntro eyebrow={shopName} title={slug?"تفاصيل المنتج":searchOnly?"ابحثي في منتجات يومياتي":"اختيارات تناسب يومك"} description={slug?undefined:"اكتشفي المنتجات وتفاصيلها وأسعارها في مكان واحد، واختاري اللي يناسبك."}/>{!slug&&<label className="relative block w-full sm:w-auto"><Search className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"/><input type="search" className="field w-full pr-12 sm:w-72" value={term} onChange={e=>setTerm(e.target.value)} placeholder="ابحثي بين المنتجات" aria-label="بحث المنتجات المعتمدة"/></label>}</div>
+    <div className="flex flex-wrap items-end justify-between gap-5"><SectionIntro eyebrow={shopName} title={slug?"تفاصيل المنتج":searchOnly?"ابحثي في منتجات يومياتي":"اختيارات تناسب يومك"} description={slug?undefined:searchOnly?"البحث يفهم اختلاف كتابة الكلمات العربية، الكلمات القريبة، وأسماء المنتجات المتاحة للعرض.":"اكتشفي المنتجات وتفاصيلها وأسعارها في مكان واحد، واختاري اللي يناسبك."}/>{!slug&&<label className="relative block w-full sm:w-auto"><Search className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"/><input type="search" className="field w-full pr-12 sm:w-72" value={term} onChange={e=>setTerm(e.target.value)} placeholder="ابحثي بين المنتجات" aria-label="بحث المنتجات المعتمدة"/></label>}</div>
+    {!slug&&<div className="mt-5 flex flex-wrap items-center gap-2" aria-label="اقتراحات البحث">
+      {(term.trim()?suggestions:SEARCH_GROUPS).slice(0,6).map(group=><a key={group.slug} href={path+"/c/"+group.slug} className="inline-flex min-h-10 items-center rounded-full border border-border bg-card px-4 text-xs font-bold text-primary transition-colors hover:border-primary/40 hover:bg-primary-soft">{group.title}</a>)}
+      {term.trim()&&<button type="button" onClick={()=>setTerm("")} className="min-h-10 rounded-full border px-4 text-xs font-semibold text-muted-foreground hover:text-primary">مسح البحث</button>}
+    </div>}
     {!origin||!key?<EmptyProducts title="تعرّفي على مجموعات يومياتي" message="اكتشفي الأفكار والأقسام أعلاه. تظهر هنا المنتجات التي تتوافر لها بيانات معتمدة."/>
     :error?<div role="alert" className="mt-8 rounded-3xl border bg-card p-8 text-center"><h3 className="font-bold">تعذّر تحميل المنتجات في الوقت الحالي</h3><button type="button" className="btn-outline mt-4" onClick={()=>setAttempt(v=>v+1)}>إعادة المحاولة</button></div>
     :rows===null?<div role="status" aria-live="polite" className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">{Array.from({length:4},(_,i)=><div key={i} className="animate-pulse rounded-2xl border bg-card p-3"><div className="aspect-square rounded-xl bg-muted"/><div className="mt-3 h-4 w-3/4 rounded bg-muted"/><div className="mt-3 h-4 w-1/2 rounded bg-muted"/></div>)}</div>
