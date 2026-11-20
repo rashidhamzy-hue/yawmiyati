@@ -17,6 +17,7 @@ jobs:
       - run: bun install --frozen-lockfile
       # TanStack Router generates routeTree.gen.ts during build.
       - run: node scripts/check-simulation-boundary.mjs
+      - run: node scripts/check-storefront-truth.mjs
       - run: node scripts/check-handoff-manifest.mjs
       - run: bun run build
       - run: bun run test
