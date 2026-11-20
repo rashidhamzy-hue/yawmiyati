@@ -1,15 +1,18 @@
 import {createFileRoute} from "@tanstack/react-router";
 import {MarketPreview} from "@/components/store/MarketPreview";
 import {img} from "@/lib/store/images";
+import {marketExperience} from "@/lib/store/market-experience";
+const title="يومياتي عُمان | للبيت تفاصيله ولليوم نكهته";
+const description="أفكار للبيت والقهوة والعناية والتنظيم في سلطنة عُمان. اكتشفي أقسام يومياتي بتفاصيل قريبة من يومك.";
 export const Route=createFileRoute("/om/")({
  head:()=>({meta:[
-  {title:"يومياتي عُمان | تفاصيل صغيرة، حياة أجمل"},
-  {name:"description",content:"تصفّحي أفكار يومياتي للبيت والقهوة والعناية والأزياء في عُمان، مع معلومات المنتجات المعتمدة بعملة الريال العُماني."},
-  {property:"og:title",content:"يومياتي عُمان | تفاصيل صغيرة، حياة أجمل"},
-  {property:"og:description",content:"تصفّحي أفكار يومياتي للبيت والقهوة والعناية والأزياء في عُمان، مع معلومات المنتجات المعتمدة بعملة الريال العُماني."},
-  {property:"og:image",content:img.hero},
+  {title},
+  {name:"description",content:description},
+  {property:"og:title",content:title},
+  {property:"og:description",content:description},
+  {property:"og:image",content:img[marketExperience.om.heroImage]},
   {name:"twitter:card",content:"summary_large_image"},
-  {name:"twitter:image",content:img.hero},
+  {name:"twitter:image",content:img[marketExperience.om.heroImage]},
   {name:"robots",content:"noindex,nofollow"}
  ]}),
  component:()=> <MarketPreview market="om"/>
