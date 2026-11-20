@@ -51,7 +51,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "يومياتي" },
       { name: "description", content: "يومياتي — تجربة عربية للمنزل والجمال والعناية" },
-      { name: "robots", content: import.meta.env.VITE_YAWMIYATI_PUBLIC_INDEXING_ENABLED==="true"?"index,follow":"noindex,nofollow" },
+      { name: "robots", content: "noindex,nofollow" }, // M4A: fail closed until launch authorization
       
       { property: "og:title", content: "يومياتي" },
       { property: "og:description", content: "يومياتي — تجربة عربية للمنزل والجمال والعناية" },
