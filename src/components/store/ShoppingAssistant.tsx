@@ -28,7 +28,7 @@ export function ShoppingAssistant({market,products}:{market:MarketCode;products:
  const [messages,setMessages]=useState<ShopMessage[]>([{role:"assistant",text:greeting}]);
  const [draft,setDraft]=useState(""),[busy,setBusy]=useState(false);
  const scrollRef=useRef<HTMLDivElement>(null),inputRef=useRef<HTMLInputElement>(null),abortRef=useRef<AbortController|null>(null);
- useEffect(()=>{scrollRef.current?.scrollTo({top:scrollRef.current.scrollHeight,behavior:"smooth"})},[messages,busy]);
+ useEffect(()=>{const el=scrollRef.current;if(el&&typeof el.scrollTo==="function")el.scrollTo({top:el.scrollHeight,behavior:"smooth"});},[messages,busy]);
  useEffect(()=>{if(open)inputRef.current?.focus();else {abortRef.current?.abort();setBusy(false);}},[open]);
  useEffect(()=>()=>abortRef.current?.abort(),[]);
  useEffect(()=>{setMessages([{role:"assistant",text:greeting}]);setDraft("")},[market]);
