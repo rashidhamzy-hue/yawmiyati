@@ -1,0 +1,48 @@
+name: Storefront browser QA
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "package.json"
+      - "bun.lock"
+      - "scripts/browser-qa.cjs"
+      - ".github/workflows/storefront-browser-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  responsive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Install frozen project dependencies
+        run: bun install --frozen-lockfile
+      - name: Install browser QA runner (CI only)
+        run: npm install --no-save --no-package-lock playwright@1.58.2
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run local storefront
+        run: |
+          bun run dev --host 127.0.0.1 --port 4173 > /tmp/yawmiyati-vite.log 2>&1 &
+          echo $! > /tmp/yawmiyati-vite.pid
+          for n in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:4173/sa/ >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/yawmiyati-vite.log
+          exit 1
+      - name: Exercise all 5 markets at 4 viewports
+        run: node scripts/browser-qa.cjs
+      - name: Upload screenshots and failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yawmiyati-browser-qa
+          path: artifacts/browser-qa/
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Show server log after failure
+        if: failure()
+        run: tail -n 120 /tmp/yawmiyati-vite.log || true
