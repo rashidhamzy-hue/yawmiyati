@@ -1,37 +1,37 @@
-# Yawmiyati engineering handoff
-Baseline: 19 November 2026, main commit 098ec29e2a8d07f63e58ca6c02a81934a65f4435 (PR 21).
+# Yawmiyati engineering handoff — verified as of 20 November 2026
 
-## Scope
-One commerce control plane for Saudi Arabia, UAE, Oman, Egypt and Iraq; isolated per-market data and Taager WooCommerce bridges. Saudi is engineering proof, not a separate commercial launch. All five markets must be ready before launch. TasteWP is disposable testing infrastructure. Do not purchase hosting or consume paid AI credits without authorization. Do not touch other projects.
+## Goal and architecture
+A single commerce control plane for sa/ae/om/eg/iq with separate market supplier integrations, one eventual commercial launch. Saudi is proof only. Lovable handles design/frontend; GitHub is source of truth; existing independent Supabase staging holds data; existing Cloudflare account hosts previews. Supabase directly managed migrations approved by owner and recorded in AGENTS.md. Never touch unrelated projects.
 
-## Verified evidence
-- Private repository tarikhtube-stack/saudi-store-spark; main branch.
-- Supabase staging project skhtunkknshvolturqlm, Frankfurt; project active.
-- Owner staging: https://yawmiyati-owner-staging.rashid-hamzy.workers.dev/
-- Direct browser Supabase password authentication and candidate RPC succeeded in production staging.
-- Supabase Edge Function sa-supplier-sync version 1, JWT verification enabled, fixed staging origin, membership RPC before Woo requests. Live user sync returned 9 received / 9 staged / 0 skipped. Independent SQL count: 9 candidates, 9 distinct SKUs, 9 priced, 9 descriptions, 9 image arrays, 9 supplier-reported instock. This verifies ingestion, not sellable inventory or cost.
-- Supplier credentials are server-side in Supabase function secrets: WOO_SA_ORIGIN, WOO_SA_CONSUMER_KEY, WOO_SA_CONSUMER_SECRET. Never retrieve or paste values. Existing Cloudflare private supplier Worker remains a legacy fallback, not the proven active integration.
-- PR 21 commercial review table and RPCs applied to staging and owner read/write tested in rolled-back transaction; 9 candidate images verified, zero persisted synthetic reviews. PR 21 CI green and merged. Dashboard upload blocked; deployed UI is still PR 20. Cloudflare GitHub connection redirects to authorized GitHub app settings; don't repeatedly reauthorize or widen repo permissions.
-- Checkout and fulfillment disabled. No real orders or payments authorized.
+## Evidence with strict status levels
+**VERIFIED LIVE:** Supabase staging `skhtunkknshvolturqlm`, owner login in older Cloudflare Worker `yawmiyati-owner-staging`, direct Edge Function `sa-supplier-sync` importing nine real Saudi WooCommerce candidate records. Nine unique SKUs, nonempty descriptions and images, supplier-reported instock. This does NOT establish supplier acquisition cost, guaranteed stock, sellability or fulfillment.
 
-## Ownership migration (manual, coordinate after code handoff)
-1. Confirm exact destination GitHub username (email alone is not a transfer target). Transfer ONLY this repository via Settings > General > Danger Zone > Transfer ownership. Accept as destination. Verify private visibility, branches, history, CI and app access. Update remotes. Lovable sync may require reconnecting; don't rewrite history. Existing app installation currently scoped to this repository.
-2. Supabase: destination account must have appropriate ownership access; use existing project transfer into a destination organization only if eligible and no unexpected cost. Otherwise invite main account with appropriate role in the existing organization and verify access first. Never move other projects. Check billing, project ref, URL, data, Auth users, migrations, secrets, Edge Function and access after transfer. Do not delete old account or project.
-3. Cloudflare: retain two named Workers, scopes and secrets; verify current account ownership separately. Do not transfer unrelated services. Establish supported deployment workflow and review changes before release.
-4. Reconnect Claude to transferred resources only. Re-run staging login/sync and candidate count. Rotate supplier secrets if necessary; never commit secrets.
+**DATABASE-TESTED in staging:** Owner commercial review RPC, immutable content approvals, atomic private catalog draft creation, catalog release gating and public product detail, per-candidate release readiness, reserve/claim/complete/fail AI content job lifecycle, market performance reporting. Transactions tested via rollback fixtures, with zero synthetic rows persisted.
 
-## Remaining engineering acceptance gates
-- Review existing code and reconcile Lovable AGENTS.md managed-scope constraints with the independently managed staging backend before schema changes; no edits to generated files or history rewriting.
-- Deploy PR 21 via supported Cloudflare workflow after source/security review; verify mobile/desktop, owner auth, filters, save/reload, image failures, stale sessions and cross-market denial. Unknown costs stay null. Protect unsaved edits and handle concurrent updates.
-- Verify actual supplier acquisition cost (Woo price is not cost), shipping, COD fees, refusals, returns, tax and FX; deterministic contribution model, evidence and downside scenarios.
-- Product research and ranking: transparent scoring, source provenance, manual shortlist, reject unsupported claims. No fabricated demand/sales data. Existing AI policies disabled and budgets zero; use offline briefs and mocks until authorized.
-- Arabic localized content pipeline for all markets; grounded source attributes, claims review, safety categories, human approval, AI budget reservation and evals. No auto-publication.
-- Candidate-to-listing promotion transaction, country-scoped supplier mapping and idempotency; approve content and price; verified freshness and stock policy; private preview, no live checkout.
-- Storefront: replace demo-only paths/data with real approved catalog, RTL/mobile accessibility, category/product pages, metadata, legal disclosures, country-specific currency and shipping; no fake checkout confirmations.
-- Orders: test only with synthetic data, guarded state transitions, idempotent webhook/reconciliation and COD ledger; no Taager order submission absent explicit authorization. Verify supplier fulfillment semantics with documented integration.
-- Four additional market bridges, separate credentials, country-level access and configs; prove import and isolation individually before launch.
-- Reporting/marketing intelligence: events, contribution, attribution, privacy, UTM, creative drafts; no automatic ad spend or customer messages.
-- Release: CI unit/integration/build, browser smoke tests, migration rollback strategy, least privilege, secret scanning, backups, incident runbook, cost controls, explicit launch gate.
+**CI-PASSED SOURCE-ONLY:** COD economic scenarios; market-specific scoring with verified evidence; Arabic content brief/validation; five-market bounded import helper; order state machine; original storefront isolation, product detail UI; React owner commercial review, draft editor, readiness, performance. Browser/deploy smoke testing pending. AI provider adapter is mock-tested; no actual provider execution authorized.
 
-## Handoff honesty
-Not a finished production system. Existing staging import is proven; all later phases must be verified. Do not describe mocked tests as live integration. Keep a running evidence log with dates/commits and mark blockers clearly.
+**BLOCKED / NOT COMPLETE:** Updated Cloudflare Worker upload encountered safety block; GitHub Builds connection redirects repeatedly. Real storefront images/categories/durable media, live stock verifier, product listings and actual supplier costs, AI operator deployment, five supplier connections, live checkout, fulfillment and account transfers remain pending.
+
+## Current flags and data
+- All five stores: `catalog_release_enabled=false`, `checkout_enabled=false`, `fulfillment_enabled=false`.
+- AI market policies: disabled, daily budget 0.
+- Database: nine Saudi import candidates; zero real catalog listings, orders and generated AI content as of latest validation. TasteWP is temporary supplier proof and should not be permanent image/hosting dependency.
+- React owner dashboard and newer standalone Worker changes are NOT deployed. Current owner staging Worker predates commercial review UI.
+- No paid AI credits spent. No real orders/marketing messages sent.
+
+## Secrets and relevant resources
+- GitHub private `tarikhtube-stack/saudi-store-spark`, planned destination `rashidhamzy-hue`. Do not transfer until coordinated by owner; avoid forced Git history changes due Lovable sync.
+- Lovable `6bc552b8-1629-4a0b-8706-8bc21c5c1279`, workspace Free, cloud database DISABLED. Existing GitHub and Supabase connectors enabled. No paid Lovable request performed.
+- Supabase staging project `skhtunkknshvolturqlm`, Frankfurt, transfer destination main user account. Do not recreate or delete project.
+- Existing Cloudflare `yawmiyati-owner-staging` public staging and `yawmiyati-sa-integration` private. Existing supplier Edge Function secrets WOO_SA_ORIGIN, WOO_SA_CONSUMER_KEY, WOO_SA_CONSUMER_SECRET. Never retrieve or print secret values.
+
+## Remaining release acceptance work
+1. Verify all merged code for real mobile/desktop frontend and authenticated owner screens, restore authorized deployment workflow without circumventing safety restrictions.
+2. Durable approved product media, real category taxonomy, product/variant coverage and accurate supplier acquisition costs; preserve null unknowns.
+3. Actual supplier stock verification with provenance and TTL; market release requires explicit owner decision, never inferred from Woo 'instock'.
+4. Research evidence integrations, Arabic creative quality evaluation, human-approved localized drafts, real Anthropic execution only with budget owner authorization and audited secret configuration.
+5. Authoritative shipping, COD, cancellations, returns, taxes and fulfillment reconciliation for five countries; test idempotently with synthetic data. Never dispatch real orders without approval.
+6. Market-specific supplier integrations and isolation, full user journey, analytics, privacy/legal disclosures, e2e regression tests, incident response and billing caps.
+7. Transfer only named repo to `rashidhamzy-hue` and existing Supabase project to main account with unchanged IDs, verify Claude Code access. Preserve Lovable connection and secrets. No unrelated account changes.
+
+See `CLAUDE.md`, `docs/INTEGRATION-CONTRACT.md`, `docs/staging-deployment.md`.
