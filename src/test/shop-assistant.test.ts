@@ -15,3 +15,16 @@ it("does not guess unsupported shipping and prices",()=>{
  expect(localShopAnswer("كم يستغرق التوصيل؟","ae",[])).not.toMatch(/٢–٥ أيام|مجاني/);
  expect(localShopAnswer("هل لديك خصم؟","sa",[])).toContain("لا يمكنني");
 });
+
+it("answers Saudi COD, shipping and return questions without presenting active checkout",()=>{
+ const payment=localShopAnswer("هل الدفع عند الاستلام؟","sa",[]);
+ expect(payment).toContain("الدفع عند الاستلام فقط");
+ expect(payment).toContain("الطلبات غير مفعّلة");
+ const shipping=localShopAnswer("كم رسوم الشحن؟","sa",[]);
+ expect(shipping).toContain("٢٨ ر.س");
+ expect(shipping).toContain("غير مضمونة");
+ const returns=localShopAnswer("كيف الاسترجاع؟","sa",[]);
+ expect(returns).toContain("٧ أيام");
+ expect(returns).toContain("الحقوق النظامية");
+ expect(localShopAnswer("كم رسوم الشحن؟","iq",[])).not.toContain("٢٨ ر.س");
+});
