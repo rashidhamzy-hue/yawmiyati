@@ -20,7 +20,7 @@ function Illustration({name,index,compact=false}:{name:string;index:number;compa
   {!compact&&<span className="relative mt-5 rounded-full bg-white/85 px-4 py-2 text-xs font-extrabold text-foreground">{name}</span>}
  </div>;
 }
-export function SyntheticProductExperience({initialMarket="sa"}:{initialMarket?:MarketCode}){
+export function SyntheticProductExperience({initialMarket="sa",lockedMarket=false}:{initialMarket?:MarketCode;lockedMarket?:boolean}){
  const [market,setMarket]=useState<MarketCode>(initialMarket);
  const [search,setSearch]=useState("");
  const [category,setCategory]=useState<SimCategory|"all">("all");
@@ -45,7 +45,7 @@ export function SyntheticProductExperience({initialMarket="sa"}:{initialMarket?:
   </div>
   <div className="grid gap-4 rounded-[1.5rem] border bg-card p-4 sm:p-6 lg:grid-cols-[1fr_1fr_1fr]">
    <label className="text-xs font-bold">الدولة
-    <select aria-label="دولة التجربة" className="mt-2 min-h-11 w-full rounded-xl border bg-background px-3 text-sm" value={market} onChange={e=>changeMarket(e.target.value as MarketCode)}>{(Object.keys(markets) as MarketCode[]).map(m=><option key={m} value={m}>{countryNames[m]} · {markets[m].currency}</option>)}</select>
+    <select aria-label="دولة التجربة" disabled={lockedMarket} className="mt-2 min-h-11 w-full rounded-xl border bg-background px-3 text-sm" value={market} onChange={e=>changeMarket(e.target.value as MarketCode)}>{(Object.keys(markets) as MarketCode[]).map(m=><option key={m} value={m}>{countryNames[m]} · {markets[m].currency}</option>)}</select>
    </label>
    <label className="text-xs font-bold lg:col-span-2">البحث في المنتجات التجريبية
     <span className="relative mt-2 block"><Search className="pointer-events-none absolute right-3 top-3 h-5 w-5 text-muted-foreground" aria-hidden="true"/><input aria-label="بحث المنتجات التجريبية" type="search" placeholder="جرّبي: تنظيم، مطبخ، SIM-SA-001" value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}} className="min-h-11 w-full rounded-xl border bg-background pr-10 pl-3 text-sm"/></span>
