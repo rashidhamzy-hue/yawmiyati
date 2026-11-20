@@ -15,6 +15,7 @@ describe("country experience and supplier-policy separation",()=>{
   expect(screen.getByRole("heading",{level:1,name:new RegExp(heading)})).toBeTruthy();
   expect(screen.getByRole("button",{name:search})).toBeTruthy();
   expect(container.querySelector('[data-yawmiyati-market="'+market+'"]')).toBeTruthy();
+  expect(screen.getByRole("region",{name:"تفاصيل التسوق في "+market})).toBeTruthy();
   expect(screen.queryByRole("button",{name:"دوّري على اللي يعجبك"})).toBeNull();
  });
  it.each([
