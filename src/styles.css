@@ -121,3 +121,42 @@ summary::-webkit-details-marker { display: none; }
  html { scroll-behavior: auto; }
  *,*::before,*::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* Country-aware editorial systems. Saudi uses the original :root identity. 
+   These palettes affect only the matching market; none denotes a fake trust badge. */
+[data-yawmiyati-market="ae"] {
+  --background: oklch(0.977 0.012 10);
+  --foreground: oklch(0.23 0.025 10);
+  --card: oklch(0.992 0.006 15);
+  --primary: oklch(0.39 0.07 15);
+  --primary-soft: oklch(0.935 0.022 10);
+  --accent: oklch(0.92 0.032 24);
+  --gold: oklch(0.7 0.09 75);
+}
+[data-yawmiyati-market="om"] {
+  --background: oklch(0.976 0.012 90);
+  --foreground: oklch(0.23 0.019 160);
+  --card: oklch(0.992 0.005 85);
+  --primary: oklch(0.39 0.072 170);
+  --primary-soft: oklch(0.935 0.025 170);
+  --accent: oklch(0.92 0.032 75);
+  --gold: oklch(0.68 0.10 70);
+}
+[data-yawmiyati-market="eg"] {
+  --background: oklch(0.974 0.019 65);
+  --foreground: oklch(0.23 0.025 45);
+  --card: oklch(0.991 0.01 75);
+  --primary: oklch(0.4 0.105 42);
+  --primary-soft: oklch(0.93 0.035 48);
+  --accent: oklch(0.91 0.045 80);
+  --gold: oklch(0.71 0.1 80);
+}
+[data-yawmiyati-market="iq"] {
+  --background: oklch(0.975 0.012 80);
+  --foreground: oklch(0.22 0.025 250);
+  --card: oklch(0.991 0.006 80);
+  --primary: oklch(0.39 0.068 257);
+  --primary-soft: oklch(0.92 0.028 256);
+  --accent: oklch(0.92 0.032 85);
+  --gold: oklch(0.68 0.1 80);
+}

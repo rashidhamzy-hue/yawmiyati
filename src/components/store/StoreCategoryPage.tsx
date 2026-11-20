@@ -1,6 +1,7 @@
 import {StoreFrame} from "./StoreChrome";
 import {ShoppingAssistant} from "./ShoppingAssistant";
 import {img} from "@/lib/store/images";
+import {marketExperience} from "@/lib/store/market-experience";
 import type {MarketCode} from "@/lib/store/markets";
 import {ArrowLeft,Search,Sparkles} from "lucide-react";
 export const EDITORIAL_CATEGORIES=[
@@ -20,8 +21,8 @@ export function StoreCategoryPage({market,slug}:{market:MarketCode;slug:string})
    <section className="relative isolate flex min-h-[340px] items-center overflow-hidden rounded-[2rem] bg-foreground sm:min-h-[430px]">
     <img src={category.image} alt={category.title} className="absolute inset-0 h-full w-full object-cover" fetchPriority="high"/>
     <div className="absolute inset-0 bg-gradient-to-l from-black/80 via-black/45 to-black/10"/>
-    <div className="relative max-w-xl px-7 py-12 text-white sm:px-12"><p className="mb-4 inline-flex items-center gap-2 text-xs font-bold"><Sparkles className="h-4 w-4"/> اكتشفي عالم يومياتي</p>
-      <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">{category.title}</h1><p className="mt-5 text-base leading-8 text-white/90">{category.subtitle}</p>
+    <div className="relative max-w-xl px-7 py-12 text-white sm:px-12"><p className="mb-4 inline-flex items-center gap-2 text-xs font-bold"><Sparkles className="h-4 w-4"/> {market==="eg"?"اكتشفي عالم يومياتي":market==="iq"?"اكتشفي يومياتچ":market==="ae"?"اكتشفي عالمج":market==="om"?"اكتشفي ما يناسبك":"اكتشفي عالم يومياتي"}</p>
+      <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">{category.title}</h1><p className="mt-5 text-base leading-8 text-white/90">{marketExperience[market].categoryCaptions[slug]??category.subtitle}</p>
       <button type="button" className="mt-7 inline-flex min-h-12 items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-foreground transition-colors hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white" onClick={()=>document.dispatchEvent(new CustomEvent("yawmiyati:open-search"))}><Search className="h-4 w-4"/> ابحثي بين المنتجات</button>
     </div>
    </section>
