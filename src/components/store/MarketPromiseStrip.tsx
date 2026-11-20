@@ -41,7 +41,7 @@ export function MarketPromiseStrip({market}:{market:NonSaudiMarket}){
     <a href={"/"+market+"/info/shipping-returns"} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-extrabold text-primary-foreground">{info.link}<ArrowLeft className="h-4 w-4" aria-hidden="true"/></a>
    </div>
    <div className="mt-6 grid gap-3 sm:grid-cols-3">
-    {info.cards.map((item,i)=>{const Icon=[HandCoins,Clock3,ShieldCheck][i];return <div key={item.title} className={"rounded-2xl bg-card px-5 py-5 shadow-sm "+(market==="eg"?"border-b-4 border-primary/35":market==="iq"?"border-r-4 border-gold":"border border-border/70")}>
+    {info.cards.map((item,i)=>{const Icon=i===0?HandCoins:i===1?Clock3:ShieldCheck;return <div key={item.title} className={"rounded-2xl bg-card px-5 py-5 shadow-sm "+(market==="eg"?"border-b-4 border-primary/35":market==="iq"?"border-r-4 border-gold":"border border-border/70")}>
       <Icon className="h-6 w-6 text-primary" aria-hidden="true"/><h3 className="mt-3 text-base font-extrabold">{item.title}</h3><p className="mt-2 text-xs leading-6 text-muted-foreground">{item.body}</p>
     </div>;})}
    </div>
