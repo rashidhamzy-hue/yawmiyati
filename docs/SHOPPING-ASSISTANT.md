@@ -32,3 +32,10 @@ The Edge Function must be deployed with `verify_jwt=false` only after the budget
 - Local replies are rules-based and should not be misrepresented as live Anthropic completions.
 - The owner dashboard's AI content-drafting workflow is separate from this consumer shopping assistant; neither requires auto-publishing.
 - The original staged WooCommerce/TasteWP supplier feed is retired; configure only newly approved hosted supplier integrations when ready.
+
+## Actual staging evidence (20 November 2026)
+- GitHub PR #54 was merged after build and tests passed. Lovable synchronized to the updated source, including visible customer assistant chat.
+- Migration `20261120102000_shopping_assistant_budget_gate.sql` applied to Yawmiyati staging. All five policies inspected: `enabled=false`, `daily_request_cap=0`, `minute_request_cap=0`.
+- Edge Function `yawmiyati-shopping-assistant` deployed as version 1 with `verify_jwt=true`, **not yet anonymous/publicly callable**. Frontend API flag is unset. Live model invocation remains unavailable by design; local fallback works.
+- Rollback-only quota acceptance test confirms disabled default, one-request daily/minute cap and denial to anonymous database callers. No calls to Anthropic were made.
+- To make public model chat usable later, finish authenticated/anonymous access design, production-origin allowlists, abuse and dollar spending controls, run evals, then request explicit owner permission. Do not silently toggle JWT verification or daily caps.
