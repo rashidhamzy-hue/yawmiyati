@@ -58,7 +58,7 @@ export function StoreInfoPage({market,topic}:{market:MarketCode;topic:InfoTopic}
       <div className="space-y-3 p-5">
        <h2 className="font-display text-xl font-extrabold">خلّينا نسهّل عليك الاختيار</h2>
        <p className="text-sm leading-7 text-muted-foreground">ابدئي باستكشاف الأقسام، أو استخدمي البحث للوصول إلى المنتج اللي يناسبك.</p>
-       <a className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-primary hover:underline" href={"/"+market+"/search"}><Search className="h-4 w-4"/> البحث في يومياتي <ArrowLeft className="h-4 w-4"/></a>
+       <button type="button" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" onClick={()=>document.dispatchEvent(new CustomEvent("yawmiyati:open-search"))}><Search className="h-4 w-4"/> البحث في يومياتي <ArrowLeft className="h-4 w-4"/></button>
       </div>
      </div>
      <div className="relative overflow-hidden rounded-[1.5rem] bg-primary-soft p-5">
