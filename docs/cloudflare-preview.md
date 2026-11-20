@@ -4,8 +4,8 @@
 
 ## Verified existing Workers
 - `yawmiyati-owner-staging`: public workers.dev staging URL, previews disabled. Settings bindings: `SA_INTEGRATION` service binding and `SUPABASE_PUBLISHABLE_KEY` (public).
-- `yawmiyati-sa-integration`: workers.dev disabled and previews disabled; preserved Woo secret bindings, not the proven active sync route.
-- **Actual working import:** browser -> Supabase Edge Function `sa-supplier-sync`, independent of Cloudflare Worker-to-Supabase network issue.
+- `yawmiyati-sa-integration`: DELETED 20 Nov 2026 at owner request, after removing its service binding from `yawmiyati-owner-staging`.
+- **Retired import:** Supabase Edge Function `sa-supplier-sync` is disabled with HTTP 410. Former temporary source no longer configured.
 - Deployed owner Worker is older than the merged owner UI. Direct API Worker upload was blocked by safety review, so do not claim a deployment or bypass the block.
 
 ## Supported deployment investigation
