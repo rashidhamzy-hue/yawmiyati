@@ -82,10 +82,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "يومياتي" },
-      { name: "description", content: "يومياتي — متجر أسلوب حياة نسائي بالدفع عند الاستلام" },
+      { name: "description", content: "يومياتي — تجربة عربية للمنزل والجمال والعناية" },
       
       { property: "og:title", content: "يومياتي" },
-      { property: "og:description", content: "يومياتي — متجر أسلوب حياة نسائي بالدفع عند الاستلام" },
+      { property: "og:description", content: "يومياتي — تجربة عربية للمنزل والجمال والعناية" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       
