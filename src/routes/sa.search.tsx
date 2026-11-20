@@ -14,6 +14,7 @@ export const Route = createFileRoute("/sa/search")({
 function SearchPage() {
   const { q } = Route.useSearch();
   const navigate = useNavigate({ from: "/sa/search" });
+  if(catalogMode()!=="demo")return <MarketPreview market="sa" searchOnly initialSearch={q}/>;
   const term = q.trim();
   const results = term ? products.filter((p) => [p.name, p.short, p.sub, getCategory(p.category)?.name].join(" ").includes(term)) : products;
   return (
