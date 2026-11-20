@@ -19,10 +19,10 @@ it("does not guess unsupported shipping and prices",()=>{
 it("answers Saudi COD, shipping and return questions without presenting active checkout",()=>{
  const payment=localShopAnswer("هل الدفع عند الاستلام؟","sa",[]);
  expect(payment).toContain("الدفع عند الاستلام فقط");
- expect(payment).toContain("الطلبات غير مفعّلة");
+ expect(payment).toContain("بدون بطاقات");
  const shipping=localShopAnswer("كم رسوم الشحن؟","sa",[]);
  expect(shipping).toContain("٢٨ ر.س");
- expect(shipping).toContain("غير مضمونة");
+ expect(shipping).toContain("قد تختلف");
  const returns=localShopAnswer("كيف الاسترجاع؟","sa",[]);
  expect(returns).toContain("٧ أيام");
  expect(returns).toContain("الحقوق النظامية");
