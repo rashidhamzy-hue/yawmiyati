@@ -46,8 +46,8 @@ export function ApprovedCatalogBrowser({market,products,onOpen}:{market:MarketCo
   // Filter inputs represent minor units to avoid floating-point currency rounding.
   const minPriceMinor=min?Number(min):undefined;
   const maxPriceMinor=max?Number(max):undefined;
-  const invalidRange=(min!==""&&(!/^\\d+$/.test(min)||!Number.isSafeInteger(minPriceMinor)))||
-    (max!==""&&(!/^\\d+$/.test(max)||!Number.isSafeInteger(maxPriceMinor)))||
+  const invalidRange=(min!==""&&(!/^\d+$/.test(min)||!Number.isSafeInteger(minPriceMinor)))||
+    (max!==""&&(!/^\d+$/.test(max)||!Number.isSafeInteger(maxPriceMinor)))||
     (minPriceMinor!==undefined&&maxPriceMinor!==undefined&&minPriceMinor>maxPriceMinor);
   const result=invalidRange?null:filterApprovedListings(products,market,{query,sort,minPriceMinor,maxPriceMinor,page,pageSize:12});
   const change=()=>setPage(1);
