@@ -54,11 +54,14 @@ export function dashboardClient(origin: string, publicKey: string, request: type
      if(!Array.isArray(rows))throw Error("Invalid candidate response");
      return rows;
    },
-   async saveCandidate(token:string,market:MarketCode,product:number,x:{supplier:number|null;delivery:number|null;other:number|null;price:number|null;decision:ReviewDecision}):Promise<void>{
+   async saveCandidate(token:string,market:MarketCode,product:number,x:{supplier:number|null;delivery:number|null;other:number|null;price:number|null;decision:ReviewDecision;expectedAt:string|null}):Promise<string>{
      if(!Number.isSafeInteger(product)||product<=0||![ "pending","shortlisted","rejected" ].includes(x.decision))throw Error("Invalid candidate");
      for(const amount of [x.supplier,x.delivery,x.other,x.price])if(amount!==null&&(!Number.isSafeInteger(amount)||amount<0||amount>1000000000))throw Error("Invalid commercial amount");
      if(x.price===0)throw Error("Invalid proposed price");
-     await call("/rest/v1/rpc/dashboard_save_candidate_review",{p_store:market,p_product:product,p_supplier:x.supplier,p_delivery:x.delivery,p_other:x.other,p_price:x.price,p_decision:x.decision},token);
+     if(x.expectedAt!==null&&!Number.isFinite(Date.parse(x.expectedAt)))throw Error("Invalid expected revision");
+     const updated=await call("/rest/v1/rpc/dashboard_save_candidate_review_v2",{p_store:market,p_product:product,p_supplier:x.supplier,p_delivery:x.delivery,p_other:x.other,p_price:x.price,p_decision:x.decision,p_expected_at:x.expectedAt},token);
+     if(typeof updated!=="string"||!Number.isFinite(Date.parse(updated)))throw Error("Invalid review revision");
+     return updated;
    },
    async candidateContent(token:string,market:MarketCode,product:number):Promise<CandidateContentState>{
      return call("/rest/v1/rpc/dashboard_candidate_content",{p_store:market,p_product:product},token);
