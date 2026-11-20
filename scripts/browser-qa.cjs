@@ -1,0 +1,59 @@
+/* Browser-only prelaunch smoke checks. No credentials, real orders or production deploys. */
+const {chromium}=require("playwright");
+const fs=require("node:fs");
+const path=require("node:path");
+const assert=require("node:assert/strict");
+const base=process.env.QA_BASE_URL||"http://127.0.0.1:4173";
+const markets=["sa","ae","om","eg","iq"];
+const viewports=[320,390,768,1440];
+const output=path.join(process.cwd(),"artifacts","browser-qa");
+fs.mkdirSync(output,{recursive:true});
+async function main(){
+ const browser=await chromium.launch({headless:true});
+ const failures=[];
+ try{
+  for(const market of markets){
+   for(const width of viewports){
+    const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:1});
+    const label=market+"-"+width;
+    try{
+     const response=await page.goto(base+"/"+market,{waitUntil:"domcontentloaded",timeout:30000});
+     assert.equal(response?.status(),200,label+": HTTP error");
+     await page.locator("h1").first().waitFor({state:"visible",timeout:15000});
+     await page.evaluate(()=>document.fonts.ready);
+     const overflow=await page.evaluate(()=>({
+       page:document.documentElement.scrollWidth,
+       viewport:document.documentElement.clientWidth,
+       body:document.body.scrollWidth
+     }));
+     assert.ok(overflow.page<=overflow.viewport+2,label+": horizontal overflow "+JSON.stringify(overflow));
+     assert.equal(await page.getByRole("heading",{level:1}).count(),1,label+": main heading count");
+     const heroSearch=page.getByRole("button",{name:"دوّري على اللي يعجبك"});
+     await heroSearch.click();
+     const dialog=page.getByRole("dialog",{name:"بحث يومياتي الذكي"});
+     await dialog.waitFor({state:"visible"});
+     assert.equal(new URL(page.url()).pathname,"/"+market,label+": search navigated away");
+     await page.keyboard.press("Escape");
+     await dialog.waitFor({state:"hidden"});
+     if(width<768){
+       const mobileNav=page.getByRole("navigation",{name:"التنقل السريع للجوال"});
+       assert.ok(await mobileNav.isVisible(),label+": mobile bottom navigation missing");
+       await mobileNav.getByRole("button",{name:"البحث"}).click();
+       await dialog.waitFor({state:"visible"});
+       await dialog.getByRole("button",{name:"إغلاق البحث"}).click();
+       await dialog.waitFor({state:"hidden"});
+     }
+     await page.screenshot({path:path.join(output,label+".png"),fullPage:true,animations:"disabled"});
+     console.log("PASS "+label+" storefront, overflow, inline search, Escape");
+    }catch(e){
+     failures.push(label+": "+e.message);
+     console.error("FAIL "+label+": "+e.message);
+     await page.screenshot({path:path.join(output,label+"-failure.png"),fullPage:true,timeout:10000}).catch(()=>{});
+    }finally{await page.close();}
+   }
+  }
+ }finally{await browser.close();}
+ if(failures.length)throw Error(failures.length+" browser QA failures:\n"+failures.join("\n"));
+ console.log("PASS all "+(markets.length*viewports.length)+" market/viewport combinations");
+}
+main().catch(e=>{console.error(e);process.exitCode=1;});
