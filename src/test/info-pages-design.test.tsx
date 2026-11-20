@@ -18,7 +18,8 @@ it("shows evidence-qualified Saudi shipping and COD with protected navigation",(
  expect(screen.getByText(/٢٨ ريالاً سعودياً/)).toBeTruthy();
  expect(screen.getByText(/الدفع نقداً عند الاستلام فقط/)).toBeTruthy();
  expect(screen.getByText(/٧ أيام/)).toBeTruthy();
- expect(screen.getByText(/ليست وعداً نهائياً/)).toBeTruthy();
+ expect(screen.getByText(/حقوقك النظامية/)).toBeTruthy();
+ expect(container.textContent).not.toMatch(/عند تفعيل|المورّد|الطلبات غير مفعّلة|معلومات تشغيلية/);
 });
 
 it("keeps unverified Egypt delivery fees unspecified",()=>{
