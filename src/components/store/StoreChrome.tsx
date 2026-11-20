@@ -5,6 +5,7 @@ const names:Record<MarketCode,string>={sa:"السعودية",ae:"الإمارا�
 export function StoreHeader({market}:{market:MarketCode}){
  const [menu,setMenu]=useState(false);
  const path="/"+market;
+ const shopName="يومياتي "+names[market];
  return <>
   <header className="sticky top-0 z-50 border-b border-border/70 bg-background/95 backdrop-blur-xl">
    <div className="mx-auto flex min-h-[76px] max-w-7xl items-center gap-5 px-4 sm:px-6 lg:px-8">
