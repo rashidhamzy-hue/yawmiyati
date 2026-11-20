@@ -8,6 +8,7 @@ import { markets, type MarketCode } from "../lib/store/markets";
 import { SIMULATION_MODE } from "../lib/store/simulation/fixtures";
 import { SyntheticProductExperience } from "../lib/store/simulation/SyntheticProductExperience";
 import { OfflineCodCheckoutDemo } from "../lib/store/simulation/OfflineCodCheckoutDemo";
+import { OfflineLaunchReadinessPanel } from "./m3a-readiness-panel";
 
 type Surface = "catalog" | "cod";
 type Finding = "not_reviewed" | "pass" | "needs_fix";
@@ -105,6 +106,7 @@ export function LocalOwnerReviewWorkspace() {
           <textarea data-testid="local-review-report" readOnly rows={8} value={report} className="mt-2 w-full rounded-xl border bg-background p-3 font-mono text-xs" />
         </label>}
       </section>
+      <OfflineLaunchReadinessPanel/>
       <section id="review-surface" aria-label="الواجهة قيد المراجعة" className="overflow-hidden rounded-3xl border bg-card" data-yawmiyati-market={market}>
         {surface==="catalog"?
           <SyntheticProductExperience key={`catalog-${market}`} initialMarket={market} lockedMarket/>:
