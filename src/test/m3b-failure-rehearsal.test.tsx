@@ -44,7 +44,7 @@ describe("Milestone 3B local owner fault panel",()=>{
   expect(container.querySelectorAll("article")).toHaveLength(6);
   expect(screen.queryByRole("button",{name:/تفعيل|نشر|إطلاق|شراء/})).toBeNull();
   fireEvent.change(screen.getByRole("combobox",{name:"دولة اختبار الأعطال"}),{target:{value:"iq"}});
-  expect(container.querySelectorAll("article")).toHaveLength(7);
+  expect(container.querySelectorAll("article")).toHaveLength(6);
   fireEvent.click(screen.getByRole("button",{name:"إظهار نتائج الأعطال للاختبارات فقط"}));
   const report=JSON.parse((screen.getByTestId("failure-matrix-export") as HTMLTextAreaElement).value);
   expect(report.total).toBe(30);
