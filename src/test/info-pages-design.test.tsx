@@ -18,7 +18,7 @@ it("shows evidence-qualified Saudi shipping and COD with protected navigation",(
  expect(screen.getByText(/لم تُعتمد رسوم شحن نهائية/)).toBeTruthy();
  expect(screen.getByText(/الدفع نقداً عند الاستلام هو الخيار المخطط له/)).toBeTruthy();
  expect(screen.getByText(/سياسة استرجاع واستبدال يراجعها المختصون/)).toBeTruthy();
- expect(screen.getByText(/حقوقك النظامية/)).toBeTruthy();
+ expect(screen.getByText(/الحقوق النظامية في المملكة/)).toBeTruthy();
  expect(container.textContent).not.toMatch(/٢٨ ريالاً سعودياً|٢–٣ أيام|٤–٥ أيام|مورد Taager/);
 });
 
