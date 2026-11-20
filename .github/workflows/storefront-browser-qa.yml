@@ -6,6 +6,7 @@ on:
       - "package.json"
       - "bun.lock"
       - "scripts/browser-qa.cjs"
+      - "scripts/m2d-*"
       - ".github/workflows/storefront-browser-qa.yml"
   workflow_dispatch:
 permissions:
@@ -35,6 +36,21 @@ jobs:
           exit 1
       - name: Exercise all 5 markets at 4 viewports
         run: node scripts/browser-qa.cjs
+      - name: Start isolated owner preview with ephemeral local credential
+        run: |
+          TOKEN=$(node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("hex"))')
+          echo "YAWMIYATI_LOCAL_PREVIEW_SECRET=$TOKEN" >> "$GITHUB_ENV"
+          YAWMIYATI_LOCAL_OWNER_PREVIEW=offline-owner-test-only YAWMIYATI_LOCAL_PREVIEW_SECRET="$TOKEN" NODE_ENV=development node scripts/m2d-local-preview.mjs > /tmp/yawmiyati-m2d-preview.log 2>&1 &
+          echo $! > /tmp/yawmiyati-m2d-preview.pid
+          for n in $(seq 1 60); do
+            STATUS=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:4174/__local_owner_review || true)
+            if [ "$STATUS" = "401" ]; then exit 0; fi
+            sleep 2
+          done
+          tail -n 100 /tmp/yawmiyati-m2d-preview.log
+          exit 1
+      - name: Exercise locked offline owner review across 5 markets at 4 viewports
+        run: node scripts/m2d-browser-qa.cjs
       - name: Upload screenshots and failure evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -45,4 +61,6 @@ jobs:
           if-no-files-found: warn
       - name: Show server log after failure
         if: failure()
-        run: tail -n 120 /tmp/yawmiyati-vite.log || true
+        run: |
+          tail -n 120 /tmp/yawmiyati-vite.log || true
+          tail -n 120 /tmp/yawmiyati-m2d-preview.log || true
