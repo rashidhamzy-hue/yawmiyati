@@ -14,6 +14,6 @@ begin
   perform public.dashboard_save_candidate_review_v2('sa',900000000003,3000,300,100,5000,'rejected',first_version);
   raise exception 'Assertion: stale write accepted';
  exception when others then if sqlerrm<>'Review changed; reload before saving' then raise; end if; end;
- if not exists(select 1 from public.candidate_commercial_review where store_code='sa' and woo_product_id=900000000003 and supplier_cost_minor=2500 and decision='shortlisted') then raise exception 'Assertion: stale write overwrote record'; end if;
+ if not exists(select 1 from public.dashboard_candidate_review('sa',100) where woo_product_id=900000000003 and (review->>'supplier_cost_minor')::bigint=2500 and review->>'decision'='shortlisted') then raise exception 'Assertion: stale write overwrote record'; end if;
 end $$;
 rollback;
