@@ -23,6 +23,9 @@ async function main(){
      const response=await page.goto(base+"/"+market,{waitUntil:"domcontentloaded",timeout:30000});
      assert.equal(response?.status(),200,label+": HTTP error");
      await page.locator("h1").first().waitFor({state:"visible",timeout:15000});
+     // TanStack Start renders HTML before the client event handlers hydrate.
+     await page.waitForLoadState("networkidle",{timeout:12000}).catch(()=>{});
+     await page.waitForTimeout(500);
      await page.evaluate(()=>Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,2500))]));
      const overflow=await page.evaluate(()=>({
        page:document.documentElement.scrollWidth,
