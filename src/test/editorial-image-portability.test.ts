@@ -1,5 +1,6 @@
 import {describe,it,expect} from "vitest";
 import {img} from "../lib/store/images";
+import {editorialSrcSet} from "../lib/store/editorial-srcset";
 
 const editorial=["hero","cat-home","cat-kitchen","cat-beauty","cat-fashion","cat-wellness","cat-organize"] as const;
 describe("portable licensed editorial media",()=>{
@@ -12,6 +13,13 @@ describe("portable licensed editorial media",()=>{
    expect(source.searchParams.has("w")).toBe(true);
    expect(source.searchParams.has("q")).toBe(true);
   }
+ });
+ it("provides responsive srcsets with mobile and desktop renditions",()=>{
+  const variants=editorialSrcSet(img.hero)!;
+  expect(variants).toContain("360w");
+  expect(variants).toContain("1920w");
+  expect(variants).not.toContain("/__l5e/");
+  expect(editorialSrcSet(img.p1)).toBeUndefined();
  });
  it("keeps editorial sources distinct and does not replace product identity with stock photos",()=>{
   expect(new Set(editorial.map(k=>img[k])).size).toBe(editorial.length);
