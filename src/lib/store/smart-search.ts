@@ -8,17 +8,18 @@ export const SEARCH_GROUPS=[
  {slug:"wellness",title:"الراحة والرفاهية",terms:["راحة","رفاهية","استرخاء","عطر","شمعة","wellness","relax"]},
  {slug:"organize",title:"التنظيم الذكي",terms:["تنظيم","ترتيب","تخزين","صندوق","رفوف","organize","storage","organizer"]},
 ] as const;
-const synonyms:Record<string,string[]>={
- "قهوة":["دله","دلة","فنجان","اكواب","قهوه","coffee"],
- "دلة":["قهوة","قهوه","دله"],
- "مكياج":["تجميل","makeup","cosmetics"],
- "بشرة":["عناية","كريم","سيروم","skin"],
- "تنظيم":["ترتيب","تخزين","organizer"],
- "حقيبة":["شنطة","شنطه","bag"],
- "عباية":["عباءه","عباءة","abaya"],
- "بيت":["منزل","ديكور","home"],
- "هدية":["هدايا","gift"],
-};
+// Bidirectional synonym sets so customers can search in either colloquial or standard Arabic.
+const synonymGroups=[
+ ["قهوة","قهوه","دلة","دله","فنجان","coffee"],
+ ["مكياج","تجميل","makeup","cosmetics"],
+ ["بشرة","بشره","عناية","عنايه","كريم","سيروم","skin","skincare"],
+ ["تنظيم","ترتيب","تخزين","منظم","organizer"],
+ ["حقيبة","حقيبه","شنطة","شنطه","bag"],
+ ["عباية","عبايه","عباءة","عباءه","abaya"],
+ ["بيت","منزل","ديكور","home","decor"],
+ ["هدية","هديه","هدايا","gift"],
+ ["عطر","عطور","perfume"],
+] as const;
 export function normalizeSearch(value:string){
  return value.normalize("NFKC").toLocaleLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g,"").replace(/[إأآٱ]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").replace(/ؤ/g,"و").replace(/ئ/g,"ي").replace(/[^\p{L}\p{N}]+/gu," ").trim().replace(/\s+/g," ");
 }
@@ -39,7 +40,7 @@ function tokenScore(query:string,titleTokens:string[],title:string){
   else if(word.startsWith(query)||query.startsWith(word))best=Math.max(best,27);
   else if(query.length>=4&&distance(query,word,2)<=1)best=Math.max(best,15);
  }
- const aliases=synonyms[query]??[];
+ const aliases=synonymGroups.find(group=>group.some(item=>normalizeSearch(item)===query))??[];
  for(const alias of aliases){const norm=normalizeSearch(alias);if(titleTokens.includes(norm)||title.includes(norm))best=Math.max(best,20);}
  return best;
 }
