@@ -12,6 +12,12 @@ describe("premium Saudi storefront prelaunch",()=>{
   expect(screen.getByRole("heading",{name:"أسئلة تتكرر كثيراً"})).toBeTruthy();
   expect(screen.queryByRole("button",{name:/أضيفي للسلة|شراء الآن|اطلبي الآن/})).toBeNull();
  });
+ it("renders a focused search page without homepage hero clutter",()=>{
+  render(<MarketPreview market="sa" searchOnly initialSearch="قهوة"/>);
+  expect(screen.getByRole("heading",{name:"ابحثي في منتجات يومياتي"})).toBeTruthy();
+  expect(screen.queryByRole("heading",{level:1,name:/كل يوم يستحق/})).toBeNull();
+  expect(screen.getByRole("searchbox",{name:"بحث المنتجات المعتمدة"})).toBeTruthy();
+ });
  it("keeps a protected product detail unavailable without a configured catalog",()=>{
   render(<MarketPreview market="ae" slug="not-a-product"/>);
   expect(screen.getByText("اختياراتنا في الطريق")).toBeTruthy();
