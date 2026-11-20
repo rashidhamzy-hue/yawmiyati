@@ -1,8 +1,12 @@
 import type {MarketCode} from "./markets";
 import type {PublicListing} from "./public-catalog";
+import {marketPolicyPages} from "./market-policy-pages";
 export const SHOP_ASSISTANT_SUGGESTIONS=["كيف أختار القسم المناسب؟","أريني المنتجات المتاحة","كيف أعرف السعر؟","ماذا عن التوصيل؟"] as const;
 export type ShopMessage={role:"visitor"|"assistant";text:string};
 export const greeting="أهلاً بك في يومياتي! ✨ أقدر أساعدك في اكتشاف الأقسام، البحث بين المنتجات المعروضة، وفهم المعلومات المتاحة عن التسوّق.";
+export function marketGreeting(market:MarketCode){
+ return market==="sa"?greeting:({ae:"هلا وغلا! ✨ شو ودّج تكتشفين في يومياتي الإمارات؟ أساعدج بالأقسام والمعلومات المتاحة.",om:"أهلاً بك! ✨ اختاري من أقسام يومياتي عُمان، وأسعد أساعدك بمعلومات المنتجات المتاحة.",eg:"أهلاً بيكي في يومياتي! ✨ قوليلي بتدوّري على إيه، وأساعدك تلاقي الأقسام والمعلومات المتاحة.",iq:"هلا بيچ في يومياتي! ✨ شنو ببالچ؟ أساعدچ تختارين الأقسام وتعرفين المعلومات المتاحة."} as const)[market];
+}
 const groups=["المنزل والديكور","المطبخ والقهوة","الجمال والعناية","الأزياء والإكسسوارات","الراحة والرفاهية","التنظيم الذكي"];
 export function localShopAnswer(question:string,market:MarketCode,products:readonly PublicListing[]):string{
  const query=question.trim().toLowerCase();
@@ -17,6 +21,12 @@ export function localShopAnswer(question:string,market:MarketCode,products:reado
  if(market==="sa"&&/(دفع|استلام|كاش|cod|payment)/i.test(query))return "الدفع كاش عند الاستلام فقط، بدون بطاقات أو تحويلات. تأكدي من اسمك وعنوانك ورقم التواصل عند إتمام الطلب.";
  if(market==="sa"&&/(استرجاع|إرجاع|استبدال|مرتجع|return|refund)/i.test(query))return "يمكن طلب الاسترجاع خلال ٧ أيام من الاستلام وفق شروط المنتج وحالته، مع حفظ حقوقك النظامية. تفاصيل الإجراءات في صفحة الشحن والاسترجاع.";
  if(market==="sa"&&/(شحن|توصيل|shipping|delivery)/i.test(query))return "رسوم الشحن ٢٨ ر.س لجميع مناطق المملكة. المدة التقديرية بعد تأكيد الطلب ٢–٣ أيام للرياض وجدة والدمام و٤–٥ أيام لبقية المناطق، وقد تختلف حسب ظروف الشحن.";
+ if(market!=="sa"){
+  const details=marketPolicyPages[market].groups;
+  if(/(دفع|استلام|كاش|cod|payment)/i.test(query))return details[0][1];
+  if(/(استرجاع|إرجاع|استبدال|مرتجع|return|refund)/i.test(query))return details[4][1];
+  if(/(شحن|توصيل|shipping|delivery)/i.test(query))return details[1][1]+" "+details[2][1];
+ }
  if(/(شحن|توصيل|استرجاع|إرجاع|استبدال|دفع|cod|shipping|delivery|return|payment)/i.test(query))return "تختلف تفاصيل الشحن والدفع والاسترجاع حسب البلد والمنتج. لا أملك حالياً شروطاً مؤكدة أستطيع نسبتها إلى طلبك، لذلك لا أعدك برسوم أو مواعيد محددة.";
  if(/(سعر|أسعار|ثمن|كم|خصم|price|discount)/i.test(query))return "تظهر الأسعار بالعملة المحلية فقط على المنتجات التي لديها سعر معتمد. لا يمكنني تأكيد أي خصم أو سعر غير موجود في صفحة المنتج.";
  if(/(مرحبا|مرحب|هلا|أهلا|السلام|hello|hi)/i.test(query))return greeting;
