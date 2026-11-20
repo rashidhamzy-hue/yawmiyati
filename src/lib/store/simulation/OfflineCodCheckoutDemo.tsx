@@ -17,7 +17,7 @@ const stepNames: Record<Step,string> = {
   cart:"سلة افتراضية", address:"عنوان تجريبي", review:"مراجعة المحاكاة", receipt:"إيصال محاكاة",
 };
 
-export function OfflineCodCheckoutDemo({ initialMarket = "sa" }: { initialMarket?: MarketCode }) {
+export function OfflineCodCheckoutDemo({ initialMarket = "sa", lockedMarket = false }: { initialMarket?: MarketCode; lockedMarket?: boolean }) {
   const [market,setMarket] = useState<MarketCode>(initialMarket);
   const [session,setSession] = useState(() => createOfflineCheckoutSession(initialMarket));
   const [,refresh] = useReducer((n:number) => n + 1, 0);
@@ -69,7 +69,7 @@ export function OfflineCodCheckoutDemo({ initialMarket = "sa" }: { initialMarket
     </header>
     <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4 sm:flex-row sm:items-end sm:justify-between">
       <label className="text-sm font-bold">دولة الاختبار
-        <select aria-label="دولة اختبار الدفع" value={market} onChange={e => restart(e.target.value as MarketCode)}
+        <select aria-label="دولة اختبار الدفع" disabled={lockedMarket} value={market} onChange={e => restart(e.target.value as MarketCode)}
           className="mt-2 block min-h-11 w-full rounded-xl border bg-background px-3 sm:w-64">
           {(Object.keys(markets) as MarketCode[]).map(m => <option value={m} key={m}>{marketsArabic[m]} · {markets[m].currency}</option>)}
         </select>
