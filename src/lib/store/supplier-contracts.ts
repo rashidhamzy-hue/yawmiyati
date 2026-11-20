@@ -44,12 +44,14 @@ export interface SupplierAdapter {
  readOrder(supplierOrderId:string):Promise<SupplierOrderReceipt>;
 }
 export function validateSupplierProduct(market:MarketCode,raw:unknown):SupplierProductSnapshot{
+ if(raw&&typeof raw==="object"&&("synthetic" in raw||"mayPublish" in raw||"kind" in raw))throw Error("synthetic_supplier_identity_forbidden");
  const p=supplierProductSchema.parse(raw);
  if(p.market!==market||p.currency!==markets[market].currency)throw Error("supplier_market_or_currency_mismatch");
  if(p.sku.startsWith("SIM-")||p.providerId.startsWith("SIM-"))throw Error("synthetic_supplier_identity_forbidden");
  return p;
 }
 export function validateSupplierOrderRequest(market:MarketCode,raw:unknown):SupplierOrderRequest{
+ if(raw&&typeof raw==="object"&&("synthetic" in raw||"mode" in raw))throw Error("synthetic_order_forbidden");
  const p=supplierOrderRequestSchema.parse(raw);
  if(p.market!==market||p.currency!==markets[market].currency)throw Error("supplier_market_or_currency_mismatch");
  if(p.internalOrderId.startsWith("SIM-")||p.lines.some(x=>x.supplierSku.startsWith("SIM-")))throw Error("synthetic_order_forbidden");
