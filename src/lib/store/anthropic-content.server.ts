@@ -26,7 +26,7 @@ export function createAnthropicContentProvider(config:Config,request:typeof fetc
   const input=validCount(data.usage?.input_tokens),output=validCount(data.usage?.output_tokens);
   // Conservative configured upper-bound estimate, not confirmed supplier billing.
   const actualMicrousd=BigInt(input)*config.rates.inputMicrousdPerToken+BigInt(output)*config.rates.outputMicrousdPerToken;
-  if(actualMicrousd>limits.reservationMicrousd)throw Error("AI usage exceeded reservation");
+  // Return even on overrun so the execution layer can record the charge and fail the job.
   return {draft:JSON.parse(data.content[0].text),actualMicrousd};
  };
 }
