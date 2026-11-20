@@ -51,16 +51,19 @@ a dormant catalog. This milestone **does not duplicate those services**.
 `markets.ts`, `pricing.ts`, `fulfillment-state.ts`,
 `supplier-evidence.ts`, `reconciliation.ts`, existing SQL and CI.
 
+## Milestone 1 second PR: adapter boundaries and offline processing
+- `src/lib/store/supplier-contracts.ts`: Zod-validated supplier catalog and order receipt contracts; explicit market/currency checks, synthetic identity rejection, typed transport/clock injection interfaces. **No network implementations or credentials.**
+- `src/lib/store/simulation/outbox.ts`: deterministic in-memory queue with export/restore snapshots, market-specific deduplication, attempt-fenced leases, bounded retries and dead-letter state. **Not a durable production outbox**; the snapshot must be saved by an external test harness to survive process exit.
+- `src/lib/store/simulation/signed-webhook.ts`: synthetic HMAC-signed webhook fixture harness using the existing Woo verification helper. All jobs stay synthetic, nothing changes real supplier order state.
+- `src/lib/store/simulation/addresses.ts`: five fake, non-personal country-specific address shapes for future checkout UI testing.
+- `scripts/check-simulation-boundary.mjs`: CI check forbidding simulation imports in app/server production source.
+
 ## Scope still outstanding in Milestone 1 / next PRs
-- Schema-validated adapter contracts covering provider read/write, order
-  acknowledgement, variance/stock, reconciliation, clock/transport injection.
-- Signed incoming event **test harness** and durable queue/outbox simulation
-  (no live webhook or provider credentials).
-- Owner demo seed adapter with strict environment boundary, if desired.
-- Country address, product media and category mapping scenario fixtures for
-  UI milestone 2.
-- CI negative test that rejects importing simulation modules from public
-  route modules and production server actions.
+- No active provider adapters have been connected. Future integrations require authenticated source data, webhook signatures and independent settlement evidence.
+- The outbox uses snapshots for offline replay; a real durable queue/database outbox and concurrency locking require a separately approved production milestone.
+- Product photo ownership and category-mapping fixtures are deferred to Milestone 2.
+- Owner dashboard synthetic-demo integration is deferred to Milestone 3; do not expose fixtures on public routes.
+- Extend the CI guard beyond direct import scanning if dynamic loaders or bundler aliases are later added.
 - Audit of `src/lib/store/catalog.ts` legacy hard-coded fictional product
   examples before any UI reuse; this file must not provide public products.
 
