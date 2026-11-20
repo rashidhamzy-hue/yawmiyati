@@ -1,3 +1,3 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-export const Route=createFileRoute("/sa/checkout")({head:()=>({meta:[{title:"الطلب غير متاح | يومياتي"},{name:"robots",content:"noindex,nofollow"}]}),component:Checkout});
-function Checkout(){return <main className="mx-auto max-w-lg space-y-4 px-4 py-16 text-center"><h1 className="text-2xl font-bold">الطلب غير متاح حالياً</h1><p>المتجر في مرحلة الاختبار. لا نطلب بياناتك الشخصية ولا نقبل طلبات حقيقية الآن.</p><Link to="/sa" className="btn-primary">العودة للمتجر</Link></main>;}
+import {createFileRoute,Link} from "@tanstack/react-router";
+export const Route=createFileRoute("/sa/checkout")({head:()=>({meta:[{title:"الطلب | يومياتي"},{name:"robots",content:"noindex,nofollow"}]}),component:Checkout});
+function Checkout(){return <main dir="rtl" className="mx-auto max-w-lg space-y-5 px-4 py-16 text-center"><h1 className="font-display text-3xl font-extrabold">لا توجد سلة قابلة للطلب</h1><p className="leading-8 text-muted-foreground">إتمام الطلب يحتاج إلى منتجات متاحة ومعلومات دفع وتوصيل معتمدة. يمكنك متابعة استكشاف يومياتي.</p><Link to="/sa" className="btn-primary">استكشفي يومياتي</Link></main>;}
