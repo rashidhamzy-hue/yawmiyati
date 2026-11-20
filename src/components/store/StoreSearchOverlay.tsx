@@ -3,7 +3,7 @@ import {ArrowLeft,Search,Sparkles,X,Package,LoaderCircle} from "lucide-react";
 import type {MarketCode} from "@/lib/store/markets";
 import {marketIdentity} from "@/lib/store/market-identity";
 import {publicBrowserConfig} from "@/lib/store/staging-public-config";
-import {fetchPublicCatalog,formatListingPrice,type PublicListing} from "@/lib/store/public-catalog";
+import {fetchPublicCatalog,fetchPublicSearch,formatListingPrice,type PublicListing} from "@/lib/store/public-catalog";
 import {smartCatalogSearch,suggestEditorialCategories,SEARCH_GROUPS} from "@/lib/store/smart-search";
 import {img} from "@/lib/store/images";
 const {origin,key}=publicBrowserConfig(import.meta.env.VITE_YAWMIYATI_SUPABASE_URL,import.meta.env.VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY);
@@ -19,6 +19,8 @@ export function StoreSearchOverlay({market,open,onClose}:{market:MarketCode;open
  const [q,setQ]=useState(""),[items,setItems]=useState<PublicListing[]|null>(null),[error,setError]=useState(false);
  const input=useRef<HTMLInputElement>(null),dialog=useRef<HTMLElement>(null);
  const [loadedMarket,setLoadedMarket]=useState<MarketCode|null>(null);
+ const [serverResults,setServerResults]=useState<{market:MarketCode;query:string;rows:PublicListing[]}|null>(null);
+ const [serverBusy,setServerBusy]=useState(false);
  const visibleItems=loadedMarket===market?items:null;
  useEffect(()=>{
   if(!open)return;
@@ -35,8 +37,17 @@ export function StoreSearchOverlay({market,open,onClose}:{market:MarketCode;open
   fetchPublicCatalog(origin,key,market).then(rows=>{if(active){setItems(rows);setLoadedMarket(market);}}).catch(()=>{if(active){setItems([]);setError(true);}});
   return()=>{active=false;};
  },[open,market]);
+ useEffect(()=>{
+  if(!open||!origin||!key||q.trim().length<2){setServerBusy(false);return;}
+  let alive=true;setServerBusy(true);
+  const timer=setTimeout(()=>{void fetchPublicSearch(origin,key,market,q).then(rows=>{if(alive)setServerResults({market,query:q,rows});}).catch(()=>{if(alive)setServerResults(null);}).finally(()=>{if(alive)setServerBusy(false);});},250);
+  return()=>{alive=false;clearTimeout(timer);};
+ },[open,market,q]);
  if(!open)return null;
- const results=visibleItems?smartCatalogSearch(q,visibleItems,10):[];
+ const localResults=visibleItems?smartCatalogSearch(q,visibleItems,10):[];
+ const remoteResults=serverResults?.market===market&&serverResults.query===q?serverResults.rows:[];
+ const seenIds=new Set(localResults.map(p=>p.listing_id));
+ const results=[...localResults,...remoteResults.filter(p=>!seenIds.has(p.listing_id))].slice(0,12);
  const recommended=suggestEditorialCategories(q);
  const shown=q.trim()?categories.filter(x=>recommended.some(s=>s.slug===x.slug)):categories;
  function submit(event:FormEvent){event.preventDefault();input.current?.blur();}
@@ -51,7 +62,7 @@ export function StoreSearchOverlay({market,open,onClose}:{market:MarketCode;open
     <p className="mt-3 flex items-center gap-2 text-xs leading-6 text-muted-foreground"><Sparkles className="h-4 w-4 shrink-0 text-primary"/>يفهم اختلاف كتابة الكلمات العربية ويقترح أقساماً تناسب بحثك.</p>
     {q.trim()&&<section className="mt-7" aria-label="نتائج بحث المنتجات">
       <div className="flex items-center justify-between"><h3 className="font-display text-lg font-extrabold">نتائج المنتجات</h3>{visibleItems&&<span className="text-xs text-muted-foreground">{results.length} نتيجة معروضة</span>}</div>
-      {!origin||!key?<p role="status" className="mt-3 rounded-xl bg-muted p-4 text-sm">تصفّحي الأقسام أدناه. البحث في المنتجات غير متاح حالياً.</p>:error?<p role="alert" className="mt-3 rounded-xl bg-muted p-4 text-sm">تعذّر تحميل المنتجات حالياً. لا نعرض نتائج غير مؤكدة.</p>:visibleItems===null?<p role="status" className="mt-4 flex items-center gap-2 text-sm text-muted-foreground"><LoaderCircle className="h-4 w-4 animate-spin"/> جاري البحث في المنتجات المعتمدة…</p>:results.length?<div className="mt-4 grid gap-2 sm:grid-cols-2">{results.map(x=><a key={x.listing_id} href={"/"+market+"/p/"+encodeURIComponent(x.slug)} className="flex items-center gap-3 rounded-2xl border bg-card p-4 hover:border-primary"><span className="grid h-12 w-12 place-items-center rounded-xl bg-primary-soft text-primary"><Package className="h-6 w-6"/></span><span className="min-w-0 flex-1"><strong className="block truncate text-sm">{x.title}</strong><span className="text-xs font-bold text-primary">{formatListingPrice(x,market)}</span></span><ArrowLeft className="h-4 w-4 text-primary"/></a>)}</div>:<div className="mt-4 rounded-2xl border bg-card p-5 text-sm text-muted-foreground">ما لقينا منتجات معتمدة تطابق بحثك حالياً. تصفّحي الأقسام الملهمة أدناه.</div>}
+      {!origin||!key?<p role="status" className="mt-3 rounded-xl bg-muted p-4 text-sm">تصفّحي الأقسام أدناه. البحث في المنتجات غير متاح حالياً.</p>:error?<p role="alert" className="mt-3 rounded-xl bg-muted p-4 text-sm">تعذّر تحميل المنتجات حالياً. لا نعرض نتائج غير مؤكدة.</p>:visibleItems===null?<p role="status" className="mt-4 flex items-center gap-2 text-sm text-muted-foreground"><LoaderCircle className="h-4 w-4 animate-spin"/> جاري البحث في المنتجات المعتمدة…</p>:results.length?<div className="mt-4 grid gap-2 sm:grid-cols-2">{results.map(x=><a key={x.listing_id} href={"/"+market+"/p/"+encodeURIComponent(x.slug)} className="flex items-center gap-3 rounded-2xl border bg-card p-4 hover:border-primary"><span className="grid h-12 w-12 place-items-center rounded-xl bg-primary-soft text-primary"><Package className="h-6 w-6"/></span><span className="min-w-0 flex-1"><strong className="block truncate text-sm">{x.title}</strong><span className="text-xs font-bold text-primary">{formatListingPrice(x,market)}</span></span><ArrowLeft className="h-4 w-4 text-primary"/></a>)}</div>:serverBusy?<p role="status" className="mt-4 text-sm text-muted-foreground">جاري البحث في تفاصيل المنتجات المعتمدة…</p>:<div className="mt-4 rounded-2xl border bg-card p-5 text-sm text-muted-foreground">ما لقينا منتجات معتمدة تطابق بحثك حالياً. تصفّحي الأقسام الملهمة أدناه.</div>}
     </section>}
     <section className="mt-8" aria-label="الأقسام المقترحة"><div className="flex items-center justify-between"><h3 className="font-display text-lg font-extrabold">{q.trim()?"أقسام ممكن تعجبك":"اكتشفي حسب اهتماماتك"}</h3><a className="text-xs font-bold text-primary hover:underline" href={"/"+market+"#discover"} onClick={onClose}>كل الأقسام</a></div>
      {shown.length?<div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">{shown.map(x=><a key={x.slug} href={"/"+market+"/c/"+x.slug} className="group overflow-hidden rounded-2xl border bg-card hover:border-primary"><img src={x.photo} alt="" loading="lazy" className="aspect-[5/3] w-full object-cover transition-transform group-hover:scale-105"/><p className="px-3 py-3 text-xs font-bold sm:text-sm">{x.name}</p></a>)}</div>:<p className="mt-4 text-sm text-muted-foreground">ما فيه أقسام مطابقة. جرّبي اسماً أبسط أو اختاري من الأقسام الرئيسية.</p>}
