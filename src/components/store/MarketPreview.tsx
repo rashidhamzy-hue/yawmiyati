@@ -8,7 +8,7 @@ import {marketIdentity} from "@/lib/store/market-identity";
 import {relatedVerifiedProducts} from "@/lib/store/verified-merchandising";
 import {smartCatalogSearch,suggestEditorialCategories,SEARCH_GROUPS} from "@/lib/store/smart-search";
 import {markets,type MarketCode} from "@/lib/store/markets";
-import {fetchPublicCatalog,fetchPublicDetail,formatListingPrice,type PublicListing,type PublicDetail} from "@/lib/store/public-catalog";
+import {fetchPublicCatalog,fetchPublicDetail,fetchPublicSearch,formatListingPrice,type PublicListing,type PublicDetail} from "@/lib/store/public-catalog";
 
 const names:Record<MarketCode,string>={sa:"السعودية",ae:"الإمارات",om:"عُمان",eg:"مصر",iq:"العراق"};
 const {origin,key}=publicBrowserConfig(import.meta.env.VITE_YAWMIYATI_SUPABASE_URL,import.meta.env.VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY);
@@ -44,6 +44,7 @@ function ShopCard({item,market}:{item:PublicListing;market:MarketCode}){
 export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{market:MarketCode;slug?:string;searchOnly?:boolean;initialSearch?:string}){
  const [rows,setRows]=useState<PublicListing[]|null>(null),[detail,setDetail]=useState<PublicDetail|null>(null);
  const [term,setTerm]=useState(initialSearch),[error,setError]=useState(false),[attempt,setAttempt]=useState(0);
+ const [remoteSearch,setRemoteSearch]=useState<{query:string;rows:PublicListing[]}|null>(null);
  
  const path="/"+market;
  const shopName="يومياتي "+marketIdentity[market].name;
@@ -55,7 +56,16 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
   task.catch(()=>{if(active)setError(true);});
   return()=>{active=false};
  },[market,slug,attempt]);
- const matching=rows?smartCatalogSearch(term,rows):[];
+ useEffect(()=>{
+  if(!origin||!key||!rows||slug||term.trim().length<2)return;
+  let alive=true;
+  const timer=setTimeout(()=>{void fetchPublicSearch(origin,key,market,term).then(result=>{if(alive)setRemoteSearch({query:term,rows:result});}).catch(()=>{if(alive)setRemoteSearch(null);});},280);
+  return()=>{alive=false;clearTimeout(timer);};
+ },[market,rows,slug,term]);
+ const localMatches=rows?smartCatalogSearch(term,rows):[];
+ const remoteMatches=remoteSearch?.query===term?remoteSearch.rows:[];
+ const matchedIds=new Set(localMatches.map(x=>x.listing_id));
+ const matching=[...localMatches,...remoteMatches.filter(x=>!matchedIds.has(x.listing_id))];
  const suggestions=suggestEditorialCategories(term);
  return <div dir="rtl" className="min-h-screen overflow-x-clip bg-background text-foreground">
   <a href="#main-content" className="skip-link">تخطي إلى المحتوى</a>
