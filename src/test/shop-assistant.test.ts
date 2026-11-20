@@ -25,6 +25,6 @@ it("answers Saudi COD, shipping and return questions without presenting active c
  expect(shipping).toContain("قد تختلف");
  const returns=localShopAnswer("كيف الاسترجاع؟","sa",[]);
  expect(returns).toContain("٧ أيام");
- expect(returns).toContain("الحقوق النظامية");
+ expect(returns).toContain("حقوقك النظامية");
  expect(localShopAnswer("كم رسوم الشحن؟","iq",[])).not.toContain("٢٨ ر.س");
 });
