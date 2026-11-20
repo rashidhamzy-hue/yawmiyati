@@ -7,7 +7,7 @@ import {useMemo,useState} from "react";
 import {ArrowLeft,ArrowRight,CheckCircle2,ImageOff,Package,Search,SlidersHorizontal} from "lucide-react";
 import {markets,type MarketCode} from "../markets";
 import {createSyntheticCatalog,type SimCategory,type SimProduct} from "./fixtures";
-import {CATEGORY_TITLES,SIM_CATEGORIES,demoAvailability,demoListing,demoVariant,formatDemoMoney,type DemoSort,type DemoStockFilter} from "./product-experience";
+import {CATEGORY_TITLES,SIM_CATEGORIES,demoAvailability,demoListing,formatDemoMoney,type DemoSort,type DemoStockFilter} from "./product-experience";
 
 const countryNames:Record<MarketCode,string>={sa:"السعودية",ae:"الإمارات",om:"عُمان",eg:"مصر",iq:"العراق"};
 const labels=["الواجهة","من زاوية أخرى","التفاصيل"] as const;
