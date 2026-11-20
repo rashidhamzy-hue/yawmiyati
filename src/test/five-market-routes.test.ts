@@ -7,5 +7,8 @@ it("registers preview and details for all five market codes",()=>{
  for(const market of ["sa","ae","om","eg","iq"]){
   expect(router.matchRoutes("/"+market).at(-1)?.routeId).not.toBe(rootRouteId);
   expect(router.matchRoutes("/"+market+"/p/demo").at(-1)?.routeId).not.toBe(rootRouteId);
+  expect(router.matchRoutes("/"+market+"/search").at(-1)?.routeId).not.toBe(rootRouteId);
+  expect(router.matchRoutes("/"+market+"/c/home").at(-1)?.routeId).not.toBe(rootRouteId);
+  expect(router.matchRoutes("/"+market+"/info/help").at(-1)?.routeId).not.toBe(rootRouteId);
  }
 });
