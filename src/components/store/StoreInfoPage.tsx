@@ -4,6 +4,8 @@ import type {MarketCode} from "@/lib/store/markets";
 import {ChevronDown,HelpCircle,ShieldCheck,Truck,FileText,ArrowLeft,Search,LockKeyhole,MessageCircle} from "lucide-react";
 import {img} from "@/lib/store/images";
 import {saudiShippingPage} from "@/lib/store/saudi-commerce-content";
+import {marketPolicyPages} from "@/lib/store/market-policy-pages";
+import {marketExperience} from "@/lib/store/market-experience";
 export type InfoTopic="help"|"privacy"|"terms"|"shipping-returns";
 const visuals:Record<InfoTopic,{hero:string;alt:string;accent:string;secondary:string;eyebrow:string}>={
  help:{hero:img["cat-kitchen"],alt:"ركن للقهوة بتفاصيل دافئة",accent:img["cat-home"],secondary:img["cat-beauty"],eyebrow:"مركز مساعدة يومياتي"},
@@ -38,13 +40,14 @@ const chapters={
  ]},
 } as const;
 export function StoreInfoPage({market,topic}:{market:MarketCode;topic:InfoTopic}){
- const page=topic==="shipping-returns"&&market==="sa"?saudiShippingPage:chapters[topic];
+ const page=topic==="shipping-returns"?(market==="sa"?saudiShippingPage:marketPolicyPages[market]):chapters[topic];
  const v=visuals[topic];
+ const heroPhoto=topic==="shipping-returns"&&market!=="sa"?img[marketExperience[market].heroImage]:v.hero;
  return <StoreFrame market={market}>
   <div className="mx-auto max-w-7xl px-4 pb-20 pt-6 sm:px-6 lg:px-8">
    <nav aria-label="مسار الصفحة" className="mb-5 text-sm text-muted-foreground"><a className="hover:text-primary" href={"/"+market}>يومياتي</a><span aria-hidden="true"> / </span>{page.title}</nav>
    <section className="relative isolate flex min-h-[285px] items-center overflow-hidden rounded-[2rem] bg-foreground sm:min-h-[350px]">
-    <img src={v.hero} alt={v.alt} className="absolute inset-0 h-full w-full object-cover" fetchPriority="high"/>
+    <img src={heroPhoto} alt={v.alt} className="absolute inset-0 h-full w-full object-cover" fetchPriority="high"/>
     <div className="absolute inset-0 bg-gradient-to-l from-black/80 via-black/50 to-black/20"/>
     <div className="relative max-w-2xl px-7 py-12 text-white sm:px-12">
      <p className="text-sm font-bold text-[#f5dab1]">{v.eyebrow}</p>
@@ -79,7 +82,7 @@ export function StoreInfoPage({market,topic}:{market:MarketCode;topic:InfoTopic}
      </div>
      <div className="mt-5 rounded-[1.5rem] border bg-muted/40 p-5 text-sm leading-7 text-muted-foreground">
       <ShieldCheck className="mb-2 h-5 w-5 text-primary"/>
-      {topic==="privacy"||topic==="terms"?"هذه معلومات توضيحية عن النسخة الحالية. تعتمد سياسة البيع والخصوصية النهائية على المتطلبات القانونية لبلدك ويجب اعتمادها قبل تفعيل المعاملات.":topic==="shipping-returns"&&market==="sa"?"الأرقام المذكورة مرجعية من معلومات تشغيلية مقدّمة، وليست وعداً نهائياً أو بديلاً عن حقوق المستهلك. الطلبات غير مفعّلة حالياً، وستُعتمد الشروط النهائية قبل إطلاق الشراء.":"قد تختلف معلومات المنتجات والخدمات حسب البلد. لا نعرض أسعار شحن أو وعود توصيل أو حقوق إرجاع غير مؤكدة."}
+      {topic==="privacy"||topic==="terms"?"هذه معلومات توضيحية عن النسخة الحالية. تعتمد سياسة البيع والخصوصية النهائية على المتطلبات القانونية لبلدك ويجب اعتمادها قبل تفعيل المعاملات.":topic==="shipping-returns"&&market==="sa"?"الأرقام المذكورة مرجعية من معلومات تشغيلية مقدّمة، وليست وعداً نهائياً أو بديلاً عن حقوق المستهلك. الطلبات غير مفعّلة حالياً، وستُعتمد الشروط النهائية قبل إطلاق الشراء.":"الأرقام الواردة مبنية على معلومات تشغيلية مقدّمة وغير مفعّلة للبيع بعد، وقد تختلف بعد التحقق. حقوق المستهلك القانونية وشروط البائع النهائية تُعتمد قبل قبول الطلبات."}
      </div>
      <div className="mt-8 flex flex-wrap gap-3 text-sm">{([{label:"مركز المساعدة",id:"help"},{label:"الدفع والتوصيل",id:"shipping-returns"},{label:"الخصوصية",id:"privacy"},{label:"الشروط",id:"terms"}] as const).filter(x=>x.id!==topic).map(x=><a key={x.id} href={"/"+market+"/info/"+x.id} className="inline-flex min-h-11 items-center rounded-full border bg-card px-4 font-bold text-primary hover:bg-primary-soft">{x.label}</a>)}</div>
     </div>
