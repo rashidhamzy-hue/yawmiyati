@@ -1,3 +1,5 @@
+> **20 Nov 2026 superseding update:** The old temporary TasteWP/WooCommerce Saudi integration is RETIRED. The nine staging import candidates have been cleared, the Supabase Edge endpoint is a JWT-protected 410 tombstone, and the old Cloudflare supplier Worker has been deleted. All supplier credentials must be replaced on the new hosting; do not reconnect or reuse the temporary source. The full original Lovable visual storefront was restored in PR #47. All five market storefronts are to be provisioned together, with separate country configurations, supplier credentials and hosting environments. Do not spend on hosting or activate orders without owner approval.
+
 # CLAUDE.md — Yawmiyati engineering handoff
 
 ## Read first

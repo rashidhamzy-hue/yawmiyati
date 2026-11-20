@@ -37,7 +37,7 @@ Supabase Edge Function supplier credentials are configured server-side only. Nev
 
 ## What is already validated
 
-Nine Saudi real supplier product candidates were staged via owner-authenticated `sa-supplier-sync`; database migrations and rollback SQL fixtures verify draft creation, release gating and AI-job constraints; all five release flags remain off. CI test success does not mean the React owner UI or updated Cloudflare Worker has been deployed.
+The original nine Saudi test candidates were imported during integration proof, then deleted at the owner’s request on 20 Nov 2026. The legacy `sa-supplier-sync` endpoint has been retired (HTTP 410); database migrations and rollback SQL fixtures verify draft creation, release gating and AI-job constraints; all five release flags remain off. CI test success does not mean the React owner UI or updated Cloudflare Worker has been deployed.
 
 ## Handoff and operational constraints
 
