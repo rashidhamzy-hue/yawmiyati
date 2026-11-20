@@ -3,6 +3,7 @@ import {ArrowLeft,ArrowUpLeft,ChevronDown,Check,Heart,Instagram,Menu,Package,Sea
 import {img} from "@/lib/store/images";
 import {ShoppingAssistant} from "@/components/store/ShoppingAssistant";
 import {StoreHeader,StoreFooter} from "@/components/store/StoreChrome";
+import {relatedVerifiedProducts} from "@/lib/store/verified-merchandising";
 import {markets,type MarketCode} from "@/lib/store/markets";
 import {fetchPublicCatalog,fetchPublicDetail,formatListingPrice,type PublicListing,type PublicDetail} from "@/lib/store/public-catalog";
 
@@ -47,7 +48,7 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
  useEffect(()=>{
   if(!origin||!key)return;
   let active=true;setError(false);setRows(null);setDetail(null);
-  const task=slug?fetchPublicDetail(origin,key,market,slug).then(d=>{if(active){setDetail(d);setRows([]);}})
+  const task=slug?Promise.all([fetchPublicDetail(origin,key,market,slug),fetchPublicCatalog(origin,key,market).catch(()=>[])]).then(([d,items])=>{if(active){setDetail(d);setRows(items);}})
    :fetchPublicCatalog(origin,key,market).then(data=>{if(active)setRows(data);});
   task.catch(()=>{if(active)setError(true);});
   return()=>{active=false};
@@ -91,7 +92,7 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
     {!origin||!key?<EmptyProducts title="تعرّفي على مجموعات يومياتي" message="اكتشفي الأفكار والأقسام أعلاه. تظهر هنا المنتجات التي تتوافر لها بيانات معتمدة."/>
     :error?<div role="alert" className="mt-8 rounded-3xl border bg-card p-8 text-center"><h3 className="font-bold">تعذّر تحميل المنتجات في الوقت الحالي</h3><button type="button" className="btn-outline mt-4" onClick={()=>setAttempt(v=>v+1)}>إعادة المحاولة</button></div>
     :rows===null?<div role="status" aria-live="polite" className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">{Array.from({length:4},(_,i)=><div key={i} className="animate-pulse rounded-2xl border bg-card p-3"><div className="aspect-square rounded-xl bg-muted"/><div className="mt-3 h-4 w-3/4 rounded bg-muted"/><div className="mt-3 h-4 w-1/2 rounded bg-muted"/></div>)}</div>
-    :slug?detail?<div className="mt-8 grid gap-8 rounded-[2rem] border bg-card p-5 shadow-soft sm:p-8 lg:grid-cols-2"><div className="grid aspect-square place-items-center rounded-[1.5rem] bg-muted"><Package className="h-20 w-20 text-primary/25" aria-hidden="true"/></div><div className="flex flex-col justify-center gap-5"><a href={path} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"><ArrowLeft className="h-4 w-4 rotate-180"/>العودة إلى يومياتي</a><h2 className="font-display text-3xl font-extrabold leading-tight">{detail.title}</h2><p className="text-3xl font-extrabold text-primary">{formatListingPrice(detail,market)}</p><p className="whitespace-pre-line text-sm leading-8">{detail.description}</p><div className="rounded-xl bg-muted px-4 py-3 text-sm"><Check className="ml-2 inline h-4 w-4 text-primary"/>تُعرض المعلومات الحالية للمنتج. إتمام الطلب يتطلب تفعيل خدمة الشراء والتحقق من توافره.</div></div></div>
+    :slug?detail?<div className="mt-8"><div className="grid gap-8 rounded-[2rem] border bg-card p-5 shadow-soft sm:p-8 lg:grid-cols-2"><div className="grid aspect-square place-items-center rounded-[1.5rem] bg-muted"><Package className="h-20 w-20 text-primary/25" aria-hidden="true"/></div><div className="flex flex-col justify-center gap-5"><a href={path} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"><ArrowLeft className="h-4 w-4 rotate-180"/>العودة إلى يومياتي</a><h2 className="font-display text-3xl font-extrabold leading-tight">{detail.title}</h2><p className="text-3xl font-extrabold text-primary">{formatListingPrice(detail,market)}</p><p className="whitespace-pre-line text-sm leading-8">{detail.description}</p><div className="rounded-xl bg-muted px-4 py-3 text-sm"><Check className="ml-2 inline h-4 w-4 text-primary"/>تُعرض المعلومات الحالية للمنتج. إتمام الطلب يتطلب تفعيل خدمة الشراء والتحقق من توافره.</div></div></div><div className="mt-8"><h3 className="mb-4 font-display text-xl font-extrabold">اختيارات أخرى من يومياتي</h3>{relatedVerifiedProducts(detail,rows).length?<div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{relatedVerifiedProducts(detail,rows).map(item=><ShopCard key={item.listing_id} item={item} market={market}/>)}</div>:<p className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">تصفحي المزيد من الأقسام والمنتجات المعتمدة في يومياتي.</p>}</div></div>
     :<EmptyProducts title="هذا المنتج غير متاح حالياً" message="قد تتغير حالة المنتجات بحسب اعتماد البيانات والتوافر."/>
     :matching.length?<div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">{matching.map(item=><ShopCard key={item.listing_id} item={item} market={market}/>)}</div>
     :<EmptyProducts title={rows.length?"لم نجد منتجات مطابقة":"اختيارات تستحق الاكتشاف"} message={rows.length?"جرّبي البحث بكلمة مختلفة.":"تصفّحي الأقسام الملهمة أعلاه. لا توجد منتجات معتمدة معروضة حالياً."}/>}
