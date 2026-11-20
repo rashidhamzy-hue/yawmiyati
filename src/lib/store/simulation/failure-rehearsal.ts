@@ -1,6 +1,6 @@
 /**
  * Milestone 3B — controlled adversarial OFFLINE rehearsal.
- * Every observation is synthetic. A PASS means a failure was DETECTED and
+ * Browser-safe scenarios only. Signed HMAC tampering is tested separately\n * in Node CI, never imported into the localhost browser bundle.\n * Every observation is synthetic. A PASS means a failure was DETECTED and
  * isolated, never that a supplier/order/payment/release was verified.
  * No environment access, network, persistence or live mutations.
  */
@@ -10,7 +10,6 @@ import {evaluateCodEvidence} from "../pricing";
 import {compareOrderSnapshots} from "../reconciliation";
 import {createOfflineCommerceSandbox} from "./offline-commerce";
 import {createSimulatedOutbox} from "./outbox";
-import {createSignedSyntheticEvent,acceptSignedSyntheticEvent} from "./signed-webhook";
 import {SIMULATION_MODE} from "./fixtures";
 import {fiveMarketReadiness} from "./offline-launch-readiness";
 
@@ -21,7 +20,6 @@ export const FAILURE_SCENARIOS=[
  "failed_order_lifecycle",
  "retry_then_dead_letter",
  "reconciliation_divergence",
- "tampered_webhook",
 ] as const;
 export type FailureScenario=typeof FAILURE_SCENARIOS[number];
 export type ScenarioOutcome={
@@ -122,17 +120,7 @@ function scenario(market:MarketCode,id:FailureScenario):boolean {
     unexpected.length===1&&unexpected[0].kind==="unmapped_remote"&&
     rejects(()=>compareOrderSnapshots([{id,status:"failed"},{id,status:"failed"}],[]),"Duplicate local order");
   }
-  case "tampered_webhook":{
-   const secret="offline-test-secret-strong";
-   const event=createSignedSyntheticEvent({mode:SIMULATION_MODE,market,
-    eventId:"tampered-"+market,orderId:"SIM-"+market.toUpperCase()+"-ORDER-00001",
-    status:"confirmed",secret});
-   const outbox=createSimulatedOutbox();
-   const changed={...event,body:new TextEncoder().encode("{}")};
-   const refused=rejects(()=>acceptSignedSyntheticEvent({
-    mode:SIMULATION_MODE,expectedMarket:market,event:changed,secret,outbox,nowMs:0,
-   }),"invalid_signature");
-   return refused&&outbox.snapshot().jobs.length===0;
+
   }
  }
 }
