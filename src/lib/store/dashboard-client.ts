@@ -7,6 +7,13 @@ export interface CatalogReadiness {woo_product_id:number;listing_id:string|null;
 export interface CatalogRow { listing_id:string; slug:string; title:string; listing_status:string; variant_count:number; available_count:number; }
 export interface Recommendation {id:string;kind:string;rationale:string;state:string;proposal:unknown;created_at:string;}
 export interface AiPolicy {enabled:boolean;daily_budget_microusd:number;auto_pricing_enabled:boolean;auto_publish_enabled:boolean;}
+export interface MarketPerformance {
+ store:MarketCode;currency:string;window_days:number;
+ orders:{recorded:number;delivered:number;failed:number;cancelled:number;returned:number;unknown:number;booked_total_minor:string};
+ ledger:{entries:number;recorded_net_minor:string};
+ marketing_observations:{records:number;impressions:string;clicks:string;submitted_orders:string;delivered_orders:string;spend_minor:string};
+ warnings:string[];
+}
 export interface DashboardSummary {
  store: MarketCode; currency: string; orders: number; customers: number;
  order_statuses: Record<string,number>; recorded_net_minor: string;
@@ -68,6 +75,12 @@ export function dashboardClient(origin: string, publicKey: string, request: type
    },
    async catalog(token:string,market:MarketCode,offset=0):Promise<CatalogRow[]> {
      return call("/rest/v1/rpc/dashboard_catalog",{p_store:market,p_limit:50,p_offset:offset},token);
+   },
+   async performance(token:string,market:MarketCode,days=30):Promise<MarketPerformance>{
+     if(!Number.isSafeInteger(days)||days<1||days>365)throw Error("Invalid period");
+     const result=await call("/rest/v1/rpc/dashboard_market_performance",{p_store:market,p_days:days},token);
+     if(!result||result.store!==market||!Array.isArray(result.warnings))throw Error("Invalid report");
+     return result;
    },
    async summary(token:string,market:MarketCode):Promise<DashboardSummary> {
      return call("/rest/v1/rpc/dashboard_summary",{p_store:market},token);
