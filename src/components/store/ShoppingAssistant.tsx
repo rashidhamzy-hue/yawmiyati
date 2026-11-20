@@ -51,7 +51,7 @@ export function ShoppingAssistant({market,products,productPage=false}:{market:Ma
   if(!controller.signal.aborted)setBusy(false);
  }
  function submit(e:FormEvent){e.preventDefault();void send(draft);}
- return <div dir="rtl" className={"fixed left-3 z-[70] sm:bottom-6 sm:left-6 "+(productPage?"bottom-24":"bottom-4")}>
+ return <div dir="rtl" className={"fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] left-3 z-[70] sm:bottom-6 sm:left-6 "+(productPage?"":"")}>
   {open&&<section role="dialog" aria-label="مساعد يومياتي للتسوق" aria-modal="false" onKeyDown={e=>{if(e.key==="Escape")setOpen(false)}} className="mb-3 flex h-[min(66dvh,550px)] w-[min(calc(100vw-24px),390px)] flex-col overflow-hidden rounded-[1.6rem] border border-border bg-card shadow-2xl sm:h-[min(74vh,580px)]">
    <header className="flex shrink-0 items-center gap-3 bg-primary p-4 text-primary-foreground"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-white/15"><Bot className="h-6 w-6"/></span><div className="min-w-0 flex-1"><h2 className="text-base font-extrabold">مساعد يومياتي الذكي</h2><p className="mt-0.5 text-xs text-white/80">يساعدك في استكشاف {countryName(market)} والمنتجات</p></div><button type="button" onClick={()=>setOpen(false)} className="tap grid place-items-center rounded-full hover:bg-white/15" aria-label="إغلاق المساعد"><X className="h-5 w-5"/></button></header>
    <div className="flex items-center gap-2 border-b px-4 py-3 text-[11px] leading-5 text-muted-foreground"><ShieldCheck className="h-4 w-4 shrink-0 text-primary"/>الإجابات تعتمد على المعلومات المتاحة. لا تشاركي معلومات شخصية أو بيانات الدفع.</div>
