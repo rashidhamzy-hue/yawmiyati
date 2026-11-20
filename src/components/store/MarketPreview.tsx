@@ -2,6 +2,7 @@ import {useEffect,useState} from "react";
 import {ArrowLeft,ArrowUpLeft,ChevronDown,Check,Heart,Instagram,Menu,Package,Search,ShieldCheck,Sparkles,X, type LucideIcon} from "lucide-react";
 import {img} from "@/lib/store/images";
 import {ShoppingAssistant} from "@/components/store/ShoppingAssistant";
+import {StoreHeader,StoreFooter} from "@/components/store/StoreChrome";
 import {markets,type MarketCode} from "@/lib/store/markets";
 import {fetchPublicCatalog,fetchPublicDetail,formatListingPrice,type PublicListing,type PublicDetail} from "@/lib/store/public-catalog";
 
@@ -40,7 +41,7 @@ function ShopCard({item,market}:{item:PublicListing;market:MarketCode}){
 export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{market:MarketCode;slug?:string;searchOnly?:boolean;initialSearch?:string}){
  const [rows,setRows]=useState<PublicListing[]|null>(null),[detail,setDetail]=useState<PublicDetail|null>(null);
  const [term,setTerm]=useState(initialSearch),[error,setError]=useState(false),[attempt,setAttempt]=useState(0);
- const [menu,setMenu]=useState(false);
+ 
  const path="/"+market;
  const shopName="يومياتي "+names[market];
  useEffect(()=>{
@@ -55,21 +56,7 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
  return <div dir="rtl" className="min-h-screen overflow-x-clip bg-background text-foreground">
   <a href="#main-content" className="skip-link">تخطي إلى المحتوى</a>
   <div className="bg-primary px-4 py-2.5 text-center text-[11px] font-bold tracking-wide text-primary-foreground sm:text-xs">اختيارات يومية للبيت والجمال والعناية · {names[market]}</div>
-  <header className="sticky top-0 z-50 border-b border-border/70 bg-background/95 backdrop-blur-xl">
-   <div className="mx-auto flex min-h-[76px] max-w-7xl items-center gap-5 px-4 sm:px-6 lg:px-8">
-    <a href={path} className="shrink-0 font-display text-[1.85rem] font-extrabold tracking-tight text-primary" aria-label={shopName+" — الرئيسية"}>يومياتي<span className="text-gold">.</span></a>
-    <span className="hidden rounded-full border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground sm:inline-flex">{names[market]}</span>
-    <nav aria-label="التنقل الرئيسي" className="mr-6 hidden items-center gap-7 text-sm font-bold lg:flex">
-     <a href={path+"#discover"} className="transition-colors hover:text-primary">اكتشفي الأقسام</a><a href={path+"#collection"} className="transition-colors hover:text-primary">المنتجات</a><a href={path+"#story"} className="transition-colors hover:text-primary">حكايتنا</a><a href={path+"#questions"} className="transition-colors hover:text-primary">الأسئلة الشائعة</a>
-    </nav>
-    <div className="mr-auto flex items-center gap-2">
-     <span className="hidden rounded-full bg-primary-soft px-3 py-2 text-xs font-extrabold text-primary sm:inline-flex">{markets[market].currency}</span>
-     <a href={path+"#collection"} aria-label="ابحثي في المنتجات" className="tap grid place-items-center rounded-full border border-border bg-card hover:border-primary"><Search className="h-5 w-5"/></a>
-     <button type="button" className="tap grid place-items-center rounded-full border border-border bg-card lg:hidden" onClick={()=>setMenu(v=>!v)} aria-label={menu?"إغلاق القائمة":"فتح القائمة"} aria-expanded={menu} aria-controls="mobile-yawmiyati-menu">{menu?<X className="h-5 w-5"/>:<Menu className="h-5 w-5"/>}</button>
-    </div>
-   </div>
-   {menu&&<nav id="mobile-yawmiyati-menu" aria-label="قائمة الجوال" className="grid gap-0 border-t bg-card px-5 py-2 text-sm font-bold lg:hidden">{[["اكتشفي الأقسام","#discover"],["المنتجات","#collection"],["حكايتنا","#story"],["الأسئلة الشائعة","#questions"]].map(([label,hash])=><a key={hash} href={path+hash} onClick={()=>setMenu(false)} className="min-h-12 border-b border-border/50 py-3 last:border-0">{label}</a>)}</nav>}
-  </header>
+  <StoreHeader market={market}/>
 
   <main id="main-content">
    {!slug&&!searchOnly&&<>
@@ -99,8 +86,8 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
      <div className="group relative min-h-[340px] overflow-hidden rounded-[1.75rem]"><img src={img["cat-home"]} alt="تفاصيل منزلية دافئة" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"/><div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"/><div className="absolute bottom-0 p-7 text-white"><p className="text-xs font-bold text-white/80">بيت يشبهك</p><h3 className="mt-2 font-display text-2xl font-extrabold">مساحات لها روح</h3></div></div>
     </section>
    </>}
-   <section id="collection" className="mx-auto max-w-7xl scroll-mt-32 px-4 pb-16 pt-20 sm:px-6 lg:px-8">
-    <div className="flex flex-wrap items-end justify-between gap-5"><SectionIntro eyebrow={shopName} title={slug?"تفاصيل المنتج":searchOnly?"ابحثي في منتجات يومياتي":"اختيارات يومياتي"} description={slug?undefined:"تصفّحي استكشفي المنتجات وتعرّفي على تفاصيلها بوضوح. تظهر المعلومات والأسعار الفعلية فقط عندما تتوفر بيانات موثوقة."}/>{!slug&&<label className="relative block w-full sm:w-auto"><Search className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"/><input type="search" className="field w-full pr-12 sm:w-72" value={term} onChange={e=>setTerm(e.target.value)} placeholder="ابحثي بين المنتجات" aria-label="بحث المنتجات المعتمدة"/></label>}</div>
+   <section id="collection" className={"mx-auto max-w-7xl scroll-mt-32 px-4 pb-16 sm:px-6 lg:px-8 "+(searchOnly||slug?"pt-8 sm:pt-12":"pt-20")}>
+    <div className="flex flex-wrap items-end justify-between gap-5"><SectionIntro eyebrow={shopName} title={slug?"تفاصيل المنتج":searchOnly?"ابحثي في منتجات يومياتي":"اختيارات يومياتي"} description={slug?undefined:"تصفّحي المنتجات وتعرّفي على تفاصيلها بوضوح. تظهر المعلومات والأسعار الفعلية فقط عندما تتوفر بيانات موثوقة."}/>{!slug&&<label className="relative block w-full sm:w-auto"><Search className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"/><input type="search" className="field w-full pr-12 sm:w-72" value={term} onChange={e=>setTerm(e.target.value)} placeholder="ابحثي بين المنتجات" aria-label="بحث المنتجات المعتمدة"/></label>}</div>
     {!origin||!key?<EmptyProducts title="تعرّفي على مجموعات يومياتي" message="اكتشفي الأفكار والأقسام أعلاه. تظهر هنا المنتجات التي تتوافر لها بيانات معتمدة."/>
     :error?<div role="alert" className="mt-8 rounded-3xl border bg-card p-8 text-center"><h3 className="font-bold">تعذّر تحميل المنتجات في الوقت الحالي</h3><button type="button" className="btn-outline mt-4" onClick={()=>setAttempt(v=>v+1)}>إعادة المحاولة</button></div>
     :rows===null?<div role="status" aria-live="polite" className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">{Array.from({length:4},(_,i)=><div key={i} className="animate-pulse rounded-2xl border bg-card p-3"><div className="aspect-square rounded-xl bg-muted"/><div className="mt-3 h-4 w-3/4 rounded bg-muted"/><div className="mt-3 h-4 w-1/2 rounded bg-muted"/></div>)}</div>
@@ -114,8 +101,8 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
     <section id="questions" className="mx-auto grid max-w-7xl scroll-mt-32 gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[.75fr_1.25fr] lg:px-8"><div><SectionIntro eyebrow="كل ما تحتاجين معرفته" title="أسئلة تتكرر كثيراً" description="نفضّل الإجابات الواضحة قبل بدء الطلبات. هنا تجدين الإجابات الأساسية عن تجربة يومياتي."/><p className="mt-5 text-xs text-muted-foreground">معلومات الدفع والتوصيل تختلف حسب البلد وتظهر بعد التحقق منها.</p></div><div className="space-y-3">{questions.map((q,i)=><details key={q.question} className="group rounded-2xl border bg-card px-5 py-4" open={undefined}><summary className="flex min-h-8 cursor-pointer list-none items-center justify-between gap-3 font-extrabold marker:hidden">{q.question}<ChevronDown className="h-5 w-5 shrink-0 text-primary transition-transform group-open:rotate-180" aria-hidden="true"/></summary><p className="pb-2 pt-3 text-sm leading-8 text-muted-foreground">{q.answer}</p></details>)}</div></section>
    </>}
   </main>
-  <ShoppingAssistant market={market} products={rows??[]}/>
-  <footer className="bg-foreground text-background"><div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.35fr_1fr_1fr] lg:px-8"><div><a href={path} className="font-display text-3xl font-extrabold">يومياتي<span className="text-gold">.</span></a><p className="mt-4 max-w-xs text-sm leading-8 text-white/70">من الإلهام إلى التفاصيل اليومية الجميلة. تجربة تسوّق عربية نعمل على تجهيزها بعناية.</p><span className="mt-4 inline-block rounded-full border border-white/20 px-4 py-2 text-xs text-white/80">اكتشفي يومياتي</span></div><nav aria-label="روابط المتجر"><h2 className="font-bold">استكشفي</h2><div className="mt-4 grid gap-3 text-sm text-white/70"><a href={path+"#discover"} className="hover:text-white">الأقسام</a><a href={path+"#collection"} className="hover:text-white">المنتجات</a><a href={path+"#story"} className="hover:text-white">حكايتنا</a><a href={path+"#questions"} className="hover:text-white">الأسئلة الشائعة</a></div></nav><nav aria-label="اختيار البلد"><h2 className="font-bold">بلدك</h2><div className="mt-4 grid grid-cols-2 gap-3 text-sm">{(Object.keys(names) as MarketCode[]).map(code=><a key={code} href={"/"+code} aria-current={code===market?"page":undefined} className={code===market?"font-extrabold text-white":"text-white/70 hover:text-white"}>{names[code]}</a>)}</div><p className="mt-5 text-xs text-white/60">العملة: {markets[market].currency}</p></nav></div><div className="border-t border-white/15 px-4 py-5 text-center text-xs text-white/60">© ٢٠٢٦ يومياتي · جميع الحقوق محفوظة.</div></footer>
+  <ShoppingAssistant market={market} products={rows??[]} productPage={Boolean(slug)}/>
+  <StoreFooter market={market}/>
  </div>;
 }
 function EmptyProducts({title,message}:{title:string;message:string}){
