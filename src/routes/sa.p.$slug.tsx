@@ -50,7 +50,7 @@ function ProductPage({p}:{p:NonNullable<ReturnType<typeof getProduct>>}) {
       <div className="mt-4 grid gap-8 md:grid-cols-2">
         <div>
           <div className="aspect-square overflow-hidden rounded-3xl bg-muted">
-            <img src={imageOf(p.gallery[active])} alt={p.name} width={900} height={900} className="h-full w-full object-cover" />
+            <img src={imageOf(p.gallery[active] ?? p.image)} alt={p.name} width={900} height={900} className="h-full w-full object-cover" />
           </div>
           {p.gallery.length > 1 && (
             <div className="mt-3 flex gap-2">

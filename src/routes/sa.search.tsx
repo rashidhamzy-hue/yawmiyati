@@ -5,7 +5,7 @@ import { products, getCategory } from "@/lib/store/catalog";
 import { ProductCard } from "@/components/store/ProductCard";
 
 export const Route = createFileRoute("/sa/search")({
-  validateSearch: (s: Record<string, unknown>) => ({ q: typeof s.q === "string" ? s.q : "" }),
+  validateSearch: (s: Record<string, unknown>) => ({ q: typeof s["q"] === "string" ? s["q"] : "" }),
   head: () => ({ meta: [{ title: "البحث | يومياتي" }, { name: "description", content: "ابحثي في منتجات يومياتي." }, { property: "og:title", content: "البحث | يومياتي" }, { property: "og:description", content: "ابحثي في منتجات يومياتي." }] }),
   component: SearchPage,
 });
