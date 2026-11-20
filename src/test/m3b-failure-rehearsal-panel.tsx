@@ -13,7 +13,6 @@ const titles:Record<FailureScenario,string>={
  failed_order_lifecycle:"فشل الطلب ومنع انتقال غير موثّق",
  retry_then_dead_letter:"إعادة المحاولة ثم قائمة الأخطاء النهائية",
  reconciliation_divergence:"اختلاف سجلات التسوية والطلبات",
- tampered_webhook:"رفض إشعار موقّع بعد التلاعب به",
 };
 const arabic:Record<MarketCode,string>={sa:"السعودية",ae:"الإمارات",om:"عُمان",eg:"مصر",iq:"العراق"};
 export function OfflineFailureRehearsalPanel(){
@@ -29,7 +28,7 @@ export function OfflineFailureRehearsalPanel(){
    <p className="mt-2 text-sm leading-7 text-muted-foreground">النجاح هنا يعني أن البرنامج كشف الخطأ التجريبي أو رفضه. لا يعني أن المورد متصل أو أن الدفع أو الشحن يعمل فعلياً.</p>
   </header>
   <div className="grid gap-3 sm:grid-cols-3">
-   <div className="rounded-xl bg-muted p-4"><p className="text-xs">الأعطال المكتشفة في 5 دول</p><p data-testid="failure-count" className="text-xl font-bold">{report.detected} / {report.total}</p></div>
+   <div className="rounded-xl bg-muted p-4"><p className="text-xs">أعطال المتصفح المكتشفة في 5 دول</p><p data-testid="failure-count" className="text-xl font-bold">{report.detected} / {report.total}</p></div>
    <div className="rounded-xl bg-muted p-4"><p className="text-xs">الصلاحية للإطلاق</p><p className="text-xl font-bold">ممنوع</p></div>
    <div className="rounded-xl bg-muted p-4"><p className="text-xs">طلبات / دفعات حقيقية</p><p className="text-xl font-bold">0</p></div>
   </div>
@@ -52,6 +51,7 @@ export function OfflineFailureRehearsalPanel(){
     <textarea data-testid="failure-matrix-export" readOnly value={exported} rows={8}
      className="mt-2 w-full rounded-xl border bg-background p-3 font-mono text-xs" />
    </label>}
+  <p className="text-xs text-muted-foreground">خمس تجارب إضافية لتوقيع HMAC الحقيقي تُفحص فقط في اختبارات Node داخل CI؛ لا تُشغّل في المتصفح.</p>
   <p className="text-xs text-muted-foreground">هذه نتائج اختبارات محلية فقط، ولا يمكن استخدامها لتجاوز أي من بوابات الإطلاق الأربعين.</p>
  </section>;
 }
