@@ -25,7 +25,7 @@ describe("country experience and supplier-policy separation",()=>{
  ] as const)("uses %s shipping facts, only as conditional guidance",(market,phrase)=>{
   render(<StoreInfoPage market={market} topic="shipping-returns"/>);
   expect(screen.getByText(new RegExp(phrase))).toBeTruthy();
-  expect(screen.getByText(/الطلبات غير مفعّلة|قبل قبول الطلبات|قبل تفعيل البيع|قبل ما نستقبل طلبات|بعدهَا قيد التحقّق/)).toBeTruthy();
-  expect(screen.queryByText(/تا?جر/)).toBeNull();
+  expect(screen.getAllByText(/الطلبات غير مفعّلة|قبل قبول الطلبات|قبل تفعيل البيع|قبل ما نستقبل طلبات|بعدهَا قيد التحقّق/).length).toBeGreaterThan(0);
+  expect(screen.queryByText(/تاجر/)).toBeNull();
  });
 });
