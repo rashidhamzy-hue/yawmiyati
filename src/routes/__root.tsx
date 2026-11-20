@@ -1,7 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
-  Link,
   createRootRouteWithContext,
   useRouter,
   HeadContent,
@@ -12,65 +11,34 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import {img} from "@/lib/store/images";
+import {ArrowRight,RefreshCw,Search} from "lucide-react";
 
 function NotFoundComponent() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Go home
-          </Link>
-        </div>
-      </div>
+ return <main dir="rtl" className="min-h-screen bg-background px-4 py-12 text-foreground sm:py-20">
+   <div className="mx-auto max-w-5xl overflow-hidden rounded-[2rem] border bg-card shadow-soft lg:grid lg:grid-cols-2">
+    <img src={img["cat-home"]} alt="تفاصيل منزلية دافئة" className="h-56 w-full object-cover lg:h-full" loading="lazy"/>
+    <div className="flex flex-col justify-center px-7 py-12 sm:px-12">
+     <a href="/sa" className="font-display text-2xl font-extrabold text-primary">يومياتي<span className="text-gold">.</span></a>
+     <p className="mt-7 text-sm font-bold text-primary">٤٠٤ · الصفحة غير موجودة</p>
+     <h1 className="mt-3 font-display text-3xl font-extrabold leading-tight sm:text-4xl">ضيعتي الطريق؟ خلّينا نرجعك للأشياء الحلوة</h1>
+     <p className="mt-4 text-sm leading-8 text-muted-foreground">يمكن الرابط تغيّر أو الصفحة ما عادت متاحة. تقدرين ترجعين ليومياتي أو تفتحين البحث مباشرة.</p>
+     <div className="mt-8 flex flex-wrap gap-3"><a href="/sa" className="btn-primary inline-flex items-center gap-2"><ArrowRight className="h-4 w-4"/>العودة للرئيسية</a><a href="/sa#discover" className="btn-outline inline-flex items-center gap-2"><Search className="h-4 w-4"/>تصفّحي الأقسام</a></div>
     </div>
-  );
+   </div>
+ </main>;
 }
-
-function ErrorComponent({ error, reset }: ErrorComponentProps) {
-  console.error(error);
-  const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Try again
-          </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            Go home
-          </a>
-        </div>
-      </div>
-    </div>
-  );
+function ErrorComponent({error,reset}:ErrorComponentProps){
+ const router=useRouter();
+ useEffect(()=>{reportLovableError(error,{boundary:"tanstack_root_error_component"});},[error]);
+ return <main dir="rtl" className="min-h-screen bg-background px-4 py-12 text-foreground sm:py-20">
+  <div className="mx-auto max-w-3xl rounded-[2rem] border bg-card p-7 text-center shadow-soft sm:p-14">
+   <a href="/sa" className="font-display text-2xl font-extrabold text-primary">يومياتي<span className="text-gold">.</span></a>
+   <h1 className="mt-8 font-display text-3xl font-extrabold">صار شيء غير متوقع</h1>
+   <p className="mt-4 text-sm leading-8 text-muted-foreground">ما قدرنا نعرض الصفحة الآن. جرّبي مرة ثانية، أو ارجعي للرئيسية. معلوماتك ما تحتاجين تعيدين إرسالها هنا.</p>
+   <div className="mt-7 flex flex-wrap justify-center gap-3"><button type="button" onClick={()=>{router.invalidate();reset();}} className="btn-primary inline-flex items-center gap-2"><RefreshCw className="h-4 w-4"/>إعادة المحاولة</button><a href="/sa" className="btn-outline inline-flex items-center gap-2">العودة إلى يومياتي</a></div>
+  </div>
+ </main>;
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -83,6 +51,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "يومياتي" },
       { name: "description", content: "يومياتي — تجربة عربية للمنزل والجمال والعناية" },
+      { name: "robots", content: import.meta.env.VITE_YAWMIYATI_PUBLIC_INDEXING_ENABLED==="true"?"index,follow":"noindex,nofollow" },
       
       { property: "og:title", content: "يومياتي" },
       { property: "og:description", content: "يومياتي — تجربة عربية للمنزل والجمال والعناية" },
