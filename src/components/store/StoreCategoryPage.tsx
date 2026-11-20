@@ -22,7 +22,7 @@ export function StoreCategoryPage({market,slug}:{market:MarketCode;slug:string})
     <div className="absolute inset-0 bg-gradient-to-l from-black/80 via-black/45 to-black/10"/>
     <div className="relative max-w-xl px-7 py-12 text-white sm:px-12"><p className="mb-4 inline-flex items-center gap-2 text-xs font-bold"><Sparkles className="h-4 w-4"/> اكتشفي عالم يومياتي</p>
       <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">{category.title}</h1><p className="mt-5 text-base leading-8 text-white/90">{category.subtitle}</p>
-      <a className="mt-7 inline-flex min-h-12 items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-foreground" href={"/"+market+"/search"}><Search className="h-4 w-4"/> ابحثي بين المنتجات</a>
+      <button type="button" className="mt-7 inline-flex min-h-12 items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-foreground transition-colors hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white" onClick={()=>document.dispatchEvent(new CustomEvent("yawmiyati:open-search"))}><Search className="h-4 w-4"/> ابحثي بين المنتجات</button>
     </div>
    </section>
    <section className="mt-12 grid gap-7 lg:grid-cols-[1fr_1.1fr]"><div><p className="text-xs font-extrabold text-primary">تفاصيل تلهمك</p><h2 className="mt-2 font-display text-3xl font-bold">اكتشفي ما يناسب يومك</h2><p className="mt-4 text-sm leading-8 text-muted-foreground">تجدين في يومياتي أفكاراً وصوراً تلهمك، بينما تُعرض المنتجات الفعلية فقط بمعلومات معتمدة. البحث يعرض المنتجات المتاحة على مستوى المتجر، ولا يدّعي تصنيف منتجات لم يتم التحقق من فئتها.</p></div>

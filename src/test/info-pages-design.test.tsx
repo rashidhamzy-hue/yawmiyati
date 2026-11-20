@@ -1,4 +1,4 @@
-import {render,screen} from "@testing-library/react";
+import {fireEvent,render,screen} from "@testing-library/react";
 import {expect,it,vi} from "vitest";
 vi.mock("../lib/store/staging-public-config",()=>({publicBrowserConfig:()=>({origin:"",key:""})}));
 import {StoreInfoPage} from "../components/store/StoreInfoPage";
@@ -6,7 +6,10 @@ it("displays a photographic hero and supporting editorial photos in help",()=>{
  const {container}=render(<StoreInfoPage market="sa" topic="help"/>);
  expect(screen.getByRole("heading",{name:"كيف نقدر نساعدك؟"})).toBeTruthy();
  expect(container.querySelectorAll("img").length).toBeGreaterThanOrEqual(3);
- expect(screen.getByRole("link",{name:/البحث في يومياتي/}).getAttribute("href")).toBe("/sa/search");
+ const eventSpy=vi.fn();
+ document.addEventListener("yawmiyati:open-search",eventSpy,{once:true});
+ fireEvent.click(screen.getByRole("button",{name:/البحث في يومياتي/}));
+ expect(eventSpy).toHaveBeenCalledTimes(1);
 });
 it("keeps styled policies with real navigation, without invented shipping promises",()=>{
  const {container}=render(<StoreInfoPage market="sa" topic="shipping-returns"/>);
