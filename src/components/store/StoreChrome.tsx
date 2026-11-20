@@ -7,7 +7,7 @@ import {marketExperience} from "@/lib/store/market-experience";
 import {markets,type MarketCode} from "@/lib/store/markets";
 
 const countryCodes:MarketCode[]=["sa","ae","om","eg","iq"];
-const navLinks=[["الأقسام","#discover"],["المنتجات","#collection"],["قصتنا","#story"],["الأسئلة الشائعة","#questions"]] as const;
+const navLinks=[["الأقسام","#discover"],["المنتجات","#collection"],["قصتنا","/story"],["الأسئلة الشائعة","#questions"]] as const;
 
 export function StoreHeader({market}:{market:MarketCode}){
  const [menu,setMenu]=useState(false);
@@ -48,7 +48,7 @@ export function StoreFooter({market}:{market:MarketCode}){
  return <><footer className="bg-foreground pb-16 text-background md:pb-0">
   <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.4fr_1fr_1fr] lg:px-8">
    <div><a href={path} className="font-display text-3xl font-extrabold">يومياتي<span className="text-gold">.</span></a><p className="mt-4 max-w-xs text-sm leading-8 text-white/75">{marketExperience[market].footerDescription}</p><p className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-2 text-xs text-white/80"><span role="img" aria-label={"علم "+identity.name}>{identity.flag}</span> {identity.fullName} <span className="text-white/40">|</span> {identity.currencyLabel}</p></div>
-   <nav aria-label="روابط المتجر"><h2 className="font-bold">اكتشفي يومياتي</h2><div className="mt-4 grid gap-3 text-sm text-white/75"><a href={path+"#discover"} className="hover:text-white">تسوقي حسب القسم</a><a href={path+"#collection"} className="hover:text-white">المنتجات</a><a href={path+"#story"} className="hover:text-white">قصتنا</a><a href={path+"/info/help"} className="hover:text-white">مركز المساعدة</a></div></nav>
+   <nav aria-label="روابط المتجر"><h2 className="font-bold">اكتشفي يومياتي</h2><div className="mt-4 grid gap-3 text-sm text-white/75"><a href={path+"#discover"} className="hover:text-white">تسوقي حسب القسم</a><a href={path+"#collection"} className="hover:text-white">المنتجات</a><a href={path+"/story"} className="hover:text-white">قصتنا</a><a href={path+"/info/help"} className="hover:text-white">مركز المساعدة</a></div></nav>
    <nav aria-label="السياسات والبلدان"><h2 className="font-bold">معلومات تهمك</h2><div className="mt-4 grid gap-3 text-sm text-white/75"><a href={path+"/info/shipping-returns"} className="hover:text-white">الدفع والتوصيل والاسترجاع</a><a href={path+"/info/privacy"} className="hover:text-white">سياسة الخصوصية</a><a href={path+"/info/terms"} className="hover:text-white">شروط الاستخدام</a></div><div className="mt-6 flex flex-wrap gap-3">{countryCodes.map(code=><a key={code} href={"/"+code} aria-label={"متجر "+marketIdentity[code].fullName} aria-current={market===code?"page":undefined} className={"rounded-full border px-2.5 py-1.5 text-lg transition-colors hover:border-white/70 "+(market===code?"border-white/80 bg-white/10":"border-white/20")}><span role="img" aria-label={"علم "+marketIdentity[code].name}>{marketIdentity[code].flag}</span></a>)}</div></nav>
   </div>
   <div className="border-t border-white/15 px-4 py-5 text-center text-xs text-white/65">© ٢٠٢٦ يومياتي. جميع الحقوق محفوظة.</div>
