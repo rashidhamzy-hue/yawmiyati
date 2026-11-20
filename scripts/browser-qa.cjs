@@ -16,11 +16,14 @@ async function main(){
    for(const width of viewports){
     const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:1});
     const label=market+"-"+width;
+    page.setDefaultTimeout(7000);
+    page.setDefaultNavigationTimeout(15000);
+    await page.route(/^https:\/\/(fonts\.googleapis\.com|fonts\.gstatic\.com)\//,route=>route.abort());
     try{
      const response=await page.goto(base+"/"+market,{waitUntil:"domcontentloaded",timeout:30000});
      assert.equal(response?.status(),200,label+": HTTP error");
      await page.locator("h1").first().waitFor({state:"visible",timeout:15000});
-     await page.evaluate(()=>document.fonts.ready);
+     await page.evaluate(()=>Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,2500))]));
      const overflow=await page.evaluate(()=>({
        page:document.documentElement.scrollWidth,
        viewport:document.documentElement.clientWidth,
