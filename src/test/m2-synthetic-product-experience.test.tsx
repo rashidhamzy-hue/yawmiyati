@@ -37,8 +37,8 @@ describe("Milestone 2 isolated product discovery engine",()=>{
   expect(demoVariant(p,p.variants[0].sku).stock).toBe("unknown");
   expect(demoVariant(p,p.variants[1].sku).stock).toBe("unavailable");
   expect(()=>demoVariant(p,"wrong")).toThrow("invalid_variant");
-  expect(formatDemoMoney("om",5000)).toContain("5");
-  expect(formatDemoMoney("iq",7000000)).toContain("7");
+  expect(formatDemoMoney("om",5000)).toContain("٥");
+  expect(formatDemoMoney("iq",7000000)).toContain("٧");
  });
 });
 describe("isolated owner-only simulation component",()=>{
