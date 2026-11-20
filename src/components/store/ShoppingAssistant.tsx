@@ -3,7 +3,7 @@ import {useEffect,useRef,useState,type FormEvent} from "react";
 import {Bot,MessageCircle,Send,ShieldCheck,Sparkles,X} from "lucide-react";
 import type {MarketCode} from "@/lib/store/markets";
 import type {PublicListing} from "@/lib/store/public-catalog";
-import {countryName,greeting,localShopAnswer,SHOP_ASSISTANT_SUGGESTIONS,type ShopMessage} from "@/lib/store/shop-assistant";
+import {countryName,marketGreeting,localShopAnswer,SHOP_ASSISTANT_SUGGESTIONS,type ShopMessage} from "@/lib/store/shop-assistant";
 
 const apiEnabled=import.meta.env.VITE_YAWMIYATI_SHOP_ASSISTANT_API_ENABLED==="true";
 const {origin:supabaseUrl,key:publishableKey}=publicBrowserConfig(import.meta.env.VITE_YAWMIYATI_SUPABASE_URL,import.meta.env.VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY);
@@ -25,13 +25,13 @@ async function requestAssistance(question:string,market:MarketCode,history:ShopM
 }
 export function ShoppingAssistant({market,products,productPage=false}:{market:MarketCode;products:readonly PublicListing[];productPage?:boolean}){
  const [open,setOpen]=useState(false);
- const [messages,setMessages]=useState<ShopMessage[]>([{role:"assistant",text:greeting}]);
+ const [messages,setMessages]=useState<ShopMessage[]>([{role:"assistant",text:marketGreeting(market)}]);
  const [draft,setDraft]=useState(""),[busy,setBusy]=useState(false);
  const scrollRef=useRef<HTMLDivElement>(null),inputRef=useRef<HTMLInputElement>(null),abortRef=useRef<AbortController|null>(null);
  useEffect(()=>{const el=scrollRef.current;if(el&&typeof el.scrollTo==="function")el.scrollTo({top:el.scrollHeight,behavior:"smooth"});},[messages,busy]);
  useEffect(()=>{if(open)inputRef.current?.focus();else {abortRef.current?.abort();setBusy(false);}},[open]);
  useEffect(()=>()=>abortRef.current?.abort(),[]);
- useEffect(()=>{setMessages([{role:"assistant",text:greeting}]);setDraft("")},[market]);
+ useEffect(()=>{setMessages([{role:"assistant",text:marketGreeting(market)}]);setDraft("")},[market]);
  async function send(value:string){
   const question=value.trim();
   if(!question||busy||question.length>500)return;
