@@ -30,3 +30,21 @@ export async function fetchPublicCatalog(origin:string,key:string,market:MarketC
  }
  throw Error("Catalog exceeds preview limit");
 }
+
+export type PublicDetail=PublicListing&{description:string};
+export function parsePublicDetail(data:unknown,market:MarketCode,requestedSlug:string):PublicDetail|null{
+ if(!Array.isArray(data)||data.length>1)throw Error("Invalid detail response");
+ if(!data.length)return null;
+ const row=data[0];
+ const [listing]=parsePublicListings([row],market);
+ if(listing.slug!==requestedSlug||typeof row.description!=="string"||row.description.length>10000)throw Error("Invalid detail response");
+ return {...listing,description:row.description};
+}
+export async function fetchPublicDetail(origin:string,key:string,market:MarketCode,slug:string,request:typeof fetch=fetch):Promise<PublicDetail|null>{
+ if(typeof slug!=="string"||!slug||slug.length>200||/[/?#\\]/.test(slug))throw Error("Invalid product slug");
+ const url=new URL(origin);
+ if(url.protocol!=="https:"||url.username||url.password||url.pathname!=="/"||url.search||url.hash||!key)throw Error("Invalid catalog configuration");
+ const response=await request(new URL("/rest/v1/rpc/public_catalog_detail",url),{method:"POST",headers:{apikey:key,"Content-Type":"application/json"},body:JSON.stringify({p_store:market,p_slug:slug}),cache:"no-store",redirect:"error",signal:AbortSignal.timeout(10000)});
+ if(!response.ok)throw Error("Product unavailable");
+ return parsePublicDetail(await response.json(),market,slug);
+}
