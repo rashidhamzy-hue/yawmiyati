@@ -5,7 +5,7 @@
  * simulation objects. This contract does not activate integrations.
  */
 import {z} from "zod";
-import {markets,type MarketCode} from "../markets";
+import {markets,type MarketCode} from "./markets";
 
 export const marketSchema=z.enum(["sa","ae","om","eg","iq"]);
 export const supplierProductSchema=z.object({
