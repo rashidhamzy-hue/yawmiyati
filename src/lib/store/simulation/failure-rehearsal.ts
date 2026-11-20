@@ -121,7 +121,6 @@ function scenario(market:MarketCode,id:FailureScenario):boolean {
     rejects(()=>compareOrderSnapshots([{id,status:"failed"},{id,status:"failed"}],[]),"Duplicate local order");
   }
 
-  }
  }
 }
 export function runOfflineFailureMatrix():FailureMatrix {
