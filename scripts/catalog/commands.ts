@@ -4,13 +4,13 @@ import { mkdirSync, readFileSync, writeFileSync, realpathSync, existsSync, readd
 import { resolve, relative, sep, isAbsolute } from "node:path";
 import { analyze, editorial, type Snapshot } from "./workspace";
 import { reviewBoard } from "./board";
-import { unpackWoo } from "./woo-snapshot";
+import { unpackWoo, refreshWoo } from "./woo-snapshot";
 import { sampleSnapshot } from "./demo";
 import { demoDate } from "../../src/lib/store/offer-selection-demo";
 import { markets } from "../../src/lib/store/markets";
 
 const [command, directory, ...args] = process.argv.slice(2);
-if (!directory || !["demo","woo","research","review","board","approve","revoke","draft","batch-approve","batch-draft"].includes(command)) throw Error("Usage: catalog <demo|woo|research|review|board|approve|revoke|draft|batch-approve|batch-draft> <workspace> [market SKU revision]");
+if (!directory || !["demo","woo","refresh","research","review","board","approve","revoke","draft","batch-approve","batch-draft"].includes(command)) throw Error("Usage: catalog <demo|woo|refresh|research|review|board|approve|revoke|draft|batch-approve|batch-draft> <workspace> [market SKU revision]");
 const root=resolve(directory), path=(name:string)=>resolve(root,name);
 function writeDraft(name:string,data:string) {
   const temp=path("draft-"+randomUUID()+".tmp");
@@ -32,15 +32,31 @@ if(command==="demo"){
   analyze(snapshot,new Date().toISOString());
   writeFileSync(path("catalog.json"),JSON.stringify(snapshot,null,2),{flag:"wx"});
   console.log("Private Woo snapshot written. Add verified economics, research and content evidence before selection.");
+} else if(command==="refresh"){
+  const db=new DatabaseSync(path("owner.sqlite"));
+  try {
+    db.exec("PRAGMA busy_timeout=5000; BEGIN IMMEDIATE");
+    const previous=readFileSync(path("catalog.json"),"utf8");
+    const {snapshot,changes}=refreshWoo(JSON.parse(previous),JSON.parse(readFileSync(path("woo-pages.json"),"utf8")));
+    analyze(snapshot,new Date().toISOString());
+    const archive=path("catalog-history");
+    mkdirSync(archive,{recursive:true,mode:0o700});
+    const backup=resolve(archive,createHash("sha256").update(previous).digest("hex")+".json");
+    if(!existsSync(backup))writeDraft(backup,previous);
+    writeDraft(path("catalog.json"),JSON.stringify(snapshot,null,2));
+    db.exec("COMMIT");
+    console.log(JSON.stringify({changes,backup},null,2));
+  } finally {db.close();}
 } else {
-  const snapshot:Snapshot=JSON.parse(readFileSync(path("catalog.json"),"utf8"));
+  const original=readFileSync(path("catalog.json"),"utf8");
+  const snapshot:Snapshot=JSON.parse(original);
   const inbox=path("evidence");
   if(existsSync(inbox)){
     for(const name of readdirSync(inbox).filter(n=>n.endsWith(".json")).sort()){
       const sample=JSON.parse(readFileSync(resolve(inbox,name),"utf8"));
       const store=snapshot.stores.find(s=>s.market===sample.market);
       const matches=store?.records.filter(r=>r.productKey===sample.productKey)??[];
-      if(!matches.length)throw Error("Unmatched evidence: "+name);
+      if(!matches.length){console.error("Unused evidence for an absent product: "+name);continue;}
       for(const record of matches){
         if(sample.metric==="search_interest_index")record.demand.push(sample);
         else if(typeof sample.seller==="string" && typeof sample.currency==="string")record.comparisons.push(sample);
@@ -78,6 +94,7 @@ if(command==="demo"){
     try {
       db.exec("PRAGMA busy_timeout=5000; CREATE TABLE IF NOT EXISTS decisions (id INTEGER PRIMARY KEY, market TEXT NOT NULL, sku TEXT NOT NULL, revision TEXT NOT NULL, decision TEXT NOT NULL, recorded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)");
       db.exec("BEGIN IMMEDIATE");
+      if(readFileSync(path("catalog.json"),"utf8")!==original)throw Error("Catalog changed during review. Reload.");
       for(const {market,sku,revision,store,row} of targets){
       const params=[market,sku];
       const last=db.prepare("SELECT revision,decision FROM decisions WHERE market=? AND sku=? ORDER BY id DESC LIMIT 1").get(...params);
