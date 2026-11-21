@@ -1,5 +1,9 @@
 import {markets,type MarketCode} from "./markets";
-export type PublicListing={listing_id:string;slug:string;title:string;price_minor:string;currency:string};
+export const PUBLIC_CATEGORY_SLUGS=["home","kitchen","beauty","fashion","wellness","organize"] as const;
+export type PublicCategorySlug=typeof PUBLIC_CATEGORY_SLUGS[number];
+export type PublicListing={listing_id:string;slug:string;title:string;price_minor:string;currency:string;
+ /** Present only after category membership is owner-approved in a release-gated RPC. */
+ approved_category_slugs?:readonly PublicCategorySlug[]};
 export function parsePublicListings(data:unknown,market:MarketCode):PublicListing[]{
  if(!Array.isArray(data)||data.length>100)throw Error("Invalid catalog response");
  const seen=new Set<string>();
@@ -8,7 +12,15 @@ export function parsePublicListings(data:unknown,market:MarketCode):PublicListin
   const r=raw as Record<string,unknown>;
   if(typeof r.listing_id!=="string"||!r.listing_id||typeof r.slug!=="string"||!r.slug||r.slug.length>200||/[/?#\\]/.test(r.slug)||typeof r.title!=="string"||!r.title.trim()||r.title.length>500||typeof r.price_minor!=="string"||!/^\d+$/.test(r.price_minor)||!Number.isSafeInteger(Number(r.price_minor))||Number(r.price_minor)<=0||r.currency!==markets[market].currency||seen.has(r.slug))throw Error("Invalid listing");
   seen.add(r.slug);
-  return {listing_id:r.listing_id,slug:r.slug,title:r.title,price_minor:r.price_minor,currency:r.currency};
+  const declared=r.approved_category_slugs!==undefined||r.category_release!==undefined;
+  const categories=r.approved_category_slugs;
+  if(declared&&(
+   r.category_release!=="owner_approved"||!Array.isArray(categories)||categories.length>PUBLIC_CATEGORY_SLUGS.length||
+   categories.some(value=>typeof value!=="string"||!PUBLIC_CATEGORY_SLUGS.some(allowed=>allowed===value))||
+   new Set(categories).size!==categories.length
+  ))throw Error("Unapproved or invalid category assignments");
+  return {listing_id:r.listing_id,slug:r.slug,title:r.title,price_minor:r.price_minor,currency:r.currency,
+    ...(declared?{approved_category_slugs:[...(categories as PublicCategorySlug[])]}:{})};
  });
 }
 export const storefrontMode=(origin:unknown,key:unknown,demo:unknown)=>typeof origin==="string"&&origin&&typeof key==="string"&&key?"catalog":!origin&&!key&&demo==="true"?"demo":"unconfigured";
