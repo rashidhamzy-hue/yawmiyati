@@ -33,10 +33,10 @@ describe("distinct five-market storefronts",()=>{
  });
 });
 describe("Saudi FAQ",()=>{
- it("has five unique questions",()=>{
+ it("has four balanced, non-duplicated service questions",()=>{
   const {container}=render(<MarketPreview market="sa"/>);
   const summaries=Array.from(container.querySelectorAll("#questions summary")).map(n=>n.textContent?.trim());
-  expect(summaries).toHaveLength(5);
-  expect(new Set(summaries).size).toBe(5);
+  expect(summaries).toHaveLength(4);
+  expect(new Set(summaries).size).toBe(4);
  });
 });

@@ -9,7 +9,7 @@ import {MarketPromiseStrip} from "@/components/store/MarketPromiseStrip";
 import {marketIdentity} from "@/lib/store/market-identity";
 import {marketExperience} from "@/lib/store/market-experience";
 import {brandStory} from "@/lib/store/brand-story";
-import {saudiDelivery} from "@/lib/store/saudi-commerce-content";
+import {saudiDelivery,saudiHomeQuestions} from "@/lib/store/saudi-commerce-content";
 import {customerServiceCopy} from "@/lib/store/customer-service-copy";
 import {relatedVerifiedProducts} from "@/lib/store/verified-merchandising";
 import {ApprovedProductGallery} from "@/lib/store/ApprovedProductExperience";
@@ -32,13 +32,7 @@ const values:{icon:LucideIcon;title:string;description:string}[]=[
  {icon:ShieldCheck,title:"التفاصيل تفرق",description:"كل منتج معروض له معلومات واضحة تساعدك تختارين."},
  {icon:Sparkles,title:"كل شيء بمكان واحد",description:"تصفّح عربي بسيط، وأقسام تلهم كل يوم."},
 ];
-const saudiQuestions=[
- {question:"كيف ألقى المنتج اللي يناسبني؟",answer:"دوّري باسم المنتج في البحث أو تصفّحي الأقسام. تشوفين معلومات المنتجات المعتمدة في صفحاتها."},
- {question:"هل الدفع عند الاستلام؟",answer:customerServiceCopy.sa.payment},
- {question:"بكم الشحن ومتى يوصل؟",answer:customerServiceCopy.sa.shipping+" "+customerServiceCopy.sa.delivery},
- {question:"أقدر أرجّع المنتج؟",answer:customerServiceCopy.sa.returns},
- {question:"كيف أتابع طلبي؟",answer:customerServiceCopy.sa.tracking},
-] as const;
+
 function SectionIntro({eyebrow,title,description}:{eyebrow:string;title:string;description?:string}){
  return <div className="space-y-2"><p className="text-xs font-extrabold tracking-wider text-primary">{eyebrow}</p><h2 className="font-display text-3xl font-extrabold leading-tight md:text-4xl">{title}</h2>{description&&<p className="max-w-2xl text-sm leading-8 text-muted-foreground md:text-base">{description}</p>}</div>;
 }
@@ -141,7 +135,7 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
    </section>
    {!slug&&!searchOnly&&<>
     <section className="bg-primary-soft"><div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8"><SectionIntro eyebrow="لماذا يومياتي؟" title="تجربة خفيفة على القلب" description="كل تفصيلة في يومياتي مصممة لتجعل الاكتشاف أسهل وألطف."/><div className="mt-8 grid gap-4 md:grid-cols-3">{values.map(({icon:Icon,title,description},i)=><div key={title} className="rounded-3xl border border-white/60 bg-card p-7"><span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-soft text-primary"><Icon className="h-6 w-6"/></span><h3 className="mt-5 text-lg font-extrabold">{title}</h3><p className="mt-2 text-sm leading-7 text-muted-foreground">{description}</p></div>)}</div></div></section>
-    <section id="questions" className="mx-auto max-w-5xl scroll-mt-32 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"><div className="max-w-2xl"><SectionIntro eyebrow="كل ما تحتاجين معرفته" title={experience.faqTitle} description={experience.faqDescription}/><a href={path+"/info/shipping-returns"} className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-primary underline underline-offset-4">تفاصيل الشحن والاسترجاع <ArrowLeft className="h-4 w-4" aria-hidden="true"/></a></div><div className="mt-7 grid items-start gap-3 sm:grid-cols-2">{(market==="sa"?saudiQuestions:experience.questions).map((q,i)=><details key={q.question} className="group rounded-2xl border bg-card px-5 py-4" open={undefined}><summary className="flex min-h-8 cursor-pointer list-none items-center justify-between gap-3 font-extrabold marker:hidden">{q.question}<ChevronDown className="h-5 w-5 shrink-0 text-primary transition-transform group-open:rotate-180" aria-hidden="true"/></summary><p className="pb-2 pt-3 text-sm leading-8 text-muted-foreground">{q.answer}</p></details>)}</div></section>
+    <section id="questions" className="mx-auto max-w-5xl scroll-mt-32 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"><div className="max-w-2xl"><SectionIntro eyebrow="كل ما تحتاجين معرفته" title={experience.faqTitle} description={experience.faqDescription}/><a href={path+"/info/shipping-returns"} className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-primary underline underline-offset-4">تفاصيل الشحن والاسترجاع <ArrowLeft className="h-4 w-4" aria-hidden="true"/></a></div><div className="mt-7 grid items-start gap-3 sm:grid-cols-2">{(market==="sa"?saudiHomeQuestions:experience.questions).map((q,i)=><details key={q.question} className="group rounded-2xl border bg-card px-5 py-4" open={undefined}><summary className="flex min-h-8 cursor-pointer list-none items-center justify-between gap-3 font-extrabold marker:hidden">{q.question}<ChevronDown className="h-5 w-5 shrink-0 text-primary transition-transform group-open:rotate-180" aria-hidden="true"/></summary><p className="pb-2 pt-3 text-sm leading-8 text-muted-foreground">{q.answer}</p></details>)}</div></section>
    </>}
   </main>
   <ShoppingAssistant market={market} products={rows??[]} productPage={Boolean(slug)}/>

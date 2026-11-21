@@ -160,3 +160,11 @@ summary::-webkit-details-marker { display: none; }
   --accent: oklch(0.92 0.032 85);
   --gold: oklch(0.68 0.1 80);
 }
+
+/* When the non-modal shopping assistant is expanded, keep mobile navigation
+   behind neither the message composer nor the on-screen keyboard. */
+@media (max-width: 767px) {
+  body.yawmiyati-assistant-open nav[aria-label="التنقل السريع للجوال"] {
+    display: none;
+  }
+}

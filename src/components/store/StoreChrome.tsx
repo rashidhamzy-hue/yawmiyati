@@ -1,4 +1,4 @@
-import {useEffect,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import type {ReactNode} from "react";
 import {ChevronDown,Home,LayoutGrid,Menu,Search,X,HelpCircle} from "lucide-react";
 import {StoreSearchOverlay} from "./StoreSearchOverlay";
@@ -12,7 +12,24 @@ const navLinks=[["الأقسام","#discover"],["المنتجات","#collection"
 export function StoreHeader({market}:{market:MarketCode}){
  const [menu,setMenu]=useState(false);
  const [searchOpen,setSearchOpen]=useState(false);
+ const countrySelector=useRef<HTMLDetailsElement>(null);
  useEffect(()=>{const handler=()=>setSearchOpen(true);document.addEventListener("yawmiyati:open-search",handler);return()=>document.removeEventListener("yawmiyati:open-search",handler);},[]);
+ useEffect(()=>{
+  const closeOutside=(event:PointerEvent)=>{
+   if(countrySelector.current&&!countrySelector.current.contains(event.target as Node)){
+    countrySelector.current.open=false;
+   }
+  };
+  const closeEscape=(event:KeyboardEvent)=>{
+   if(event.key==="Escape"&&countrySelector.current?.open){
+    countrySelector.current.open=false;
+    countrySelector.current.querySelector("summary")?.focus();
+   }
+  };
+  document.addEventListener("pointerdown",closeOutside);
+  document.addEventListener("keydown",closeEscape);
+  return()=>{document.removeEventListener("pointerdown",closeOutside);document.removeEventListener("keydown",closeEscape);};
+ },[]);
  const path="/"+market;
  const identity=marketIdentity[market];
  return <><header className="sticky top-0 z-50 border-b border-border/70 bg-background/95 backdrop-blur-xl">
@@ -20,7 +37,7 @@ export function StoreHeader({market}:{market:MarketCode}){
    <a href={path} className="shrink-0 font-display text-[1.8rem] font-extrabold tracking-tight text-primary sm:text-[2rem]" aria-label={"يومياتي "+identity.name+"، الصفحة الرئيسية"}>يومياتي<span className="text-gold">.</span></a>
    <nav aria-label="التنقل الرئيسي" className="mr-5 hidden items-center gap-7 text-sm font-bold lg:flex">{navLinks.map(([title,hash])=><a href={path+hash} key={hash} className="transition-colors hover:text-primary">{title}</a>)}</nav>
    <div className="mr-auto flex items-center gap-2">
-    <details className="group relative">
+    <details ref={countrySelector} className="group relative">
      <summary aria-label={"البلد والعملة: "+identity.fullName+"، "+identity.currencyLong} className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-full border border-border/90 bg-card px-2.5 py-1.5 text-xs font-bold text-foreground shadow-sm transition-colors hover:border-primary/40 hover:bg-primary-soft sm:px-3.5">
       <span className="text-xl leading-none" role="img" aria-label={"علم "+identity.name}>{identity.flag}</span>
       <span className="hidden whitespace-nowrap sm:inline">{identity.name}</span>
