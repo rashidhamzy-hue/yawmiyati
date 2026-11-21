@@ -22,7 +22,7 @@ describe("M10E exact buyer-facing currency formatting",()=>{
   expect(formatListingPrice(item("om","1999"),"om")).toContain("٫٩٩٩");
   expect(formatListingPrice(item("iq","1999"),"iq")).toContain("٫٩٩٩");
   expect(formatListingPrice(item("sa","1999"),"sa")).toContain("٫٩٩");
-  expect(formatListingPrice(item("ae","1001"),"ae")).toContain("٫٠١");
+  expect(formatListingPrice(item("ae","1001"),"ae")).toContain("10.01"); // ar-AE uses Latin digits and "."
   expect(formatListingPrice(item("eg","1001"),"eg")).toContain("٫٠١");
  });
  it("refuses invalid minor amounts and currency contamination",()=>{
