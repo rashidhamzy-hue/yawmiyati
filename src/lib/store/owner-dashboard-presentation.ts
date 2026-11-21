@@ -29,7 +29,7 @@ export function formatRecordedMinor(market:MarketCode,value:string):string {
 /** Preserve large supplier-observed price strings without unsafe Number() conversion. */
 export function formatObservedSupplierPrice(market:MarketCode,minorUnits:string|null):string{
  if(minorUnits===null)return "Unknown";
- if(typeof minorUnits!=="string"||!/^\\d+$/.test(minorUnits))return "Unknown (invalid observation)";
+ if(typeof minorUnits!=="string"||!/^[0-9]+$/.test(minorUnits))return "Unknown (invalid observation)";
  try{return formatRecordedMinor(market,minorUnits);}
  catch{return "Unknown (invalid observation)";}
 }
