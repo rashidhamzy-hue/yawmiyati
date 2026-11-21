@@ -28,6 +28,8 @@ const qualifiers=/(?:إرشادي|إرشادياً|تقدير|المورّد ا�
 for(const path of storefront){
  const text=readFileSync(join(root,path),"utf8");
  for(const [lineNumber,line] of text.split("\n").entries()){
+  // Customer-visible quoted copy must not name or allude to the upstream supplier.
+  if(/"[^"\n]*(?:المورّد|المورد|Taager|تاجر)[^"\n]*"/i.test(line))bad.push(path+":"+(lineNumber+1)+": supplier reference in customer copy");
   if(risky.test(line)&&!qualifiers.test(line))bad.push(path+":"+(lineNumber+1)+": unqualified owner-supplied supplier quote");
  }
  if(/(?:from\s*|import\s*\()\s*["'][^"']*(?:\/|\.)catalog["']/.test(text))
