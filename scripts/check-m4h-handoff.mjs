@@ -8,7 +8,7 @@ const fail=why=>{throw Error("M4H handoff invalid: "+why);};
 const raw=readFileSync(join(root,"docs/handoff/M4H-STATUS.json"),"utf8");
 const x=JSON.parse(raw);
 if(x.schemaVersion!==1||x.project!=="Yawmiyati"||x.repository!=="tarikhtube-stack/saudi-store-spark"||x.type!=="source_only_handoff")fail("identity");
-const expected=[["sa","SAR",2,"28"],["ae","AED",2,"19"],["om","OMR",3,"3"],["eg","EGP",2,null],["iq","IQD",3,"7000"]];
+const expected=[["sa","SAR",2,"28"],["ae","AED",2,"19"],["om","OMR",3,"3"],["eg","EGP",2,"95/100/105 by exact destination (screenshot only)"],["iq","IQD",3,"7000"]];
 if(JSON.stringify(x.markets.map(m=>[m.code,m.currency,m.minorDigits,m.shippingGuide]))!==JSON.stringify(expected))fail("market_shipping_currency");
 if(Object.values(x.restrictions).some(v=>v!==false)||Object.keys(x.restrictions).length!==8)fail("unsafe_release_flags");
 if(x.current.m4h!=="pr_pending_ci"||x.current.supplierProductImport!=="not_connected"||x.current.localizedAI!=="offline_contract_only"||x.current.publicSEO!=="noindex")fail("false_live_status");
