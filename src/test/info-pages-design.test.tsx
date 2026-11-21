@@ -25,6 +25,6 @@ it("shows evidence-qualified Saudi shipping and COD with protected navigation",(
 
 it("shows Egypt screenshot shipping bands as estimates without authorizing orders",()=>{
  render(<StoreInfoPage market="eg" topic="shipping-returns"/>);
- expect(screen.getByText(/رسوم الشحن التقديرية حسب الوجهة: ٩٥ جنيه/)).toBeTruthy();
+ expect(screen.getByText(/رسوم الشحن التقديرية حسب الوجهة — ٩٥ جنيه/)).toBeTruthy();
  expect(screen.queryByText(/٢٨ ريالاً سعودياً/)).toBeNull();
 });
