@@ -22,6 +22,11 @@ function OwnerDashboard(){
  const [recommendations,setRecommendations]=useState<Recommendation[]>([]);
  const [policy,setPolicy]=useState<AiPolicy|null>(null);
  const [catalog,setCatalog]=useState<CatalogRow[]>([]);
+ const [catalogHasMore,setCatalogHasMore]=useState(false);
+ const [catalogNextOffset,setCatalogNextOffset]=useState(0);
+ const [catalogLoading,setCatalogLoading]=useState(false);
+ const [catalogPageError,setCatalogPageError]=useState("");
+ const catalogPageInFlight=useRef(false);
  const [error,setError]=useState("");
  const [busy,setBusy]=useState(false);
  const generation=useRef(0);
@@ -29,8 +34,8 @@ function OwnerDashboard(){
  const reviewClient=useMemo(()=>{try{return dashboardClient(origin,key)}catch{return null}},[origin,key]);
  const overview=useMemo(()=>summarizeOwnerMarket(market,data,performance,data?catalog:null,data?recommendations:null,policy),[market,data,performance,catalog,recommendations,policy]);
  async function load(next:MarketCode,access:string){
-  const id=++generation.current;setBusy(true);setError("");setData(null);setPerformance(null);setCatalog([]);setRecommendations([]);setPolicy(null);
-  try{const client=dashboardClient(origin,key);const [result,rows,recs,ai,perf]=await Promise.all([client.summary(access,next),client.catalog(access,next),client.recommendations(access,next),client.policy(access,next),client.performance(access,next)]);if(id===generation.current){setPerformance(perf);setData(result);setCatalog(rows);setRecommendations(recs);setPolicy(ai);}}
+  const id=++generation.current;setBusy(true);setError("");setData(null);setPerformance(null);setCatalog([]);setCatalogHasMore(false);setCatalogNextOffset(0);setCatalogLoading(false);setCatalogPageError("");catalogPageInFlight.current=false;setRecommendations([]);setPolicy(null);
+  try{const client=dashboardClient(origin,key);const [result,rows,recs,ai,perf]=await Promise.all([client.summary(access,next),client.catalog(access,next),client.recommendations(access,next),client.policy(access,next),client.performance(access,next)]);if(id===generation.current){setPerformance(perf);setData(result);setCatalog(rows);setCatalogNextOffset(rows.length);setCatalogHasMore(rows.length===50);setRecommendations(recs);setPolicy(ai);}}
   catch{if(id===generation.current)setError("Unable to load this market. Verify access or sign in again.");}
   finally{if(id===generation.current)setBusy(false);}
  }
@@ -50,7 +55,26 @@ function OwnerDashboard(){
   try{await dashboardClient(origin,key).pauseAi(token,market);if(id===generation.current)await load(market,token);}
   catch{if(id===generation.current){setError("Pause request failed");setBusy(false);}}
  }
- function signOut(){generation.current++;setToken("");setData(null);setPerformance(null);setCatalog([]);setRecommendations([]);setPolicy(null);setError("");setBusy(false);}
+ async function loadMoreCatalog(){
+  if(!token||!data||!catalogHasMore||catalogLoading||catalogPageInFlight.current||busy)return;
+  const currentGeneration=generation.current,selectedMarket=market,access=token,offset=catalogNextOffset;
+  catalogPageInFlight.current=true;setCatalogLoading(true);setCatalogPageError("");
+  try{
+   const page=await dashboardClient(origin,key).catalog(access,selectedMarket,offset);
+   if(currentGeneration!==generation.current)return;
+   setCatalog(previous=>{
+    const ids=new Set(previous.map(row=>row.listing_id));
+    return [...previous,...page.filter(row=>{
+     if(ids.has(row.listing_id))return false;
+     ids.add(row.listing_id);return true;
+    })];
+   });
+   setCatalogNextOffset(offset+page.length);
+   setCatalogHasMore(page.length===50&&offset+page.length<=100000);
+  }catch{if(currentGeneration===generation.current)setCatalogPageError("Could not load more catalog records. Retry after checking access.");}
+  finally{if(currentGeneration===generation.current){catalogPageInFlight.current=false;setCatalogLoading(false);}}
+ }
+ function signOut(){generation.current++;setToken("");setData(null);setPerformance(null);setCatalog([]);setCatalogHasMore(false);setCatalogNextOffset(0);setCatalogLoading(false);setCatalogPageError("");catalogPageInFlight.current=false;setRecommendations([]);setPolicy(null);setError("");setBusy(false);}
  return <main dir="ltr" className="min-h-screen bg-background text-foreground pb-16">
  <div className="border-b border-border bg-card"><div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-5 md:px-8"><a href="/sa" className="text-2xl font-extrabold tracking-tight text-primary">yawmiyati<span className="text-gold">.</span><span className="ml-3 rounded-full bg-primary-soft px-3 py-1 align-middle text-[11px] font-bold uppercase tracking-wider text-primary">OS</span></a><span className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold text-muted-foreground"><LockKeyhole className="h-4 w-4 text-primary"/> Private owner workspace</span></div></div><div className="mx-auto max-w-7xl space-y-7 px-4 pt-7 md:px-8">
  <header className="rounded-[2rem] bg-gradient-to-r from-primary via-primary to-[#073c3f] px-6 py-9 text-primary-foreground sm:px-9"><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="mb-2 inline-flex items-center gap-2 text-xs font-bold text-white/80"><Sparkles className="h-4 w-4"/> CONTROL CENTER</p><h1 className="font-display text-3xl font-extrabold sm:text-4xl">Yawmiyati OS</h1><p className="mt-3 max-w-xl text-sm leading-7 text-white/80">Five market-specific review workspaces. Figures are recorded observations, not verified settlement or permission to publish products.</p></div>{token&&<button className="rounded-full border border-white/40 px-5 py-3 text-sm font-semibold hover:bg-white/10" onClick={signOut}>Sign out</button>}</div></header>
@@ -75,7 +99,7 @@ function OwnerDashboard(){
  <ul className="list-inside list-disc text-xs text-muted-foreground">{performance.warnings.map(w=><li key={w}>{w}</li>)}</ul></section>}
  {data&&<OwnerActionQueue market={market} catalog={catalog} recommendations={recommendations} policy={policy}/>}
  {data&&reviewClient&&<CommercialReview key={market} client={reviewClient} token={token} market={market}/>}
- {data&&<section id="catalog" className="rounded-[1.75rem] border bg-card p-6 shadow-soft"><h2 className="text-xl font-bold">Product catalog</h2><p className="text-sm text-muted-foreground">First 50 returned listing records · Read only. Inventory counts are not independent supplier stock proof.</p>{catalog.length===0?<p className="mt-4">No supplier listings imported yet.</p>:<div className="overflow-x-auto"><table className="mt-4 w-full text-left text-sm"><thead><tr><th>Product</th><th>Status</th><th>Variants</th><th>Recently available</th></tr></thead><tbody>{catalog.map(row=><tr key={row.listing_id} className="border-t"><td className="py-3">{row.title}</td><td>{row.listing_status}</td><td>{row.variant_count}</td><td>{row.available_count}</td></tr>)}</tbody></table></div>}</section>}
+ {data&&<section id="catalog" className="rounded-[1.75rem] border bg-card p-6 shadow-soft"><h2 className="text-xl font-bold">Product catalog</h2><p className="text-sm text-muted-foreground">Loaded {catalog.length} listing record(s) from this market · Read only. Inventory counts are not independent supplier stock proof.</p>{catalog.length===0?<p className="mt-4">No supplier listings imported yet.</p>:<div className="overflow-x-auto"><table className="mt-4 w-full text-left text-sm"><thead><tr><th>Product</th><th>Status</th><th>Variants</th><th>Recently available</th></tr></thead><tbody>{catalog.map(row=><tr key={row.listing_id} className="border-t"><td className="py-3">{row.title}</td><td>{row.listing_status}</td><td>{row.variant_count}</td><td>{row.available_count}</td></tr>)}</tbody></table></div>}{catalogPageError&&<p role="alert" className="mt-3 text-sm">{catalogPageError}</p>}{catalogHasMore&&<button type="button" onClick={()=>void loadMoreCatalog()} disabled={busy||catalogLoading} className="mt-4 min-h-11 rounded-lg border px-4 py-2 text-sm font-bold text-primary hover:bg-primary-soft disabled:opacity-50">{catalogLoading?"Loading catalog…":"Load 50 more listings"}</button>}{!catalogHasMore&&catalog.length>0&&<p className="mt-3 text-xs text-muted-foreground">End of returned catalog records for this market.</p>}</section>}
  {data&&<section id="approvals" className="rounded-[1.75rem] border bg-card p-6 shadow-soft space-y-3"><h2 className="text-xl font-bold">Owner approvals</h2><p className="text-sm text-muted-foreground">Decisions are recorded only; nothing is published automatically.</p>{recommendations.length===0&&<p>No recommendations returned for this market. This does not confirm that every catalog item is approved.</p>}{recommendations.map(r=><article key={r.id} className="rounded border p-4 space-y-2"><h3 className="font-bold">{r.kind} · {r.state}</h3><p>{r.rationale}</p><pre className="whitespace-pre-wrap break-all text-xs">{JSON.stringify(r.proposal,null,2)}</pre>{r.state==="pending"&&<div className="flex gap-2"><button disabled={busy} className="rounded border p-3" onClick={()=>void review(r.id,"approved")}>Approve proposal</button><button disabled={busy} className="rounded border p-3" onClick={()=>void review(r.id,"rejected")}>Reject</button></div>}</article>)}</section>}
  {policy&&<section id="safety" className="rounded-[1.75rem] border bg-card p-6 shadow-soft space-y-2"><h2 className="font-bold">Automation safety</h2><p>AI: {policy.enabled?"Enabled":"Disabled"} · Daily limit: ${(policy.daily_budget_microusd/1000000).toFixed(2)} USD</p><p>Automatic pricing: {policy.auto_pricing_enabled?"On":"Off"} · Publishing: {policy.auto_publish_enabled?"On":"Off"}</p><button disabled={busy} onClick={()=>void pauseAi()} className="rounded border p-3">Pause market automation</button></section>}
  <p className="text-sm text-muted-foreground">Recorded net is not settlement profit. No verified public checkout, supplier dispatch, real fulfillment or five-market launch approval is established by this dashboard.</p>
