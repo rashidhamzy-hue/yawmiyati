@@ -6,6 +6,9 @@ on:
       - "package.json"
       - "bun.lock"
       - "scripts/browser-qa.cjs"
+      - "scripts/check-storefront-truth.mjs"
+      - "scripts/test-storefront-truth-guard.mjs"
+      - "scripts/check-m4g-release-boundary.mjs"
       - "scripts/m2d-*"
       - ".github/workflows/storefront-browser-qa.yml"
   workflow_dispatch:
