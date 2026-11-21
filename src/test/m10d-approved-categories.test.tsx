@@ -2,6 +2,7 @@ import {describe,it,expect,vi} from "vitest";
 import {render,screen,waitFor} from "@testing-library/react";
 import {parsePublicListings,PUBLIC_CATEGORY_SLUGS} from "../lib/store/public-catalog";
 import {ApprovedCategoryProductGrid} from "../components/store/ApprovedCategoryProductGrid";
+import {StoreCategoryPage} from "../components/store/StoreCategoryPage";
 vi.mock("../lib/store/staging-public-config",()=>({publicBrowserConfig:()=>({origin:"https://example.supabase.co/",key:"public-publishable"})}));
 vi.mock("../lib/store/public-catalog",async importOriginal=>{
  const original=await importOriginal<typeof import("../lib/store/public-catalog")>();
@@ -40,6 +41,9 @@ describe("M10D proof-based public categories",()=>{
   expect(screen.getByText("إبريق قهوة معتمد")).toBeTruthy();
   expect(screen.queryByText("منظّم منزلي")).toBeNull();
   unmount();
+  const page=render(<StoreCategoryPage market="sa" slug="kitchen"/>);
+  await waitFor(()=>expect(screen.getByRole("heading",{name:"منتجات المطبخ والقهوة"})).toBeTruthy());
+  page.unmount();
   const e=render(<ApprovedCategoryProductGrid market="ae" slug="kitchen" categoryTitle="المطبخ والقهوة"/>);
   expect(e.container.textContent).not.toContain("إبريق قهوة معتمد");
  });
