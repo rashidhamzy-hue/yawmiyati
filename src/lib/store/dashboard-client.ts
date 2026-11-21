@@ -100,8 +100,8 @@ export function dashboardClient(origin: string, publicKey: string, request: type
        return typeof item.listing_id!=="string"||!item.listing_id.trim()||
         typeof item.title!=="string"||typeof item.slug!=="string"||
         typeof item.listing_status!=="string"||
-        !Number.isSafeInteger(item.variant_count)||item.variant_count!<0||
-        !Number.isSafeInteger(item.available_count)||item.available_count!<0;
+        !Number.isSafeInteger(item.variant_count)||item.variant_count! < 0||
+        !Number.isSafeInteger(item.available_count)||item.available_count! < 0;
      }))throw Error("Invalid catalog response");
      return result as CatalogRow[];
    },
