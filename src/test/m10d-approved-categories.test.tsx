@@ -10,10 +10,10 @@ vi.mock("../lib/store/public-catalog",async importOriginal=>{
  const original=await importOriginal<typeof import("../lib/store/public-catalog")>();
  return {...original,fetchPublicCatalog:vi.fn(async(_origin:string,_key:string,market:string)=>{
   if(market!=="sa")return [];
-  return [
-   {listing_id:"ok-1",slug:"coffee-pot",title:"إبريق قهوة معتمد",price_minor:"2500",currency:"SAR",approved_category_slugs:["kitchen"]},
-   {listing_id:"ok-2",slug:"organizer",title:"منظّم منزلي",price_minor:"1500",currency:"SAR",approved_category_slugs:["organize"]}
-  ];
+  return original.parsePublicListings([
+   {listing_id:"ok-1",slug:"coffee-pot",title:"إبريق قهوة معتمد",price_minor:"2500",currency:"SAR",approved_category_slugs:["kitchen"],category_release:"owner_approved"},
+   {listing_id:"ok-2",slug:"organizer",title:"منظّم منزلي",price_minor:"1500",currency:"SAR",approved_category_slugs:["organize"],category_release:"owner_approved"}
+  ],"sa");
  })};
 });
 const raw={listing_id:"r1",slug:"coffee-pot",title:"إبريق قهوة معتمد",price_minor:"2500",currency:"SAR"};
