@@ -32,8 +32,9 @@
       "code": "eg",
       "currency": "EGP",
       "minorDigits": 2,
-      "shippingGuide": null,
-      "eta": "2d Cairo/Giza/Alexandria; 3d Lower Egypt/Qalyubia; 2–5d other named regions"
+      "shippingGuide": "95/100/105 by exact destination (screenshot only)",
+      "eta": "2d Cairo/Giza/Alexandria; 3d Lower Egypt/Qalyubia; 2–5d other named regions",
+      "shippingEvidence": "owner_screenshot_2026_11_21"
     },
     {
       "code": "iq",
@@ -60,7 +61,8 @@
     "actualAuthenticatedAdmin": "not_verified_here",
     "supplierProductImport": "not_connected",
     "localizedAI": "offline_contract_only",
-    "publicSEO": "noindex"
+    "publicSEO": "noindex",
+    "egyptShipping": "screenshot_captured_not_live_checkout"
   },
   "activeHandoffPaths": [
     "docs/handoff/M4H-CLAUDE-START-HERE.md",
@@ -76,12 +78,13 @@
     "src/lib/store/offline-ai-workflows.ts",
     "src/lib/store/offline-seo-release.ts",
     "scripts/check-storefront-truth.mjs",
-    "scripts/test-storefront-truth-guard.mjs"
+    "scripts/test-storefront-truth-guard.mjs",
+    "src/lib/store/egypt-shipping-evidence.ts"
   ],
   "launchBlockers": [
     "verified_supplier_feeds_all_5",
     "real_stock_cost_variants_photos",
-    "egypt_governorate_shipping_fees",
+    "egypt_screenshot_rate_reconfirmation_zone_coverage",
     "iraq_returns_conflict",
     "all_market_legal_seller_policies",
     "real_catalog_approval",
