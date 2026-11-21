@@ -127,7 +127,7 @@ export function auditOfflineSeoCandidates(candidates:readonly SeoCandidate[]):Of
  for(let i=0;i<staged.length;i++){
   const r=staged[i];
   if(!r.draft||r.blockers.length||!r.candidate.alternateGroupRef)continue;
-  const id=r.candidate.kind+":"+r.candidate.alternateGroupRef;
+  const id=r.candidate.kind+":"+(r.candidate.kind==="category"?r.candidate.category+":":"")+r.candidate.alternateGroupRef;
   groups.set(id,[...(groups.get(id)??[]),i]);
  }
  for(const ids of groups.values()){
@@ -138,7 +138,7 @@ export function auditOfflineSeoCandidates(candidates:readonly SeoCandidate[]):Of
  }
  const entries=staged.map((r,i):OfflineSeoEntry=>{
   const approved=r.blockers.length===0;
-  const group=r.candidate.alternateGroupRef ? groups.get(r.candidate.kind+":"+r.candidate.alternateGroupRef)??[] : [];
+  const group=r.candidate.alternateGroupRef ? groups.get(r.candidate.kind+":"+(r.candidate.kind==="category"?r.candidate.category+":":"")+r.candidate.alternateGroupRef)??[] : [];
   const siblings=approved&&r.draft ? group.filter(j=>j!==i&&staged[j].blockers.length===0&&staged[j].draft).map(j=>({
    market:staged[j].candidate.market,relativePath:staged[j].draft!.relativePath,
   })).sort((a,b)=>marketCodes.indexOf(a.market)-marketCodes.indexOf(b.market)) : [];
