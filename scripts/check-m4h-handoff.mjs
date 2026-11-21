@@ -22,7 +22,8 @@ const customerFiles=[
  "src/lib/store/saudi-commerce-content.ts",
  "src/lib/store/market-policy-pages.ts",
  "src/components/store/MarketPreview.tsx",
- "src/components/store/MarketPromiseStrip.tsx"
+ "src/components/store/MarketPromiseStrip.tsx",
+ "src/components/store/StoreInfoPage.tsx"
 ];
 for(const path of customerFiles){
  const src=readFileSync(join(root,path),"utf8");
