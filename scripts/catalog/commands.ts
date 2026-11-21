@@ -3,13 +3,14 @@ import { DatabaseSync } from "node:sqlite";
 import { mkdirSync, readFileSync, writeFileSync, realpathSync, existsSync, readdirSync, renameSync } from "node:fs";
 import { resolve, relative, sep, isAbsolute } from "node:path";
 import { analyze, editorial, type Snapshot } from "./workspace";
+import { reviewBoard } from "./board";
 import { unpackWoo } from "./woo-snapshot";
 import { sampleSnapshot } from "./demo";
 import { demoDate } from "../../src/lib/store/offer-selection-demo";
 import { markets } from "../../src/lib/store/markets";
 
 const [command, directory, ...args] = process.argv.slice(2);
-if (!directory || !["demo","woo","research","review","approve","revoke","draft"].includes(command)) throw Error("Usage: catalog <demo|woo|research|review|approve|revoke|draft> <workspace> [market SKU revision]");
+if (!directory || !["demo","woo","research","review","board","approve","revoke","draft","batch-approve","batch-draft"].includes(command)) throw Error("Usage: catalog <demo|woo|research|review|board|approve|revoke|draft|batch-approve|batch-draft> <workspace> [market SKU revision]");
 const root=resolve(directory), path=(name:string)=>resolve(root,name);
 function writeDraft(name:string,data:string) {
   const temp=path("draft-"+randomUUID()+".tmp");
@@ -50,7 +51,9 @@ if(command==="demo"){
   const asOf=snapshot.demo?demoDate:new Date().toISOString();
   const cap=Number(process.env.YAWMIYATI_FAMILY_LIMIT??150);
   const review=analyze(snapshot,asOf,cap);
-  if(command==="research"){
+  if(command==="board"){
+    writeDraft(path("catalog-review.html"),reviewBoard(review,snapshot.demo));console.log(path("catalog-review.html"));
+  } else if(command==="research"){
     const countries={sa:"السعودية",ae:"الإمارات",om:"سلطنة عمان",eg:"مصر",iq:"العراق"};
     console.log(JSON.stringify(snapshot.stores.flatMap(store=>store.records.map(({offer,productKey})=>{
       const phrase=offer.title+" "+countries[store.market];
@@ -62,18 +65,25 @@ if(command==="demo"){
   } else if(command==="review") console.log(JSON.stringify(review.map(r=>({market:r.market,read:r.read,reported:r.reportedTotal,coverage:r.coverage,
     target:Math.min(100,cap),shortfall:Math.max(0,Math.min(100,cap)-r.selected.length),decisions:r.decisions})),null,2));
   else {
-    const [market,sku,revision]=args;
+    const batch=command==="batch-approve" || command==="batch-draft";
+    const items=batch ? JSON.parse(readFileSync(resolve(args[0]??path("selected-offers.json")),"utf8")) : [{market:args[0],sku:args[1],revision:args[2]}];
+    if(!Array.isArray(items)||items.length<1||items.length>750)throw Error("Invalid selection file");
+    const targets=items.map(({market,sku,revision})=>{
     const store=review.find(r=>r.market===market);
     const row=store?.decisions.find(r=>r.sku===sku);
     if(!row || !store || row.revision!==revision || (command!=="revoke" && !row.selected))throw Error("Re-run review and choose the current shortlisted revision");
+      return {market,sku,revision,store,row};
+    });
     const db=new DatabaseSync(path("owner.sqlite"));
     try {
       db.exec("PRAGMA busy_timeout=5000; CREATE TABLE IF NOT EXISTS decisions (id INTEGER PRIMARY KEY, market TEXT NOT NULL, sku TEXT NOT NULL, revision TEXT NOT NULL, decision TEXT NOT NULL, recorded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)");
-      const params=[market,sku];
       db.exec("BEGIN IMMEDIATE");
+      for(const {market,sku,revision,store,row} of targets){
+      const params=[market,sku];
       const last=db.prepare("SELECT revision,decision FROM decisions WHERE market=? AND sku=? ORDER BY id DESC LIMIT 1").get(...params);
-      if(command==="approve" || command==="revoke"){
-        if(last?.revision!==revision || last?.decision!==command)db.prepare("INSERT INTO decisions (market,sku,revision,decision) VALUES (?,?,?,?)").run(market,sku,revision,command);
+      if(command==="approve" || command==="batch-approve" || command==="revoke"){
+        const action=command==="revoke"?"revoke":"approve";
+        if(last?.revision!==revision || last?.decision!==action)db.prepare("INSERT INTO decisions (market,sku,revision,decision) VALUES (?,?,?,?)").run(market,sku,revision,action);
         console.log(command+" recorded for "+market+"/"+sku);
       } else {
         if(last?.revision!==revision || last.decision!=="approve")throw Error("Owner approval required for this revision");
@@ -102,6 +112,7 @@ if(command==="demo"){
         writeDraft(path("draft-"+revision+".json"),JSON.stringify({schema:"yawmiyati-draft-1",demo:snapshot.demo,
           market,sku,revision,woo:record.woo??null,title:field("title"),description:field("description"),editorial:page},null,2));
         console.log(out);
+      }
       }
       db.exec("COMMIT");
     } finally { db.close(); }
