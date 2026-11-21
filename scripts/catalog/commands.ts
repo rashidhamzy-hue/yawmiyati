@@ -63,7 +63,7 @@ if(command==="demo"){
         verifiedComparisons:review.find(r=>r.market===store.market)?.decisions.find(d=>d.sku===offer.sku)?.comparison??null};
     })),null,2));
   } else if(command==="review") console.log(JSON.stringify(review.map(r=>({market:r.market,read:r.read,reported:r.reportedTotal,coverage:r.coverage,
-    target:Math.min(100,cap),shortfall:Math.max(0,Math.min(100,cap)-r.selected.length),decisions:r.decisions})),null,2));
+    target:Math.min(100,cap),shortfall:Math.max(0,Math.min(100,cap)-r.selected.length),decisions:r.decisions.map(d=>({...d,accountProposal:d.selected?{schema:"yawmiyati-offer-1",demo:snapshot.demo,market:r.market,sku:d.sku,title:d.title,revision:d.revision,priceMinor:d.proposedPriceMinor,expectedContributionMinor:d.expectedContributionMinor,components:d.components}:null}))})),null,2));
   else {
     const batch=command==="batch-approve" || command==="batch-draft";
     const items=batch ? JSON.parse(readFileSync(resolve(args[0]??path("selected-offers.json")),"utf8")) : [{market:args[0],sku:args[1],revision:args[2]}];
