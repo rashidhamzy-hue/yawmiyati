@@ -40,7 +40,7 @@ for(const path of storefront){
   if(literal||jsxText)bad.push(path+":"+(lineNumber+1)+": internal source or awkward advisory wording in customer copy");
   // M9: keep approved customer copy direct; old 'coming soon' and
   // unverified shipping estimate language must never drift back.
-  const placeholders=/(?:المتوقعة|المتوقع|سيكون متاحاً|ستكون متاحة|سيتم نشر|سنوضح|بنوضح|هنوضح|راح يتوفر|عند بدء استقبال الطلبات|قبل تفعيل الطلبات|الشحن التقديري)/;
+  const placeholders=/(?:المتوقعة|المتوقع|سيكون متاحاً|ستكون متاحة|سيتم نشر|سنوضح|بنوضح|هنوضح|راح يتوفر|عند بدء استقبال الطلبات|بدء استقبال الطلبات|قبل بدء الطلبات|مع بدء الطلبات|مع تشغيل الطلبات|قبل تفعيل الطلبات|الشحن التقديري)/;
   if(placeholders.test(line))bad.push(path+":"+(lineNumber+1)+": forbidden coming-soon or speculative public copy");
 
   if(risky.test(line)&&!qualifiers.test(line))bad.push(path+":"+(lineNumber+1)+": unqualified owner-supplied supplier quote");
