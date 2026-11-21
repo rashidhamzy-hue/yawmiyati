@@ -12,9 +12,25 @@ export function parsePublicListings(data:unknown,market:MarketCode):PublicListin
  });
 }
 export const storefrontMode=(origin:unknown,key:unknown,demo:unknown)=>typeof origin==="string"&&origin&&typeof key==="string"&&key?"catalog":!origin&&!key&&demo==="true"?"demo":"unconfigured";
+/** Exact localized display: never coerce a multi-digit minor-unit amount to a float. */
 export function formatListingPrice(row:PublicListing,market:MarketCode){
- if(row.currency!==markets[market].currency)throw Error("Currency mismatch");
- return new Intl.NumberFormat(markets[market].locale,{style:"currency",currency:row.currency}).format(Number(row.price_minor)/10**markets[market].minorDigits);
+ const info=markets[market];
+ if(row.currency!==info.currency)throw Error("Currency mismatch");
+ if(typeof row.price_minor!=="string"||!/^\d+$/.test(row.price_minor)||row.price_minor.length>100||BigInt(row.price_minor)<=0n)
+  throw Error("Invalid public listing amount");
+ const digits=info.minorDigits;
+ const unit=10n**BigInt(digits);
+ const amount=BigInt(row.price_minor);
+ const whole=amount/unit,minor=amount%unit;
+ const formatter=new Intl.NumberFormat(info.locale,{style:"currency",currency:info.currency,minimumFractionDigits:0,maximumFractionDigits:0});
+ const pieces=formatter.formatToParts(whole);
+ if(digits===0)return pieces.map(part=>part.value).join("");
+ const decimal=new Intl.NumberFormat(info.locale).formatToParts(1.1).find(part=>part.type==="decimal")?.value??".";
+ const fractional=new Intl.NumberFormat(info.locale,{useGrouping:false,minimumIntegerDigits:digits,maximumFractionDigits:0}).format(Number(minor));
+ let lastInteger=-1;
+ pieces.forEach((part,i)=>{if(part.type==="integer"||part.type==="group")lastInteger=i;});
+ if(lastInteger<0)throw Error("Currency formatting unavailable");
+ return pieces.map((part,i)=>part.value+(i===lastInteger?decimal+fractional:"")).join("");
 }
 export async function fetchPublicCatalog(origin:string,key:string,market:MarketCode,request:typeof fetch=fetch):Promise<PublicListing[]>{
  const url=new URL(origin);
