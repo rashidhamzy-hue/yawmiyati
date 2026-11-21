@@ -22,3 +22,20 @@ jobs:
           node scripts/catalog/run.mjs board "$RUNNER_TEMP/catalog"
           npm install --prefix "$RUNNER_TEMP/catalog-qa" --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
           NODE_PATH="$RUNNER_TEMP/catalog-qa/node_modules" node scripts/catalog/board-browser.cjs "$RUNNER_TEMP/catalog/catalog-review.html"
+  private-decisions:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fixture
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify owner access, revocation and stale-write behavior
+        env:
+          PGPASSWORD: fixture
+        run: psql -h localhost -U postgres -d postgres -f scripts/catalog/account-db-check.sql
