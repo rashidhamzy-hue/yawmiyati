@@ -15,7 +15,7 @@ export function localShopAnswer(question:string,market:MarketCode,products:reado
  if(/(قسم|أقسام|تصنيف|فئات|اختار|اختيار|category|categories)/i.test(query))
   return "يمكنك استكشاف: "+groups.join("، ")+". اختاري القسم الذي يناسب اهتماماتك، أو ابحثي باسم منتج في قسم المنتجات.";
  if(/(منتج|منتجات|متاح|موجود|عرض|products|stock|available)/i.test(query)){
-  if(!products.length)return "لا توجد منتجات معتمدة ظاهرة في كتالوج "+countryName(market)+" حالياً. يمكنك تصفّح الأقسام وأفكار يومياتي في الصفحة.";
+  if(!products.length)return "ما لقيت منتجات معروضة في كتالوج "+countryName(market)+" حالياً. يمكنك تصفّح الأقسام وأفكار يومياتي في الصفحة.";
   return "هذه أسماء بعض المنتجات الظاهرة في الكتالوج: "+products.slice(0,4).map(p=>p.title).join("، ")+". يمكنك فتح كل منتج لقراءة تفاصيله.";
  }
  const service=customerServiceCopy[market];
