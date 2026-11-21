@@ -8,7 +8,7 @@ import {StoreInfoPage} from "../components/store/StoreInfoPage";
 it("describes Saudi shipping estimates without supplier references without enabling orders",()=>{
  const {container}=render(<MarketPreview market="sa"/>);
  expect(screen.getByText(/الدفع عند الاستلام مخطط له — لا توجد طلبات مفعّلة/)).toBeTruthy();
- expect(screen.getByRole("heading",{name:/عرض شحن إرشادي: ٢٨ ر.س/})).toBeTruthy();
+ expect(screen.getByRole("heading",{name:/رسوم شحن تقديرية: ٢٨ ر.س/})).toBeTruthy();
  expect(container.textContent).toMatch(/٢–٣ أيام/);
  expect(container.textContent).toMatch(/٤–٥ أيام/);
  expect(container.textContent).toMatch(/إرشادي/);
