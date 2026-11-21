@@ -103,7 +103,7 @@ export function dashboardClient(origin: string, publicKey: string, request: type
    },
    async summary(token:string,market:MarketCode):Promise<DashboardSummary> {
      const result=await call("/rest/v1/rpc/dashboard_summary",{p_store:market},token);
-     if(!result||result.store!==market||result.currency!==markets[market].currency||!Number.isSafeInteger(result.orders)||result.orders<0||!Number.isSafeInteger(result.customers)||result.customers<0||typeof result.recorded_net_minor!=="string"||! /^-?\\d+$/.test(result.recorded_net_minor))throw Error("Invalid market summary");
+     if(!result||result.store!==market||result.currency!==markets[market].currency||!Number.isSafeInteger(result.orders)||result.orders<0||!Number.isSafeInteger(result.customers)||result.customers<0||typeof result.recorded_net_minor!=="string"||! /^-?\d+$/.test(result.recorded_net_minor))throw Error("Invalid market summary");
      return result;
    },
  };
