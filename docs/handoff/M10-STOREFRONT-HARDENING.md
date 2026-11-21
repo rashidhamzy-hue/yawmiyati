@@ -9,7 +9,8 @@
 | M10A | #120 | Localized information/category/story metadata for SA, AE, OM, EG, IQ; unknown categories blocked; safe product metadata helper; `noindex,nofollow` | Real product-specific server-rendered metadata (requires verified public catalog on SSR), indexable canonical/hreflang/sitemaps |
 | M10B | #121 | Existing approved-product gallery integrated into real product route, details, variant/gallery/spec UI and image fallback; responsive verified product page | Image/media/variant RPC from trusted service; actual supplier photography or stock selector |
 | M10C | #122 | Four balanced Saudi FAQs, local cash-on-delivery message in search, 44px search clear button, outside/Escape country selector, assistant mobile navigation spacing, customer-friendly category and checkout copy | Full live browser device/accessibility acceptance or connected checkout |
-| M10D | #123 (pending at document creation) | Verified-category UI renders only explicitly owner-approved catalog category slugs; new fail-closed parser with tests | Staging backend returning approved assignments; actual populated categories; production API, DB mutation |
+| M10D | #123, merged after green Commerce CI/browser QA | Verified-category UI renders only explicitly owner-approved catalog category slugs; new fail-closed parser with tests | Staging backend returning approved assignments; actual populated categories; production API, DB mutation |
+| M10E | #124, CI pending at document update | Exact customer-facing currency display using BigInt and locale-aware fraction placement for SAR/AED/OMR/EGP/IQD; tests protect the configured minor units | Actual live product prices, supplier costs, or payments |
 
 ## IMPORTANT: Category contract is not live yet
 
