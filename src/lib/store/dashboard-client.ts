@@ -1,4 +1,4 @@
-import type { MarketCode } from "./markets";
+import { markets, type MarketCode } from "./markets";
 export type ReviewDecision="pending"|"shortlisted"|"rejected";
 export interface CommercialReview {supplier_cost_minor:number|null;delivery_cost_minor:number|null;other_cost_minor:number|null;proposed_price_minor:number|null;decision:ReviewDecision;updated_at:string;}
 export interface CandidateRow {woo_product_id:number;supplier_sku:string;title:string;observed_price_minor:string|null;source_stock_status:string|null;observed_at:string;images:unknown;categories:unknown;review:CommercialReview|null;}
@@ -22,6 +22,15 @@ export function dashboardClient(origin: string, publicKey: string, request: type
  const url = new URL(origin);
  if (url.protocol !== "https:" || url.username || url.password || url.pathname !== "/" || url.search || url.hash || !publicKey) throw new Error("Dashboard configuration unavailable");
  async function call(path: string, body: unknown, token?: string) {
+   const rpc=path.startsWith("/rest/v1/rpc/");
+   if(rpc){
+     const payload=body as {p_store?:unknown}|null;
+     if(!payload||!Object.hasOwn(markets,payload.p_store as string))throw Error("Invalid owner market");
+     if(typeof token!=="string"||!token.trim()||token.length>8192||/[\x00-\x20\x7f]/.test(token))
+       throw Error("Owner authentication required");
+   } else if(path!=="/auth/v1/token?grant_type=password"){
+     throw Error("Invalid owner endpoint");
+   }
    const response = await request(new URL(path,url), {
      method:"POST", headers:{"Content-Type":"application/json",apikey:publicKey,...(token?{Authorization:"Bearer "+token}:{})},
      body:JSON.stringify(body),cache:"no-store",redirect:"error",signal:AbortSignal.timeout(15000),
@@ -42,6 +51,7 @@ export function dashboardClient(origin: string, publicKey: string, request: type
      return call("/rest/v1/rpc/dashboard_recommendations",{p_store:market},token);
    },
    async review(token:string,market:MarketCode,id:string,decision:"approved"|"rejected"):Promise<void> {
+     if(typeof id!=="string"||!id.trim()||id.length>200||!["approved","rejected"].includes(decision))throw Error("Invalid decision target");
      await call("/rest/v1/rpc/review_recommendation",{p_store:market,p_id:id,p_decision:decision},token);
    },
    async readiness(token:string,market:MarketCode):Promise<CatalogReadiness[]>{
@@ -64,15 +74,16 @@ export function dashboardClient(origin: string, publicKey: string, request: type
      return updated;
    },
    async candidateContent(token:string,market:MarketCode,product:number):Promise<CandidateContentState>{
+     if(!Number.isSafeInteger(product)||product<=0)throw Error("Invalid product");
      return call("/rest/v1/rpc/dashboard_candidate_content",{p_store:market,p_product:product},token);
    },
    async approveContent(token:string,market:MarketCode,product:number,observedAt:string,title:string,description:string):Promise<string>{
-     if(!title.trim()||title.trim().length>500||!description.trim()||description.trim().length>10000||!Number.isFinite(Date.parse(observedAt)))throw Error("Invalid content");
+     if(!Number.isSafeInteger(product)||product<=0||!title.trim()||title.trim().length>500||!description.trim()||description.trim().length>10000||!Number.isFinite(Date.parse(observedAt)))throw Error("Invalid content");
      const result=await call("/rest/v1/rpc/approve_candidate_content",{p_store:market,p_product:product,p_observed_at:observedAt,p_title:title.trim(),p_description:description.trim()},token);
      if(typeof result!=="string"||!result)throw Error("Invalid approval response");return result;
    },
    async createDraft(token:string,market:MarketCode,product:number,reviewAt:string,revision:string):Promise<string>{
-     if(!Number.isFinite(Date.parse(reviewAt))||!revision)throw Error("Invalid review revision");
+     if(!Number.isSafeInteger(product)||product<=0||!Number.isFinite(Date.parse(reviewAt))||typeof revision!=="string"||!revision.trim()||revision.length>500)throw Error("Invalid review revision");
      const result=await call("/rest/v1/rpc/create_candidate_draft",{p_store:market,p_product:product,p_review_at:reviewAt,p_revision:revision},token);
      if(typeof result!=="string"||!result)throw Error("Invalid draft response");return result;
    },
@@ -81,16 +92,19 @@ export function dashboardClient(origin: string, publicKey: string, request: type
      await call("/rest/v1/rpc/publish_candidate_draft",{p_store:market,p_product:product,p_listing:listing},token);
    },
    async catalog(token:string,market:MarketCode,offset=0):Promise<CatalogRow[]> {
+     if(!Number.isSafeInteger(offset)||offset<0||offset>100000)throw Error("Invalid catalog offset");
      return call("/rest/v1/rpc/dashboard_catalog",{p_store:market,p_limit:50,p_offset:offset},token);
    },
    async performance(token:string,market:MarketCode,days=30):Promise<MarketPerformance>{
      if(!Number.isSafeInteger(days)||days<1||days>365)throw Error("Invalid period");
      const result=await call("/rest/v1/rpc/dashboard_market_performance",{p_store:market,p_days:days},token);
-     if(!result||result.store!==market||!Array.isArray(result.warnings))throw Error("Invalid report");
+     if(!result||result.store!==market||result.currency!==markets[market].currency||!Array.isArray(result.warnings))throw Error("Invalid report");
      return result;
    },
    async summary(token:string,market:MarketCode):Promise<DashboardSummary> {
-     return call("/rest/v1/rpc/dashboard_summary",{p_store:market},token);
+     const result=await call("/rest/v1/rpc/dashboard_summary",{p_store:market},token);
+     if(!result||result.store!==market||result.currency!==markets[market].currency||!Number.isSafeInteger(result.orders)||result.orders<0||!Number.isSafeInteger(result.customers)||result.customers<0||typeof result.recorded_net_minor!=="string"||! /^-?\\d+$/.test(result.recorded_net_minor))throw Error("Invalid market summary");
+     return result;
    },
  };
 }
