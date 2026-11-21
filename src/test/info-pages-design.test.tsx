@@ -2,7 +2,8 @@ import {fireEvent,render,screen} from "@testing-library/react";
 import {expect,it,vi} from "vitest";
 vi.mock("../lib/store/staging-public-config",()=>({publicBrowserConfig:()=>({origin:"",key:""})}));
 import {StoreInfoPage} from "../components/store/StoreInfoPage";
-it("displays a photographic hero and supporting editorial photos in help",()=>{
+import {customerServiceCopy} from "../lib/store/customer-service-copy";
+it("displays a photographic help page with a working search action",()=>{
  const {container}=render(<StoreInfoPage market="sa" topic="help"/>);
  expect(screen.getByRole("heading",{name:"كيف نقدر نساعدك؟"})).toBeTruthy();
  expect(container.querySelectorAll("img").length).toBeGreaterThanOrEqual(3);
@@ -11,20 +12,17 @@ it("displays a photographic hero and supporting editorial photos in help",()=>{
  fireEvent.click(screen.getByRole("button",{name:/البحث في يومياتي/}));
  expect(eventSpy).toHaveBeenCalledTimes(1);
 });
-it("shows evidence-qualified Saudi shipping and COD with protected navigation",()=>{
+it("shows verified-safe Saudi service details and protected navigation",()=>{
  const {container}=render(<StoreInfoPage market="sa" topic="shipping-returns"/>);
  expect(container.querySelectorAll("img").length).toBeGreaterThanOrEqual(3);
  expect(screen.getByRole("link",{name:"الخصوصية"}).getAttribute("href")).toBe("/sa/info/privacy");
- expect(screen.getByText(/رسوم التوصيل المتوقعة ٢٨ ريالاً سعودياً داخل المملكة/)).toBeTruthy();
- expect(screen.getByText(/الدفع نقداً عند الاستلام سيكون متاحاً/)).toBeTruthy();
- expect(screen.getByText(/شروط الاسترجاع والاستبدال/)).toBeTruthy();
- expect(screen.getByText(/حقوقك النظامية/)).toBeTruthy();
- expect(container.textContent).toContain("مدة التوصيل المتوقعة");
- expect(container.textContent).not.toMatch(/المورّد|المورد|Taager/);
+ expect(container.textContent).toContain(customerServiceCopy.sa.shipping);
+ expect(container.textContent).toContain(customerServiceCopy.sa.payment);
+ expect(container.textContent).toContain(customerServiceCopy.sa.returns);
+ expect(container.textContent).not.toMatch(/المتوقعة|سيكون متاحاً|سيتم نشر|٢٨ ريالاً|Taager/);
 });
-
-it("shows Egypt screenshot shipping bands as estimates without authorizing orders",()=>{
- render(<StoreInfoPage market="eg" topic="shipping-returns"/>);
- expect(screen.getByText(/مصاريف الشحن المتوقعة حسب المنطقة — ٩٥ جنيه/)).toBeTruthy();
- expect(screen.queryByText(/٢٨ ريالاً سعودياً/)).toBeNull();
+it("does not turn owner-supplied Egypt screenshot estimates into public shipping prices",()=>{
+ const {container}=render(<StoreInfoPage market="eg" topic="shipping-returns"/>);
+ expect(container.textContent).toContain(customerServiceCopy.eg.shipping);
+ expect(container.textContent).not.toMatch(/٩٥ جنيه|١٠٠ جنيه|١٠٥ جنيه|المتوقعة/);
 });
