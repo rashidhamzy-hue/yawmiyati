@@ -119,3 +119,15 @@ test("gallery bytes are revision-bound and five-market approved drafts open with
  writeFileSync(image,Buffer.concat([png,Buffer.from("changed")]));
  assert.notEqual(cli("draft",...last).status,0);
 });
+
+test("board exports only recommended choices and stale batch approvals are atomic",t=>{
+ const dir=mkdtempSync(join(tmpdir(),"yawm-board-"));t.after(()=>rmSync(dir,{recursive:true,force:true}));
+ const cli=(action,...args)=>run(process.execPath,["scripts/catalog/run.mjs",action,dir,...args]);cli("demo");
+ const rows=JSON.parse(cli("review").stdout).flatMap(r=>r.decisions.filter(d=>d.selected).map(d=>({market:r.market,sku:d.sku,revision:d.revision})));
+ const board=readFileSync(cli("board").stdout.trim(),"utf8");assert.equal(board.match(/type="checkbox"/g).length,rows.length);
+ const list=join(dir,"selected-offers.json");
+ writeFileSync(list,JSON.stringify([rows[0],{...rows[1],revision:"old"}]));
+ assert.notEqual(cli("batch-approve",list).status,0);assert.notEqual(cli("draft",rows[0].market,rows[0].sku,rows[0].revision).status,0);
+ writeFileSync(list,JSON.stringify(rows));assert.equal(cli("batch-approve",list).status,0);
+ const drafts=cli("batch-draft",list);assert.equal(drafts.status,0,drafts.stderr);assert.equal(drafts.stdout.trim().split("\n").length,10);
+});
