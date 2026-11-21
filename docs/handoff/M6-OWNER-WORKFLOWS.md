@@ -10,7 +10,7 @@
 |---|---|---|---|
 | M6A | #113 | The existing authenticated `/admin` catalog viewer can load further 50-item pages via the existing `dashboard_catalog` RPC; it validates rows, de-duplicates results and rejects stale responses after country changes or sign-out | Merged, CI-passed, **not verified in hosted authenticated owner browser** |
 | M6B | #114 | Candidate review supplier-observed prices now preserve exact currency minor units using `BigInt`, including 3-decimal OMR/IQD | Merged, CI-passed, **source change** |
-| M6C | #115 | Candidate and readiness RPC pagination source, `CommercialReview` load-more UI, page-aware `CandidateDraft` review, tests and rollback plan | **PR and CI pending at first draft.** SQL migration is **NOT APPLIED** to staging |
+| M6C | #115 | Candidate and readiness RPC pagination source, `CommercialReview` load-more UI, page-aware `CandidateDraft` review, tests and rollback plan | Merged into `main` as PR #115 after green Commerce CI and browser QA. SQL migration is **NOT APPLIED** to staging |
 
 M5A–M5I are merged, and the M5 continuation baseline remains `docs/handoff/M5-CONTINUATION.md`.
 
