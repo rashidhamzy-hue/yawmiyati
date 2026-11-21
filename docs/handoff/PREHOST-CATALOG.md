@@ -50,3 +50,7 @@ Supply approved local Arabic facts as `{id,text,source}`. The title fact must ma
 The authenticated owner dashboard can load the JSON title and description through **Content and catalog draft → Load offline editorial draft** for an exact non-demo, parent Woo candidate. It compares market, supplier SKU, Woo ID and observation timestamp. The owner must still approve the content in their account. Offline SQLite decisions do not grant server approval. Variations remain available for offline review until the server candidate contract supports them.
 
 Run the end-to-end local checks with `node --test scripts/catalog/prehost.test.mjs`. Live Taager fields, commercial terms, source coverage, stock freshness, delivery zones and actual order/status behavior must be verified after connection.
+
+## Review a whole shortlist
+
+Run `npm run catalog -- board <folder>` and open `catalog-review.html`. Select the offers you want, then download the selection file. Claude or the local operator can record those exact decisions in one transaction using `npm run catalog -- batch-approve <folder> <selection-file>` and generate their drafts with `npm run catalog -- batch-draft <folder> <selection-file>`. Both commands re-evaluate the snapshot and reject superseded revisions. Each draft has its own revision-specific filename so interrupted batch exports can be rerun.
