@@ -2,28 +2,28 @@ import {useEffect,useState} from "react";
 import {dashboardClient,type CandidateRow,type CandidateContentState} from "@/lib/store/dashboard-client";
 import type {MarketCode} from "@/lib/store/markets";
 type Client=ReturnType<typeof dashboardClient>;
-export function CandidateDraft({client,token,market,row}:{client:Client;token:string;market:MarketCode;row:CandidateRow}){
+export function CandidateDraft({client,token,market,row,pageOffset}:{client:Client;token:string;market:MarketCode;row:CandidateRow;pageOffset:number}){
  const [open,setOpen]=useState(false);
- return <div className="mt-3 border-t pt-3"><button type="button" className="rounded border px-3 py-2" onClick={()=>setOpen(v=>!v)} aria-expanded={open}>{open?"Close content workspace":"Content and catalog draft"}</button>{open&&<Workspace client={client} token={token} market={market} row={row}/>}</div>;
+ return <div className="mt-3 border-t pt-3"><button type="button" className="rounded border px-3 py-2" onClick={()=>setOpen(v=>!v)} aria-expanded={open}>{open?"Close content workspace":"Content and catalog draft"}</button>{open&&<Workspace client={client} token={token} market={market} row={row} pageOffset={pageOffset}/>}</div>;
 }
-function Workspace({client,token,market,row}:{client:Client;token:string;market:MarketCode;row:CandidateRow}){
+function Workspace({client,token,market,row,pageOffset}:{client:Client;token:string;market:MarketCode;row:CandidateRow;pageOffset:number}){
  const [state,S]=useState<CandidateContentState|null>(null),[title,T]=useState(row.title),[description,D]=useState("");
  const [reviewAt,R]=useState<string|null>(null),[eligible,E]=useState(false),[blockers,G]=useState<string[]|null>(null);
  const [busy,B]=useState(false),[message,M]=useState(""),[ack,A]=useState(false),[publishAck,PA]=useState(false);
  async function load(){
-  const [content,rows,gates]=await Promise.all([client.candidateContent(token,market,row.woo_product_id),client.candidates(token,market),client.readiness(token,market)]);
+  const [content,rows,gates]=await Promise.all([client.candidateContent(token,market,row.woo_product_id),client.candidates(token,market,pageOffset),client.readiness(token,market,pageOffset)]);
   S(content);T(content.approval?.title??row.title);D(content.approval?.description??"");
   const review=rows.find(x=>x.woo_product_id===row.woo_product_id)?.review;
   R(review?.updated_at??null);
   E(review?.decision==="shortlisted"&&review.supplier_cost_minor!==null&&review.delivery_cost_minor!==null&&review.other_cost_minor!==null&&review.proposed_price_minor!==null);
   G(gates.find(x=>x.woo_product_id===row.woo_product_id)?.blockers??null);
  }
- useEffect(()=>{let alive=true;B(true);Promise.all([client.candidateContent(token,market,row.woo_product_id),client.candidates(token,market),client.readiness(token,market)]).then(([content,rows,gates])=>{
+ useEffect(()=>{let alive=true;B(true);Promise.all([client.candidateContent(token,market,row.woo_product_id),client.candidates(token,market,pageOffset),client.readiness(token,market,pageOffset)]).then(([content,rows,gates])=>{
   if(!alive)return;S(content);T(content.approval?.title??row.title);D(content.approval?.description??"");
   const review=rows.find(x=>x.woo_product_id===row.woo_product_id)?.review;R(review?.updated_at??null);
   E(review?.decision==="shortlisted"&&review.supplier_cost_minor!==null&&review.delivery_cost_minor!==null&&review.other_cost_minor!==null&&review.proposed_price_minor!==null);
   G(gates.find(x=>x.woo_product_id===row.woo_product_id)?.blockers??null);
- }).catch(()=>{if(alive)M("Workspace unavailable. Check current staging migrations.");}).finally(()=>{if(alive)B(false)});return()=>{alive=false};},[client,token,market,row.woo_product_id,row.title]);
+ }).catch(()=>{if(alive)M("Workspace unavailable. Check current staging migrations.");}).finally(()=>{if(alive)B(false)});return()=>{alive=false};},[client,token,market,row.woo_product_id,row.title,pageOffset]);
  async function approve(){B(true);M("");try{await client.approveContent(token,market,row.woo_product_id,row.observed_at,title,description);await load();A(false);PA(false);M("Approved content revision. Nothing published.");}catch{M("Approval failed. Supplier observation may have changed.");}finally{B(false)}}
  async function draft(){if(!state?.approval||!reviewAt)return;B(true);M("");try{await client.createDraft(token,market,row.woo_product_id,reviewAt,state.approval.revision_id);await load();M("Private draft created. Publication remains gated.");}catch{M("Draft creation failed. Reload source data and commercial review.");}finally{B(false)}}
  async function publish(){if(!state?.draft||!publishAck||!blockers||blockers.length)return;B(true);M("");try{await client.publishDraft(token,market,row.woo_product_id,state.draft.listing_id);PA(false);await load();M("Publication recorded by the server. Verify public visibility separately.");}catch{M("Release refused by the server. Stock, approvals, or market authorization may have changed.");}finally{B(false)}}

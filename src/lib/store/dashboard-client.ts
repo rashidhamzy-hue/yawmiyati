@@ -54,15 +54,27 @@ export function dashboardClient(origin: string, publicKey: string, request: type
      if(typeof id!=="string"||!id.trim()||id.length>200||!["approved","rejected"].includes(decision))throw Error("Invalid decision target");
      await call("/rest/v1/rpc/review_recommendation",{p_store:market,p_id:id,p_decision:decision},token);
    },
-   async readiness(token:string,market:MarketCode):Promise<CatalogReadiness[]>{
-     const result=await call("/rest/v1/rpc/dashboard_catalog_readiness",{p_store:market},token);
-     if(!Array.isArray(result)||result.some(r=>!r||!Number.isSafeInteger(r.woo_product_id)||!Array.isArray(r.blockers)))throw Error("Invalid readiness response");
+   async readiness(token:string,market:MarketCode,offset=0):Promise<CatalogReadiness[]>{
+     if(!Number.isSafeInteger(offset)||offset<0||offset>100000)throw Error("Invalid readiness offset");
+     const nextPage=offset>0;
+     const result=await call(nextPage?"/rest/v1/rpc/dashboard_catalog_readiness_page":"/rest/v1/rpc/dashboard_catalog_readiness",
+       nextPage?{p_store:market,p_limit:100,p_offset:offset}:{p_store:market},token);
+     if(!Array.isArray(result)||result.length>100||result.some(r=>!r||!Number.isSafeInteger(r.woo_product_id)||!Array.isArray(r.blockers)))throw Error("Invalid readiness response");
      return result;
    },
-   async candidates(token:string,market:MarketCode):Promise<CandidateRow[]>{
-     const rows=await call("/rest/v1/rpc/dashboard_candidate_review",{p_store:market,p_limit:100},token);
-     if(!Array.isArray(rows))throw Error("Invalid candidate response");
-     return rows;
+   async candidates(token:string,market:MarketCode,offset=0):Promise<CandidateRow[]>{
+     if(!Number.isSafeInteger(offset)||offset<0||offset>100000)throw Error("Invalid candidate offset");
+     // Keep first-page access compatible with staging before the M6C migration.
+     const nextPage=offset>0;
+     const rows=await call(nextPage?"/rest/v1/rpc/dashboard_candidate_review_page":"/rest/v1/rpc/dashboard_candidate_review",
+       nextPage?{p_store:market,p_limit:100,p_offset:offset}:{p_store:market,p_limit:100},token);
+     if(!Array.isArray(rows)||rows.length>100||rows.some((row:unknown)=>{
+       if(!row||typeof row!=="object")return true;
+       const x=row as Partial<CandidateRow>;
+       return !Number.isSafeInteger(x.woo_product_id)||x.woo_product_id! <= 0||
+        typeof x.supplier_sku!=="string"||typeof x.title!=="string";
+     }))throw Error("Invalid candidate response");
+     return rows as CandidateRow[];
    },
    async saveCandidate(token:string,market:MarketCode,product:number,x:{supplier:number|null;delivery:number|null;other:number|null;price:number|null;decision:ReviewDecision;expectedAt:string|null}):Promise<string>{
      if(!Number.isSafeInteger(product)||product<=0||![ "pending","shortlisted","rejected" ].includes(x.decision))throw Error("Invalid candidate");
