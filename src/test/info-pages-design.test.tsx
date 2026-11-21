@@ -15,12 +15,12 @@ it("shows evidence-qualified Saudi shipping and COD with protected navigation",(
  const {container}=render(<StoreInfoPage market="sa" topic="shipping-returns"/>);
  expect(container.querySelectorAll("img").length).toBeGreaterThanOrEqual(3);
  expect(screen.getByRole("link",{name:"الخصوصية"}).getAttribute("href")).toBe("/sa/info/privacy");
- expect(screen.getByText(/الشحن ٢٨ ريالاً سعودياً لجميع المناطق/)).toBeTruthy();
+ expect(screen.getByText(/رسوم الشحن التقديرية ٢٨ ريالاً سعودياً لجميع المناطق/)).toBeTruthy();
  expect(screen.getByText(/الدفع نقداً عند الاستلام هو الخيار المخطط له/)).toBeTruthy();
- expect(screen.getByText(/مدة استرجاع ٧ أيام/)).toBeTruthy();
+ expect(screen.getByText(/سياسة الاسترجاع والاستبدال المعتمدة/)).toBeTruthy();
  expect(screen.getByText(/الحقوق النظامية/)).toBeTruthy();
  expect(container.textContent).toContain("تقديرات إرشادية");
- expect(container.textContent).not.toContain("Taager");
+ expect(container.textContent).not.toMatch(/المورّد|المورد|Taager/);
 });
 
 it("keeps unverified Egypt delivery fees unspecified",()=>{
