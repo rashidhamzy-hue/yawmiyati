@@ -15,16 +15,16 @@ it("shows evidence-qualified Saudi shipping and COD with protected navigation",(
  const {container}=render(<StoreInfoPage market="sa" topic="shipping-returns"/>);
  expect(container.querySelectorAll("img").length).toBeGreaterThanOrEqual(3);
  expect(screen.getByRole("link",{name:"الخصوصية"}).getAttribute("href")).toBe("/sa/info/privacy");
- expect(screen.getByText(/رسوم الشحن التقديرية ٢٨ ريالاً سعودياً لجميع المناطق/)).toBeTruthy();
- expect(screen.getByText(/الدفع نقداً عند الاستلام هو الخيار المخطط له/)).toBeTruthy();
- expect(screen.getByText(/سياسة الاسترجاع والاستبدال المعتمدة/)).toBeTruthy();
- expect(screen.getByText(/الحقوق النظامية/)).toBeTruthy();
- expect(container.textContent).toContain("تقديرات إرشادية");
+ expect(screen.getByText(/رسوم التوصيل المتوقعة ٢٨ ريالاً سعودياً داخل المملكة/)).toBeTruthy();
+ expect(screen.getByText(/الدفع نقداً عند الاستلام سيكون متاحاً/)).toBeTruthy();
+ expect(screen.getByText(/شروط الاسترجاع والاستبدال/)).toBeTruthy();
+ expect(screen.getByText(/حقوقك النظامية/)).toBeTruthy();
+ expect(container.textContent).toContain("مدة التوصيل المتوقعة");
  expect(container.textContent).not.toMatch(/المورّد|المورد|Taager/);
 });
 
 it("shows Egypt screenshot shipping bands as estimates without authorizing orders",()=>{
  render(<StoreInfoPage market="eg" topic="shipping-returns"/>);
- expect(screen.getByText(/رسوم الشحن التقديرية حسب الوجهة — ٩٥ جنيه/)).toBeTruthy();
+ expect(screen.getByText(/مصاريف الشحن المتوقعة حسب المنطقة — ٩٥ جنيه/)).toBeTruthy();
  expect(screen.queryByText(/٢٨ ريالاً سعودياً/)).toBeNull();
 });

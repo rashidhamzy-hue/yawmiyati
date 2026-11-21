@@ -15,6 +15,10 @@ const storefront=[
  "src/components/store/StoreInfoPage.tsx",
  "src/components/store/StoreCommerceGuard.tsx",
  "src/components/store/StoreChrome.tsx",
+ "src/components/store/StoreStoryPage.tsx",
+ "src/components/store/StoreCategoryPage.tsx",
+ "src/components/store/StoreSearchOverlay.tsx",
+ "src/components/store/ShoppingAssistant.tsx",
  "src/lib/store/saudi-commerce-content.ts",
  "src/lib/store/market-policy-pages.ts",
  "src/lib/store/market-experience.ts",
@@ -23,13 +27,15 @@ const storefront=[
 // Owner-provided quote amounts may be shown only with explicit provenance and
 // conditional language in the same source statement. Numbers are not proof of
 // enabled checkout, confirmed shipping or a binding seller return policy.
-const risky=/(?:٢٨\s*(?:ر\.س|ريالاً)|١٩\s*درهماً|٣\s*ريالات\s*عُمانية|٧[٬,]?٠٠٠\s*دينار(?:اً)?|٢٤[–-]٤٨\s*ساعة|٢[–-]٣\s*أيام|٤[–-]٥\s*أيام)/;
-const qualifiers=/(?:إرشادي|إرشادياً|تقدير|المورّد السابق|عرض المورّد|غير مضمون|غير مضمونة|يحتاج|تحتاج|سابقة|بحسب|غير معتمد)/;
+const risky=/(?:٢٨\s*(?:ر\.س|ريالاً)|١٩\s*درهماً|٣\s*ريالات\s*عُمانية|٧[٬,]?٠٠٠\s*دينار(?:اً)?|(?:٩٥|١٠٠|١٠٥)\s*جنيه|٢٤[–-]٤٨\s*ساعة|٢[–-]٣\s*أيام|٤[–-]٥\s*أيام)/;
+const qualifiers=/(?:المتوقع|المتوقعة|متوقعة|متوقع|حسب|نؤكد|هنأكد|تأكيد|قبل|تختلف|قد تختلف)/;
 for(const path of storefront){
  const text=readFileSync(join(root,path),"utf8");
  for(const [lineNumber,line] of text.split("\n").entries()){
   // Customer-visible quoted copy must not name or allude to the upstream supplier.
-  if(/"[^"\n]*(?:المورّد|المورد|Taager|تاجر)[^"\n]*"/i.test(line))bad.push(path+":"+(lineNumber+1)+": supplier reference in customer copy");
+  const literal = /(["'`])(?:(?!\1).)*?(?:المورّد|المورد|الموّرد|Taager|تاجر|إرشادي|إرشادية|إرشادياً|المورِّد السابق|عرض المورّد|تقديرات سابقة)(?:(?!\1).)*?\1/i.test(line);
+  const jsxText = />[^<>]*(?:المورّد|المورد|Taager|إرشادي|إرشادية|إرشادياً)[^<>]*</i.test(line);
+  if(literal||jsxText)bad.push(path+":"+(lineNumber+1)+": internal source or awkward advisory wording in customer copy");
   if(risky.test(line)&&!qualifiers.test(line))bad.push(path+":"+(lineNumber+1)+": unqualified owner-supplied supplier quote");
  }
  if(/(?:from\s*|import\s*\()\s*["'][^"']*(?:\/|\.)catalog["']/.test(text))

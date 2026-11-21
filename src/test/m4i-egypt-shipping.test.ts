@@ -37,7 +37,7 @@ describe("M4I Egypt screenshot shipping evidence is advisory only",()=>{
   expect(customer).not.toMatch(/خصم.{0,15}٥ جنيه|رفض.{0,15}٥ جنيه/);
   expect(customer).not.toContain("خصم ٥");
   expect(customer).not.toMatch(/المورّد|المورد|Taager|تاجر/);
-  expect(customer).toContain("رسوم الشحن التقديرية");
+  expect(customer).toContain("مصاريف الشحن المتوقعة");
  });
  it("displays each listed group and clearly leaves unspecified destinations unknown",()=>{
   const shipping=marketPolicyPages.eg.groups[1][1];
@@ -45,7 +45,7 @@ describe("M4I Egypt screenshot shipping evidence is advisory only",()=>{
    for(const city of destinations)expect(shipping).toContain(city);
   }
   for(const value of ["٩٥ جنيه","١٠٠ جنيه","١٠٥ جنيه"])expect(shipping).toContain(value);
-  expect(shipping).toContain("لو عنوانك مش مذكور");
-  expect(shipping).toMatch(/تأكيد|إرشادية/);
+  expect(shipping).toContain("لو منطقتك مش موجودة");
+  expect(shipping).toMatch(/هنأكد|المتوقعة/);
  });
 });

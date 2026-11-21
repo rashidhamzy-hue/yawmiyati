@@ -17,6 +17,10 @@ const paths=[
  "src/components/store/StoreInfoPage.tsx",
  "src/components/store/StoreCommerceGuard.tsx",
  "src/components/store/StoreChrome.tsx",
+ "src/components/store/StoreStoryPage.tsx",
+ "src/components/store/StoreCategoryPage.tsx",
+ "src/components/store/StoreSearchOverlay.tsx",
+ "src/components/store/ShoppingAssistant.tsx",
  "src/lib/store/saudi-commerce-content.ts",
  "src/lib/store/market-policy-pages.ts",
  "src/lib/store/market-experience.ts",
@@ -37,12 +41,14 @@ try{
  const bad=check(false,"unqualified_multiline_quote");
  if(!bad.stderr.includes("unqualified owner-supplied supplier quote"))throw Error("quote rule did not fire");
  write(paths[1],"export const guidance = 'بحسب عرض المورّد السابق، الشحن ٧٬٠٠٠ دينار عراقي إرشادي ويحتاج تأكيداً قبل الطلب';\n");
- check(true,"qualified_historical_quote");
+ check(false,"previous_provider_phrase_is_banned");
+ write(paths[1],'export const awkward = "الشحن الإرشادي ١٩ درهماً";\n');
+ check(false,"unnatural_advisory_wording_is_banned");
  write(paths[1],"export const leaked = 'بحسب عرض المورّد السابق';\n");
  // The production copy uses double quoted TS strings; exercise that exact form.
  write(paths[1],'export const leaked = "بحسب عرض المورّد السابق";\n');
  const leaked=check(false,"upstream_supplier_mentioned_to_customer");
- if(!leaked.stderr.includes("supplier reference in customer copy"))throw Error("supplier leak rule did not fire");
+ if(!leaked.stderr.includes("internal source or awkward advisory wording in customer copy"))throw Error("customer copy rule did not fire");
  write(paths[1],'export const customer = "الشحن التقديري ٧٬٠٠٠ دينار عراقي؛ السعر يحتاج تأكيداً قبل الطلب";\n');
  check(true,"customer_branded_estimate");
 

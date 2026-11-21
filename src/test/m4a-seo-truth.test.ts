@@ -64,13 +64,13 @@ describe("M4A country policy truth",()=>{
   expect(copied).toContain("١٩ درهماً");
   expect(copied).toContain("٣ ريالات عُمانية");
   expect(copied).toContain("٧٬٠٠٠ دينار عراقي");
-  expect(copied).toMatch(/إرشادي|إرشادية/);
+  expect(copied).toMatch(/المتوقعة|المتوقع/);
   expect(copied).not.toContain("Taager");
   for(const market of ["ae","om","eg","iq"] as const){
    const page=marketPolicyPages[market];
    expect(page.groups).toHaveLength(5);
    expect(JSON.stringify(page)).toMatch(/حالياً|بعد|مخطط|اعتماد|مؤكدة|تأكيد/);
   }
-  expect(saudiDelivery.shipping).toContain("التقديرية");
+  expect(saudiDelivery.shipping).toContain("المتوقعة");
  });
 });
