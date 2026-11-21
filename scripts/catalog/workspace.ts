@@ -9,9 +9,9 @@ type PriceSample = { market: MarketCode; currency: string; productKey: string; s
 type DemandSample = { market: MarketCode; productKey: string; url: string; observedAt: string;
   metric: "search_interest_index"; value: number };
 type Fact = { id: string; text: string; source: string };
-export type RecordInput = { targetContributionMinor?:number; woo?: {productId:number;variationId:number;observedAt:string}; offer: Offer; productKey: string; comparisons: PriceSample[]; demand: DemandSample[];
+export type RecordInput = { targetContributionMinor?:number; woo?: {productId:number;variationId:number;observedAt:string;sourceDigest?:string;stockStatus?:string}; offer: Offer; productKey: string; comparisons: PriceSample[]; demand: DemandSample[];
   facts: Fact[]; faq: { question: string; factId: string }[]; media: { file: string; checksum: string; alt: string; factId: string; rights: string }[] };
-export type Snapshot = {version: 1; demo: boolean; stores: { market: MarketCode; reportedTotal: number | null; records: RecordInput[] }[]};
+export type Snapshot = {version: 1; demo: boolean; stores: { market: MarketCode; observedAt?:string; reportedTotal: number | null; records: RecordInput[] }[]};
 const urlOK = (s: string) => { try {const u = new URL(s); return u.protocol === "https:" && !u.username && !u.password;} catch {return false;} };
 const money = (n: unknown): n is number => typeof n === "number" && Number.isSafeInteger(n) && n >= 0;
 const fresh = (s: string, now: number) => {const age=now-Date.parse(s); return age >= 0 && age <= 30 * 86400000;};
@@ -67,7 +67,7 @@ export function analyze(snapshot: Snapshot, asOf: string, limit = 150) {
         if(price===null)price=minimum;
         else if(minimum===null || price<minimum)price=null;
       }
-      return {...offer,economics:{...offer.economics,price}, competitor: lowest ? {source: lowest.url, deliveredMinor: lowest.price+lowest.shipping!, observedAt:lowest.observedAt} : null,
+      return {...offer, ...(record.woo?.stockStatus && record.woo.stockStatus !== "instock" ? {stockVerifiedAt:""} : {}),economics:{...offer.economics,price}, competitor: lowest ? {source: lowest.url, deliveredMinor: lowest.price+lowest.shipping!, observedAt:lowest.observedAt} : null,
         observations:[...offer.observations.filter(o=>o.factor !== "demand" && o.verified === true && urlOK(o.source)),
           ...demand.map(d=>({factor:"demand" as const, market, sku:offer.sku, score:d.value, source:d.url, verified:true, observedAt:d.observedAt}))]};
     });
