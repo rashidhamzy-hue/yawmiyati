@@ -7,7 +7,7 @@ type Client=ReturnType<typeof dashboardClient>;
 function amount(value:string,market:MarketCode){return value.trim()===""?null:parseMinorUnits(market,value.trim());}
 function format(value:number|null,market:MarketCode){return value===null?"":(value/10**markets[market].minorDigits).toFixed(markets[market].minorDigits);}
 export function CommercialReview({client,token,market}:{client:Client;token:string;market:MarketCode}){
- const [rows,setRows]=useState<CandidateRow[]|null>(null),[readiness,setReadiness]=useState<CatalogReadiness[]>([]),
+ const [rows,setRows]=useState<{row:CandidateRow;pageOffset:number}[]|null>(null),[readiness,setReadiness]=useState<CatalogReadiness[]>([]),
   [error,setError]=useState(""),[attempt,setAttempt]=useState(0),[query,setQuery]=useState("");
  const [hasMore,setHasMore]=useState(false),[nextOffset,setNextOffset]=useState(0),
   [loadingMore,setLoadingMore]=useState(false),[pageError,setPageError]=useState("");
@@ -17,7 +17,7 @@ export function CommercialReview({client,token,market}:{client:Client;token:stri
   setHasMore(false);setNextOffset(0);setLoadingMore(false);setPageError("");pageInFlight.current=false;
   Promise.all([client.candidates(token,market),client.readiness(token,market)])
    .then(([page,gates])=>{if(id!==generation.current)return;
-    setRows(page);setReadiness(gates);setNextOffset(page.length);setHasMore(page.length===100);
+    setRows(page.map(row=>({row,pageOffset:0})));setReadiness(gates);setNextOffset(page.length);setHasMore(page.length===100);
    }).catch(()=>{if(id===generation.current)setError("Cannot load candidates. Verify access and reload.");});
   return()=>{generation.current++;};
  },[client,token,market,attempt]);
@@ -29,11 +29,11 @@ export function CommercialReview({client,token,market}:{client:Client;token:stri
    const page=await client.candidates(token,market,offset);
    if(id!==generation.current)return;
    setRows(existing=>{
-    const ids=new Set((existing??[]).map(row=>row.woo_product_id));
+    const ids=new Set((existing??[]).map(entry=>entry.row.woo_product_id));
     return [...(existing??[]),...page.filter(row=>{
      if(ids.has(row.woo_product_id))return false;
      ids.add(row.woo_product_id);return true;
-    })];
+    }).map(row=>({row,pageOffset:offset}))];
    });
    setNextOffset(offset+page.length);
    setHasMore(page.length===100&&offset+page.length<100000);
@@ -45,10 +45,10 @@ export function CommercialReview({client,token,market}:{client:Client;token:stri
  <div className="flex flex-wrap gap-2"><input className="rounded border p-2" aria-label="Search loaded candidates" placeholder="Search loaded name or SKU" value={query} onChange={e=>setQuery(e.target.value)}/>
   <button className="rounded border px-3" onClick={()=>setAttempt(a=>a+1)}>Reload (discards unsaved edits)</button></div>
  {error?<p role="alert">{error}</p>:rows===null?<p role="status">Loading candidates…</p>:<p>{rows.length} imported candidate(s) loaded for {market.toUpperCase()}</p>}
- <div className="grid gap-4 lg:grid-cols-2">{rows?.map((row,index)=><div key={market+":"+row.woo_product_id} hidden={!(row.title+" "+row.supplier_sku).toLowerCase().includes(query.toLowerCase())}>
+ <div className="grid gap-4 lg:grid-cols-2">{rows?.map(({row,pageOffset})=><div key={market+":"+row.woo_product_id} hidden={!(row.title+" "+row.supplier_sku).toLowerCase().includes(query.toLowerCase())}>
   <ReviewCard row={row} market={market} save={x=>client.saveCandidate(token,market,row.woo_product_id,x)}/>
   <ReadinessView value={readiness.find(g=>g.woo_product_id===row.woo_product_id)}/>
-  <CandidateDraft client={client} token={token} market={market} row={row} pageOffset={Math.floor(index/100)*100}/>
+  <CandidateDraft client={client} token={token} market={market} row={row} pageOffset={pageOffset}/>
  </div>)}</div>
  {pageError&&<p role="alert" className="text-sm">{pageError}</p>}
  {hasMore&&<button type="button" className="min-h-11 rounded border px-4 py-2 text-sm font-semibold" onClick={()=>void loadMore()} disabled={loadingMore}>{loadingMore?"Loading more candidates…":"Load 100 more candidates"}</button>}
