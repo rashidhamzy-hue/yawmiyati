@@ -93,7 +93,17 @@ export function dashboardClient(origin: string, publicKey: string, request: type
    },
    async catalog(token:string,market:MarketCode,offset=0):Promise<CatalogRow[]> {
      if(!Number.isSafeInteger(offset)||offset<0||offset>100000)throw Error("Invalid catalog offset");
-     return call("/rest/v1/rpc/dashboard_catalog",{p_store:market,p_limit:50,p_offset:offset},token);
+     const result=await call("/rest/v1/rpc/dashboard_catalog",{p_store:market,p_limit:50,p_offset:offset},token);
+     if(!Array.isArray(result)||result.length>50||result.some((row:unknown)=>{
+       if(!row||typeof row!=="object")return true;
+       const item=row as Partial<CatalogRow>;
+       return typeof item.listing_id!=="string"||!item.listing_id.trim()||
+        typeof item.title!=="string"||typeof item.slug!=="string"||
+        typeof item.listing_status!=="string"||
+        !Number.isSafeInteger(item.variant_count)||item.variant_count!<0||
+        !Number.isSafeInteger(item.available_count)||item.available_count!<0;
+     }))throw Error("Invalid catalog response");
+     return result as CatalogRow[];
    },
    async performance(token:string,market:MarketCode,days=30):Promise<MarketPerformance>{
      if(!Number.isSafeInteger(days)||days<1||days>365)throw Error("Invalid period");
