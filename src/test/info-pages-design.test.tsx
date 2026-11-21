@@ -18,7 +18,7 @@ it("shows evidence-qualified Saudi shipping and COD with protected navigation",(
  expect(screen.getByText(/رسوم التوصيل المتوقعة ٢٨ ريالاً سعودياً داخل المملكة/)).toBeTruthy();
  expect(screen.getByText(/الدفع نقداً عند الاستلام سيكون متاحاً/)).toBeTruthy();
  expect(screen.getByText(/شروط الاسترجاع والاستبدال/)).toBeTruthy();
- expect(screen.getByText(/الحقوق النظامية/)).toBeTruthy();
+ expect(screen.getByText(/حقوقك النظامية/)).toBeTruthy();
  expect(container.textContent).toContain("مدة التوصيل المتوقعة");
  expect(container.textContent).not.toMatch(/المورّد|المورد|Taager/);
 });
