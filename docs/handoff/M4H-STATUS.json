@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "project": "Yawmiyati",
+  "type": "source_only_handoff",
+  "generatedOn": "2026-11-21",
+  "repository": "tarikhtube-stack/saudi-store-spark",
+  "referenceMainCommit": "a0938b75676046593dbcdc2badf6bfd578b9d010",
+  "sourceNotice": "Prepared from source and GitHub CI, not a live Supabase, supplier or deployment query.",
+  "markets": [
+    {
+      "code": "sa",
+      "currency": "SAR",
+      "minorDigits": 2,
+      "shippingGuide": "28",
+      "eta": "2–3d major cities; 4–5d others"
+    },
+    {
+      "code": "ae",
+      "currency": "AED",
+      "minorDigits": 2,
+      "shippingGuide": "19",
+      "eta": "24–48h"
+    },
+    {
+      "code": "om",
+      "currency": "OMR",
+      "minorDigits": 3,
+      "shippingGuide": "3",
+      "eta": null
+    },
+    {
+      "code": "eg",
+      "currency": "EGP",
+      "minorDigits": 2,
+      "shippingGuide": null,
+      "eta": "2d Cairo/Giza/Alexandria; 3d Lower Egypt/Qalyubia; 2–5d other named regions"
+    },
+    {
+      "code": "iq",
+      "currency": "IQD",
+      "minorDigits": 3,
+      "shippingGuide": "7000",
+      "eta": null
+    }
+  ],
+  "restrictions": {
+    "supplierConnection": false,
+    "realOrders": false,
+    "paidAI": false,
+    "autoPublish": false,
+    "adSpend": false,
+    "liveIndexing": false,
+    "deploy": false,
+    "productionRelease": false
+  },
+  "current": {
+    "m1_to_m4g": "source_merged_ci_verified",
+    "m4h": "pr_pending_ci",
+    "browserQA": "synthetic_5_markets_4_viewports_and_local_owner",
+    "actualAuthenticatedAdmin": "not_verified_here",
+    "supplierProductImport": "not_connected",
+    "localizedAI": "offline_contract_only",
+    "publicSEO": "noindex"
+  },
+  "activeHandoffPaths": [
+    "docs/handoff/M4H-CLAUDE-START-HERE.md",
+    "docs/M4G-FIVE-MARKET-QA-AUDIT.md",
+    "docs/BLUEPRINT-ACCEPTANCE-STATUS.md",
+    "docs/SUPPLIER-POLICIES-2026-11-20.md",
+    "docs/BUILD-TO-LAUNCH-EXECUTION.md",
+    "src/lib/store/markets.ts",
+    "src/lib/store/historic-supplier-terms.ts",
+    "src/lib/store/market-policy-pages.ts",
+    "src/lib/store/saudi-commerce-content.ts",
+    "src/lib/store/market-import.server.ts",
+    "src/lib/store/offline-ai-workflows.ts",
+    "src/lib/store/offline-seo-release.ts",
+    "scripts/check-storefront-truth.mjs",
+    "scripts/test-storefront-truth-guard.mjs"
+  ],
+  "launchBlockers": [
+    "verified_supplier_feeds_all_5",
+    "real_stock_cost_variants_photos",
+    "egypt_governorate_shipping_fees",
+    "iraq_returns_conflict",
+    "all_market_legal_seller_policies",
+    "real_catalog_approval",
+    "real_checkout_and_sandbox_dispatch",
+    "authenticated_owner_runtime_E2E",
+    "model_budget_authorization",
+    "production_domains_and_seo",
+    "security_and_operational_controls",
+    "ownership_transfer_authorization"
+  ],
+  "oldSnapshots": [
+    "CLAUDE.md",
+    "docs/HANDOFF-STATUS.md",
+    "docs/INTEGRATION-CONTRACT.md",
+    "docs/handoff/ENGINEERING-MANIFEST.json"
+  ]
+}

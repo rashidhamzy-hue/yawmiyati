@@ -8,7 +8,7 @@ import {marketExperience} from "../lib/store/market-experience";
 const countries=[
  ["ae","تفاصيل تليق بذوقج","شو ودّج تلاقين؟","١٩ درهماً"],
  ["om","للبيت تفاصيله","وش في بالك اليوم؟","٣ ريالات عُمانية"],
- ["eg","كل يوم فيه حاجة","بتدوّري على إيه؟","جدول أسعار المحافظات"],
+ ["eg","كل يوم فيه حاجة","بتدوّري على إيه؟","أسعار الشحن التفصيلية"],
  ["iq","كل يوم يصير أحلى","شنو ببالچ اليوم؟","٧٬٠٠٠ دينار عراقي"],
 ] as const;
 describe("four distinct market storefronts",()=>{
@@ -23,12 +23,12 @@ describe("four distinct market storefronts",()=>{
   const faqs=Array.from(faq!.querySelectorAll("summary")).map(e=>e.textContent?.trim());
   expect(faqs).toHaveLength(marketExperience[market].questions.length);
   expect(new Set(faqs).size).toBe(faqs.length);
-  expect(faq?.textContent).not.toContain("Taager");
+  expect(faq?.textContent).not.toMatch(/المورّد|المورد|Taager/);
  });
  it.each(countries)("%s: shows source-quoted shipping or accurate Egypt gap",(market,_,__,fee)=>{
   const {container}=render(<StoreInfoPage market={market} topic="shipping-returns"/>);
   expect(container.textContent).toContain(fee);
-  expect(container.textContent).not.toContain("Taager");
+  expect(container.textContent).not.toMatch(/المورّد|المورد|Taager/);
   expect(container.textContent).not.toMatch(/Apple Pay|تابي|تمارا|فيزا/);
   expect(container.textContent).toMatch(/إرشادي|تأكيد|معتمد|محتاجة/);
   expect(screen.getByRole("heading",{level:1})).toBeTruthy();

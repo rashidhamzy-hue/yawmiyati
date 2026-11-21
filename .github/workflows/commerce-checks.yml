@@ -20,6 +20,7 @@ jobs:
       - run: node scripts/check-storefront-truth.mjs
       - run: node scripts/test-storefront-truth-guard.mjs
       - run: node scripts/check-m4g-release-boundary.mjs
+      - run: node scripts/check-m4h-handoff.mjs
       - run: node scripts/check-handoff-manifest.mjs
       - run: bun run build
       - run: bun run test

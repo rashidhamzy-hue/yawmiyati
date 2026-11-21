@@ -71,6 +71,6 @@ describe("M4A country policy truth",()=>{
    expect(page.groups).toHaveLength(5);
    expect(JSON.stringify(page)).toMatch(/حالياً|بعد|مخطط|اعتماد|مؤكدة|تأكيد/);
   }
-  expect(saudiDelivery.shipping).toContain("إرشادي");
+  expect(saudiDelivery.shipping).toContain("التقديرية");
  });
 });
