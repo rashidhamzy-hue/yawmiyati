@@ -32,7 +32,7 @@ export function ApprovedProductGallery({detail,market,extras}:{detail:PublicDeta
       {product.description.trim()&&<p className="whitespace-pre-wrap break-words text-sm leading-7 text-muted-foreground">{product.description}</p>}
       {product.variants.length>0&&<fieldset className="space-y-2"><legend className="text-sm font-bold">الخيارات المعتمدة</legend><div className="flex flex-wrap gap-2">{product.variants.map(v=><button key={v.id} type="button" aria-pressed={chosenVariant?.id===v.id} onClick={()=>setVariantId(v.id)} className={`min-h-11 rounded-xl border px-4 py-2 text-sm ${chosenVariant?.id===v.id?"border-primary bg-muted font-bold":""}`}>{v.label}</button>)}</div><p className="text-xs text-muted-foreground">اختيار للعرض فقط؛ لا توجد معلومات مخزون أو شراء مؤكدة.</p></fieldset>}
       {product.specifications.length>0&&<section aria-label="المواصفات المعتمدة"><h2 className="mb-3 text-base font-bold">المواصفات</h2><dl className="divide-y rounded-xl border px-4">{product.specifications.map((s,index)=><div key={index} className="grid grid-cols-2 gap-3 py-3 text-sm"><dt className="font-semibold">{s.label}</dt><dd className="break-words text-muted-foreground">{s.value}</dd></div>)}</dl></section>}
-      <p className="rounded-xl bg-muted px-4 py-3 text-sm text-muted-foreground">الشراء غير متاح حالياً. تفاصيل التوفر والتوصيل والدفع غير مؤكدة.</p>
+      <p className="rounded-xl bg-muted px-4 py-3 text-sm text-muted-foreground">هذه معاينة للمنتج وليست صفحة لإتمام الطلب. لا تُجمع منها بيانات دفع أو يُنشأ بها طلب شراء.</p>
     </div>
   </article>;
 }

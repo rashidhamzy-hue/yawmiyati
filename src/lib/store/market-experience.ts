@@ -1,5 +1,6 @@
 import type {MarketCode} from "./markets";
 import type {ImgKey} from "./images";
+import {customerServiceCopy} from "./customer-service-copy";
 
 /**
  * Market-specific editorial voice and visual direction.
@@ -54,7 +55,7 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
   categoryCaptions:{home:"لأجواء تشبهك",kitchen:"لحظات تستحق التذوّق",beauty:"تفاصيل يومية ناعمة",fashion:"إطلالة تعبر عنك",wellness:"مساحة لنفسك",organize:"أقل فوضى، راحة أكثر"},
   questions:[
    {question:"كيف ألقى اختيارات تناسبني؟",answer:"استخدمي البحث أو تصفّحي الأقسام، وشوفي تفاصيل كل منتج في صفحته."},
-   {question:"وين تفاصيل الشحن؟",answer:"شوفي رسوم التوصيل المتوقعة والمدة حسب المنطقة في صفحة الدفع والتوصيل."},
+   {question:"وين تفاصيل الشحن؟",answer:customerServiceCopy.sa.shipping+" "+customerServiceCopy.sa.delivery},
   ],
  },
  ae:{
@@ -79,7 +80,7 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
    {question:"شلون ألاقي اللي على ذوقي؟",answer:"اكتبي اسم المنتج في البحث أو تصفّحي الأقسام الإماراتية والاختيارات المعروضة."},
    {question:"هل نفس المنتجات موجودة في كل بلد؟",answer:"الاختيارات والأسعار تختلف من بلد للثاني، وكل متجر يعرض عملته المحلية عند توفر المنتجات."},
    {question:"كيف أعرف تفاصيل المنتج؟",answer:"عند توفر المنتج، افتحي صفحته عشان تشوفين المواصفات والصور والسعر."},
-   {question:"وين ألقى تفاصيل الطلب؟",answer:"رسوم التوصيل المتوقعة ١٩ درهماً داخل الإمارات؛ التفاصيل في صفحة الدفع والتوصيل."},
+   {question:"وين ألقى تفاصيل الطلب؟",answer:customerServiceCopy.ae.shipping},
   ],
  },
  om:{
@@ -104,7 +105,7 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
    {question:"كيف أختار القسم المناسب؟",answer:"تصفّحي الأقسام أو استخدمي البحث داخل الصفحة للعثور على ما يناسبك."},
    {question:"كيف أعرف مواصفات المنتج؟",answer:"عند توفر المنتج، تظهر مواصفاته وسعره في صفحته."},
    {question:"هل الأسعار بالريال العُماني؟",answer:"نعم، المتجر العُماني يعرض الأسعار بعملته المحلية."},
-   {question:"وين تفاصيل التوصيل؟",answer:"رسوم التوصيل المتوقعة ٣ ريالات عُمانية؛ شوفي التفاصيل في صفحة الدفع والتوصيل."},
+   {question:"وين تفاصيل التوصيل؟",answer:customerServiceCopy.om.shipping},
   ],
  },
  eg:{
@@ -129,7 +130,7 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
    {question:"ألاقي الحاجة اللي بدور عليها إزاي؟",answer:"اكتبي اسم المنتج في البحث أو لفي على الأقسام وشوفي اختيارات كل قسم."},
    {question:"السعر بالجنيه المصري؟",answer:"أيوه، الأسعار المعروضة في متجر مصر بالجنيه المصري."},
    {question:"هل كل المنتجات موجودة في كل بلد؟",answer:"كل بلد ليه اختياراته وأسعاره الخاصة."},
-   {question:"أتابع تفاصيل الشحن فين؟",answer:"مصاريف الشحن المتوقعة ٩٥ أو ١٠٠ أو ١٠٥ جنيه حسب المنطقة؛ شوفي التفاصيل في صفحة الشحن."},
+   {question:"أتابع تفاصيل الشحن فين؟",answer:customerServiceCopy.eg.shipping},
   ],
  },
  iq:{
@@ -154,7 +155,7 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
    {question:"شلون أدوّر على اللي أريده؟",answer:"اكتبي اسم المنتج بالبحث أو تصفّحي الأقسام اللي تعجبچ."},
    {question:"الأسعار بالدينار العراقي؟",answer:"إي، متجر العراق يعرض الأسعار بالدينار العراقي."},
    {question:"هل المنتجات تختلف حسب البلد؟",answer:"إي، كل متجر إله منتجات وأسعار خاصة بيه."},
-   {question:"وين أشوف تفاصيل التوصيل؟",answer:"أجرة التوصيل المتوقعة ٧٬٠٠٠ دينار عراقي؛ باقي التفاصيل في صفحة الدفع والتوصيل."},
+   {question:"وين أشوف تفاصيل التوصيل؟",answer:customerServiceCopy.iq.shipping},
   ],
  },
 };

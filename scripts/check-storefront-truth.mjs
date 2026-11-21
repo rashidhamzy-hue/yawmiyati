@@ -23,6 +23,8 @@ const storefront=[
  "src/lib/store/market-policy-pages.ts",
  "src/lib/store/market-experience.ts",
  "src/lib/store/brand-story.ts",
+ "src/lib/store/customer-service-copy.ts",
+ "src/lib/store/shop-assistant.ts",
 ];
 // Owner-provided quote amounts may be shown only with explicit provenance and
 // conditional language in the same source statement. Numbers are not proof of
@@ -36,6 +38,11 @@ for(const path of storefront){
   const literal = /(["'`])(?:(?!\1).)*?(?:المورّد|المورد|الموّرد|Taager|تاجر|إرشادي|إرشادية|إرشادياً|المورِّد السابق|عرض المورّد|تقديرات سابقة)(?:(?!\1).)*?\1/i.test(line);
   const jsxText = />[^<>]*(?:المورّد|المورد|Taager|إرشادي|إرشادية|إرشادياً)[^<>]*</i.test(line);
   if(literal||jsxText)bad.push(path+":"+(lineNumber+1)+": internal source or awkward advisory wording in customer copy");
+  // M9: keep approved customer copy direct; old 'coming soon' and
+  // unverified shipping estimate language must never drift back.
+  const placeholders=/(?:المتوقعة|المتوقع|سيكون متاحاً|ستكون متاحة|سيتم نشر|سنوضح|بنوضح|هنوضح|راح يتوفر|عند بدء استقبال الطلبات|بدء استقبال الطلبات|قبل بدء الطلبات|مع بدء الطلبات|مع تشغيل الطلبات|قبل تفعيل الطلبات|الشحن التقديري)/;
+  if(placeholders.test(line))bad.push(path+":"+(lineNumber+1)+": forbidden coming-soon or speculative public copy");
+
   if(risky.test(line)&&!qualifiers.test(line))bad.push(path+":"+(lineNumber+1)+": unqualified owner-supplied supplier quote");
  }
  if(/(?:from\s*|import\s*\()\s*["'][^"']*(?:\/|\.)catalog["']/.test(text))

@@ -46,26 +46,19 @@ describe("M4D owner API fail-closed transport boundaries",()=>{
  });
 });
 
-describe("M4D owner-supplied historical country policies",()=>{
- it("preserves known supplier quotation amounts while distinguishing live price",()=>{
+describe("M4D owner-supplied supplier evidence stays internal",()=>{
+ it("preserves previous quotations for review, but not as customer sale prices",()=>{
   const t=historicSupplierTerms;
-  expect([t.sa.shippingQuote?.amount,t.ae.shippingQuote?.amount,t.om.shippingQuote?.amount,t.eg.shippingQuote,t.iq.shippingQuote?.amount]).toEqual(["28","19","3",null,"7000"]);
+  expect([t.sa.shippingQuote?.amount,t.ae.shippingQuote?.amount,t.om.shippingQuote?.amount,t.eg.shippingQuote,t.iq.shippingQuote?.amount])
+   .toEqual(["28","19","3",null,"7000"]);
   expect(Object.values(t).every(x=>x.status==="historic_unverified"&&!x.customerPriceAuthorized&&!x.checkoutEnabled&&!x.supplierConnected)).toBe(true);
-  expect(saudiDelivery.shipping).toMatch(/٢٨ ر.س/);
-  expect(saudiDelivery.shipping).toMatch(/المتوقعة|نؤكد/);
-  expect(marketPolicyPages.ae.groups[1][1]).toMatch(/المتوقعة ١٩ درهماً/);
-  expect(marketPolicyPages.om.groups[1][1]).toMatch(/المتوقعة ٣ ريالات عُمانية/);
-  expect(marketPolicyPages.iq.groups[1][1]).toMatch(/المتوقعة ٧٬٠٠٠ دينار عراقي/);
-  expect(marketPolicyPages.eg.groups[1][1]).toMatch(/٩٥ جنيه.*١٠٠ جنيه.*١٠٥ جنيه/);
+  const customer=JSON.stringify([saudiDelivery,saudiShippingPage,marketPolicyPages]);
+  expect(customer).not.toMatch(/المتوقعة|٢٨ ر.س|٢٨ ريالاً|١٩ درهماً|٣ ريالات عُمانية|٧٬٠٠٠ دينار عراقي/);
+  expect(customer).toContain("الدفع");
  });
- it("preserves supplied country delivery timelines as estimates, not promises",()=>{
-  const info=JSON.stringify([saudiDelivery,saudiShippingPage,marketPolicyPages]);
-  expect(info).toContain("٢٤–٤٨ ساعة");
-  expect(info).toContain("٢–٣ أيام");
-  expect(info).toContain("٤–٥ أيام");
-  expect(info).toContain("٢–٥ أيام");
-  expect(info).not.toMatch(/١٥ يوماً|٣ أيام للإرجاع|١٤ يوماً للسلع المعيبة/);
-  expect(info).toMatch(/المتوقعة|قبل|تأكيد/);
-  expect(info).not.toMatch(/المورّد|المورد|Taager/);
+ it("does not turn unverified delivery or return windows into customer promises",()=>{
+  const content=JSON.stringify([saudiDelivery,saudiShippingPage,marketPolicyPages]);
+  expect(content).not.toMatch(/٢٤–٤٨ ساعة|٢–٣ أيام|٤–٥ أيام|٢–٥ أيام|٧ أيام|١٥ يوماً/);
+  expect(content).not.toMatch(/المورّد|المورد|Taager|سيتم نشر|عند بدء استقبال الطلبات/);
  });
 });

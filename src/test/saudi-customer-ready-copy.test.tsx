@@ -4,33 +4,32 @@ vi.mock("../lib/store/staging-public-config",()=>({publicBrowserConfig:()=>({ori
 import {MarketPreview} from "../components/store/MarketPreview";
 import {StoreCommerceGuard} from "../components/store/StoreCommerceGuard";
 import {StoreInfoPage} from "../components/store/StoreInfoPage";
+import {customerServiceCopy} from "../lib/store/customer-service-copy";
 
-it("describes Saudi shipping estimates without supplier references without enabling orders",()=>{
+it("presents Saudi COD, shipping and returns in natural operational wording without promising checkout",()=>{
  const {container}=render(<MarketPreview market="sa"/>);
- expect(screen.getByText(/الدفع عند الاستلام عند بدء الطلبات — الشراء غير متاح حالياً/)).toBeTruthy();
- expect(screen.getByRole("heading",{name:/رسوم التوصيل المتوقعة: ٢٨ ر.س/})).toBeTruthy();
- expect(container.textContent).toMatch(/٢–٣ أيام/);
- expect(container.textContent).toMatch(/٤–٥ أيام/);
- expect(container.textContent).toMatch(/المتوقعة/);
- expect(container.textContent).not.toMatch(/المورّد|المورد|Taager/);
+ expect(screen.getByText(/الدفع عند الاستلام · التفاصيل حسب عنوانك/)).toBeTruthy();
+ expect(screen.getByRole("heading",{name:"رسوم التوصيل حسب العنوان"})).toBeTruthy();
+ expect(container.textContent).toContain(customerServiceCopy.sa.shipping);
+ expect(container.textContent).toContain(customerServiceCopy.sa.returns);
+ expect(container.textContent).not.toMatch(/المتوقعة|سيكون متاحاً|سيتم نشر|٢٨ ر.س|المورد|Taager/);
  expect(screen.getByRole("link",{name:/اعرفي أكثر عن الشحن والاسترجاع/}).getAttribute("href")).toBe("/sa/info/shipping-returns");
  expect(screen.queryByRole("button",{name:/تأكيد الطلب|إتمام الدفع|شراء الآن/})).toBeNull();
 });
 it.each(["help","terms","privacy","shipping-returns"] as const)(
- "keeps Saudi %s disclosures non-transactional",(topic)=>{
+ "keeps Saudi %s disclosures relevant and direct",(topic)=>{
  const {container}=render(<StoreInfoPage market="sa" topic={topic}/>);
  expect(screen.getByRole("heading",{level:1})).toBeTruthy();
- expect(container.textContent).not.toMatch(/المورّد|المورد|Taager/);
+ expect(container.textContent).not.toMatch(/المورّد|المورد|Taager|المتوقعة|سيتم نشر/);
  if(topic==="shipping-returns"){
-  expect(container.textContent).toContain("٢٨ ريالاً سعودياً");
-  expect(container.textContent).toContain("المتوقعة");
-  expect(container.textContent).toContain("شروط الاسترجاع");
+  expect(container.textContent).toContain(customerServiceCopy.sa.shipping);
+  expect(container.textContent).toContain(customerServiceCopy.sa.returns);
   expect(container.textContent).toContain("حقوقك النظامية");
  }
 });
 it.each(["cart","checkout","order"] as const)(
  "keeps Saudi %s non-transactional",(type)=>{
  const {container}=render(<StoreCommerceGuard market="sa" type={type}/>);
- expect(container.textContent).not.toMatch(/شراء الآن|طلب ناجح/);
+ expect(container.textContent).not.toMatch(/شراء الآن|طلب ناجح|سيكون متاحاً/);
  expect(screen.queryByRole("button",{name:/ادفعي|تأكيد الطلب|شراء الآن/})).toBeNull();
 });

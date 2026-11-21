@@ -45,7 +45,7 @@ export function planMarketSeo(market:MarketCode):SeoDraft{
  const c=marketIdentity[market],v=marketExperience[market];
  return draft(market,"home","/"+market+"/",
   "يومياتي "+c.name+" | "+v.heroStart+" "+v.heroAccent,
-  "اكتشفي أفكار يومياتي لـ"+c.fullName+"؛ "+v.heroDescription+" استكشفي أقسام البيت والقهوة والجمال والعناية باللغة العربية. لا توجد طلبات شراء مفعّلة حالياً.");
+  "اكتشفي أفكار يومياتي لـ"+c.fullName+"؛ "+v.heroDescription+" استكشفي أقسام البيت والقهوة والجمال والعناية واختاري ما يلائم ذوقك.");
 }
 export function planCategorySeo(market:MarketCode,category:unknown):SeoDraft|null{
  if(!Object.hasOwn(markets,market))throw Error("invalid_seo_market");
