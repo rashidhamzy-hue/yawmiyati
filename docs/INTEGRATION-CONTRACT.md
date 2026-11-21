@@ -1,3 +1,5 @@
+> **CURRENT OVERRIDE — 21 Nov 2026:** This is a pre-retirement integration snapshot. The formerly described Saudi Woo/Taager proof and nine import candidates are no longer connected/current. Use `docs/handoff/M4H-CLAUDE-START-HERE.md` for current release blockers. Do not treat this snapshot as current deployment evidence.
+
 # Integration contract — 19 November 2026
 Lovable project Souq Of Saudi (6bc552b8-1629-4a0b-8706-8bc21c5c1279) is synchronized with this private repository; workspace plan Free; GitHub and Supabase connectors enabled, but Lovable cloud database status explicitly enabled=false. External staging Supabase skhtunkknshvolturqlm is active, with nine SA candidates and zero listings across all five markets. Do not enable a new database, import another project's credentials, or incur Lovable build charges. Existing AGENTS.md database management boundary requires owner clarification before further migrations.
 
