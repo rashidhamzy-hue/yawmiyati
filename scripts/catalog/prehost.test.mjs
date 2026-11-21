@@ -131,3 +131,24 @@ test("board exports only recommended choices and stale batch approvals are atomi
  writeFileSync(list,JSON.stringify(rows));assert.equal(cli("batch-approve",list).status,0);
  const drafts=cli("batch-draft",list);assert.equal(drafts.status,0,drafts.stderr);assert.equal(drafts.stdout.trim().split("\n").length,10);
 });
+
+test("refresh retains unchanged enrichment, resets changed stock and archives removals only on full captures",t=>{
+ const dir=mkdtempSync(join(tmpdir(),"yawm-refresh-"));t.after(()=>rmSync(dir,{recursive:true,force:true}));
+ const cli=action=>run(process.execPath,["scripts/catalog/run.mjs",action,dir]);
+ const file=join(dir,"catalog.json"),raw=join(dir,"woo-pages.json");
+ const product=id=>({id,sku:"R"+id,name:"رف",categories:[],variations:[],price:"20.00",stock_status:"instock"});
+ function capture(day,products,total=products.length,pages=1){writeFileSync(raw,JSON.stringify({sa:{observedAt:"2025-01-"+day+"T00:00:00Z",pages:[{page:1,totalPages:pages,totalProducts:total,products}]}}));}
+ capture("01",[product(1),product(2),product(3)]);assert.equal(cli("woo").status,0);
+ const data=JSON.parse(readFileSync(file,"utf8"));
+ for(const r of data.stores[0].records)r.facts=[{id:"title",text:r.offer.title,source:"https://example.com"}];
+ writeFileSync(file,JSON.stringify(data));const before=readFileSync(file,"utf8");
+ capture("02",[product(1)],3,2);assert.notEqual(cli("refresh").status,0);assert.equal(readFileSync(file,"utf8"),before);
+ capture("02",[product(1),{...product(2),stock_status:"outofstock"},product(4)]);
+ const output=cli("refresh");assert.equal(output.status,0,output.stderr);const result=JSON.parse(output.stdout);
+ assert.equal(readFileSync(result.backup,"utf8"),before);
+ assert.deepEqual(result.changes,[{market:"sa",unchanged:1,changed:1,added:1,removed:1}]);
+ const next=JSON.parse(readFileSync(file,"utf8")).stores[0].records;
+ assert.equal(next[0].facts.length,1);assert.equal(next[1].facts.length,0);assert.equal(next[1].woo.stockStatus,"outofstock");
+ assert.equal(cli("refresh").status,0);
+ capture("01",[product(1)]);assert.notEqual(cli("refresh").status,0);
+});
