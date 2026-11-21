@@ -25,6 +25,6 @@ it("shows evidence-qualified Saudi shipping and COD with protected navigation",(
 
 it("keeps unverified Egypt delivery fees unspecified",()=>{
  render(<StoreInfoPage market="eg" topic="shipping-returns"/>);
- expect(screen.getByText(/مصاريف الشحن حسب المحافظة والعنوان/)).toBeTruthy();
+ expect(screen.getByText(/مصاريف الشحن بتختلف حسب المحافظة والعنوان/)).toBeTruthy();
  expect(screen.queryByText(/٢٨ ريالاً سعودياً/)).toBeNull();
 });
