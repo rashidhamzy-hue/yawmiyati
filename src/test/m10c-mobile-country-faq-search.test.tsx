@@ -5,6 +5,8 @@ import {StoreHeader,StoreFooter} from "../components/store/StoreChrome";
 import {ShoppingAssistant} from "../components/store/ShoppingAssistant";
 import {StoreSearchOverlay} from "../components/store/StoreSearchOverlay";
 import {MarketPreview} from "../components/store/MarketPreview";
+import {StoreCategoryPage} from "../components/store/StoreCategoryPage";
+import {StoreCommerceGuard} from "../components/store/StoreCommerceGuard";
 import {customerServiceCopy} from "../lib/store/customer-service-copy";
 vi.mock("../lib/store/staging-public-config",()=>({publicBrowserConfig:()=>({origin:"",key:""})}));
 
@@ -39,6 +41,15 @@ describe("M10C mobile storefront details",()=>{
   expect(clear.className).toContain("min-w-12");
   fireEvent.click(clear);
   expect((input as HTMLInputElement).value).toBe("");
+ });
+ it.each(["sa","ae","om","eg","iq"] as const)("%s category and checkout use customer language, not database architecture",market=>{
+  const category=render(<StoreCategoryPage market={market} slug="kitchen"/>);
+  expect(category.container.textContent).toContain("أفكاراً تلهم");
+  expect(category.container.textContent).not.toMatch(/لا يدّعي تصنيف|معلومات معتمدة/);
+  category.unmount();
+  const guard=render(<StoreCommerceGuard market={market} type="checkout"/>);
+  expect(guard.container.textContent).toContain("تصفّحي الأقسام");
+  expect(guard.container.textContent).not.toMatch(/بناءً على بيانات معتمدة/);
  });
  it("assistant visibility moves composer above mobile nav and removes global state on close/unmount",async()=>{
   const {unmount}=render(<><StoreFooter market="sa"/><ShoppingAssistant market="sa" products={[]}/></>);
