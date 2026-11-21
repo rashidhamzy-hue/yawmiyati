@@ -18,6 +18,7 @@ jobs:
       # TanStack Router generates routeTree.gen.ts during build.
       - run: node scripts/check-simulation-boundary.mjs
       - run: node scripts/check-storefront-truth.mjs
+      - run: node scripts/test-storefront-truth-guard.mjs
       - run: node scripts/check-handoff-manifest.mjs
       - run: bun run build
       - run: bun run test
