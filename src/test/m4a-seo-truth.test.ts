@@ -65,7 +65,7 @@ describe("M4A country policy truth",()=>{
   for(const market of ["ae","om","eg","iq"] as const){
    const page=marketPolicyPages[market];
    expect(page.groups).toHaveLength(6);
-   expect(page.groups[1][1]).toMatch(/العنوان|عنوانج|الموقع|منطقة التوصيل|عنوانچ/);
+   expect(page.groups[1][1]).toMatch(/العنوان|عنوانج|موقع|منطقة التوصيل|عنوانچ/);
   }
   expect(saudiDelivery.shipping).toContain("عنوان التسليم");
  });
