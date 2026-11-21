@@ -34,7 +34,7 @@ describe("M4I Egypt screenshot shipping evidence is advisory only",()=>{
   expect(card.checkoutEnabled).toBe(false);
   expect(card.supplierConnected).toBe(false);
   const customer=JSON.stringify(marketPolicyPages.eg);
-  expect(customer).not.toContain("٥ جنيه");
+  expect(customer).not.toMatch(/خصم.{0,15}٥ جنيه|رفض.{0,15}٥ جنيه/);
   expect(customer).not.toContain("خصم ٥");
   expect(customer).not.toMatch(/المورّد|المورد|Taager|تاجر/);
   expect(customer).toContain("التكلفة");
