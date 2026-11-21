@@ -1,5 +1,6 @@
 import {useEffect,useState} from "react";
 import {dashboardClient,type CandidateRow,type CandidateContentState} from "@/lib/store/dashboard-client";
+import {readOfflineDraft} from "@/lib/store/import-offline-draft";
 import type {MarketCode} from "@/lib/store/markets";
 type Client=ReturnType<typeof dashboardClient>;
 export function CandidateDraft({client,token,market,row,pageOffset}:{client:Client;token:string;market:MarketCode;row:CandidateRow;pageOffset:number}){
@@ -10,6 +11,7 @@ function Workspace({client,token,market,row,pageOffset}:{client:Client;token:str
  const [state,S]=useState<CandidateContentState|null>(null),[title,T]=useState(row.title),[description,D]=useState("");
  const [reviewAt,R]=useState<string|null>(null),[eligible,E]=useState(false),[blockers,G]=useState<string[]|null>(null);
  const [busy,B]=useState(false),[message,M]=useState(""),[ack,A]=useState(false),[publishAck,PA]=useState(false);
+ const [packet,setPacket]=useState("");
  async function load(){
   const [content,rows,gates]=await Promise.all([client.candidateContent(token,market,row.woo_product_id),client.candidates(token,market,pageOffset),client.readiness(token,market,pageOffset)]);
   S(content);T(content.approval?.title??row.title);D(content.approval?.description??"");
@@ -32,6 +34,12 @@ function Workspace({client,token,market,row,pageOffset}:{client:Client;token:str
   <h4 className="font-bold">Owner-approved content and release</h4>
   <p className="text-sm">Verify factual claims against evidence. AI drafts and shortlists do not publish automatically.</p>
   {state?.draft?<p className="text-sm break-all">Private listing: {state.draft.listing_id}. Editing this draft requires a separate reviewed workflow.</p>:<>
+   <details><summary>Load offline editorial draft</summary>
+    <label className="block text-sm">Paste draft JSON<textarea className="block w-full rounded border p-2" maxLength={250000} value={packet} onChange={e=>setPacket(e.target.value)}/></label>
+    <button type="button" disabled={busy||!packet.trim()} onClick={()=>{try{
+      const copy=readOfflineDraft(packet,market,row);T(copy.title);D(copy.description);A(false);PA(false);setPacket("");M("Draft loaded for review.");
+    }catch{M("Use a current non-demo draft for this market and candidate.");}}}>Load title and description</button>
+   </details>
    <label className="block text-sm">Product title<input maxLength={500} className="block w-full rounded border p-2" dir="auto" value={title} onChange={e=>{T(e.target.value);A(false)}} disabled={busy}/></label>
    <label className="block text-sm">Product description<textarea maxLength={10000} rows={5} className="block w-full rounded border p-2" dir="auto" value={description} onChange={e=>{D(e.target.value);A(false)}} disabled={busy}/></label>
    <label className="flex gap-2 text-sm"><input type="checkbox" checked={ack} onChange={e=>A(e.target.checked)} disabled={busy}/> I verified the claims and approve this exact content revision.</label>
