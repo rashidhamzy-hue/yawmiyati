@@ -40,6 +40,12 @@ export function dashboardClient(origin: string, publicKey: string, request: type
    return response.json();
  }
  return {
+   async offerDecision(token:string,market:MarketCode,sku:string){
+     return call("/rest/v1/rpc/owner_offer_decision",{p_store:market,p_sku:sku},token);
+   },
+   async saveOfferDecision(token:string,market:MarketCode,proposal:unknown,approved:boolean,expected:string){
+     return call("/rest/v1/rpc/save_owner_offer_decision",{p_store:market,p_proposal:proposal,p_approved:approved,p_expected:expected},token);
+   },
    async signIn(email:string,password:string):Promise<string> {
      const data=await call("/auth/v1/token?grant_type=password",{email,password});
      if(typeof data.access_token!=="string") throw new Error("Authentication failed");
