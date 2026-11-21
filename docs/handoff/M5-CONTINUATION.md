@@ -16,9 +16,9 @@
 | M5F | `src/lib/store/offline-job-lifecycle.ts` | Replayable lease, timeout, retry, dead-letter, idempotency and simulated review reducer; no DB persistence |
 | M5G | `src/lib/store/owner-action-queue.ts`, `src/components/store/OwnerActionQueue.tsx` | Read-only owner next-actions using existing scoped dashboard observations |
 | M5H | `src/lib/store/offline-five-market-catalog-plan.ts` | 100-product minimum target / 150 maximum proposal per market; shortfalls shown rather than invented |
-| M5I | `src/test/m5i-offline-cross-system-boundary.test.ts` | Pending PR #111 at time this document was drafted: offline product, job and independent synthetic checkout safety rehearsal |
+| M5I | `src/test/m5i-offline-cross-system-boundary.test.ts` | Merged via PR #111 after green Commerce CI and browser QA: offline product, job and independent synthetic checkout safety rehearsal |
 
-M5A–M5H are merged into `main` after GitHub Commerce checks and storefront browser QA. M5I must not be treated as merged until verified on GitHub. Existing legacy source contains additional demos, RPC clients, server adapters and storefront pages; do not overwrite them blindly.
+M5A–M5I are merged into `main` after GitHub Commerce checks and storefront browser QA. Their CI success proves source/test behavior, not live operation. Existing legacy source contains additional demos, RPC clients, server adapters and storefront pages; do not overwrite them blindly.
 
 ## Actual operational state
 
