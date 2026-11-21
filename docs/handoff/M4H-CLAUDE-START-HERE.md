@@ -1,3 +1,5 @@
+> **21 November 2026 M4I update — Egypt destination rates captured.** The former 'no governorate shipping fee table' statement below was true at the M4H snapshot but is now superseded **for exactly the 30 screenshot-listed destinations**. Use `src/lib/store/egypt-shipping-evidence.ts` for EGP 95/100/105 bands and strict lookup. Unknown destinations remain unknown. A screenshot also indicates a separate internal EGP 5 deduction on refused COD deliveries; **never present it as a customer fee**. The rates are not authenticated current checkout prices, so customer totals and orders remain disabled. See `docs/M4I-EGYPT-SHIPPING-SCREENSHOT.md`. **Do not change other countries** until their terms are reconfirmed.
+
 # Yawmiyati — M4H Claude Code engineering handoff
 
 **Prepared:** 21 November 2026. **Canonical repository:** `tarikhtube-stack/saudi-store-spark`. **Parent milestone:** M4G, merged to `main` as `a0938b75676046593dbcdc2badf6bfd578b9d010`. M4H changes live in their own PR until GitHub CI is green and merged.
