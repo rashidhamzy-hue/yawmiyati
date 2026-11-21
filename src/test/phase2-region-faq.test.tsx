@@ -30,7 +30,7 @@ describe("four distinct market storefronts",()=>{
   expect(container.textContent).toContain(fee);
   expect(container.textContent).not.toMatch(/المورّد|المورد|Taager/);
   expect(container.textContent).not.toMatch(/Apple Pay|تابي|تمارا|فيزا/);
-  expect(container.textContent).toMatch(/إرشادي|تأكيد|معتمد|محتاجة/);
+  expect(container.textContent).toMatch(/متوقع|تأكيد|نؤكد|قبل/);
   expect(screen.getByRole("heading",{level:1})).toBeTruthy();
  });
 });
