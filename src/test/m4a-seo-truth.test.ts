@@ -60,13 +60,17 @@ describe("M4A five-country source-only SEO",()=>{
 describe("M4A country policy truth",()=>{
  it("does not surface internal supplier quotes as confirmed shipping to customers",()=>{
   const copied=JSON.stringify([saudiDelivery,saudiShippingPage,marketPolicyPages]);
-  expect(copied).not.toMatch(/٢٨\s*(?:ر\.س|ريالاً)|١٩\s*درهماً|٣\s*ريالات\s*عُمانية|٧٬٠٠٠\s*دينار|٢٤–٤٨\s*ساعة|٢–٣\s*أيام|٤–٥\s*أيام/);
+  expect(copied).toContain("٢٨");
+  expect(copied).toContain("١٩ درهماً");
+  expect(copied).toContain("٣ ريالات عُمانية");
+  expect(copied).toContain("٧٬٠٠٠ دينار عراقي");
+  expect(copied).toMatch(/إرشادي|إرشادية/);
   expect(copied).not.toContain("Taager");
   for(const market of ["ae","om","eg","iq"] as const){
    const page=marketPolicyPages[market];
    expect(page.groups).toHaveLength(5);
    expect(JSON.stringify(page)).toMatch(/حالياً|بعد|مخطط|اعتماد|مؤكدة|تأكيد/);
   }
-  expect(saudiDelivery.shipping).toContain("غير معتمدة");
+  expect(saudiDelivery.shipping).toContain("إرشادي");
  });
 });

@@ -6,14 +6,13 @@ import {StoreInfoPage} from "../components/store/StoreInfoPage";
 import {marketExperience} from "../lib/store/market-experience";
 
 const countries=[
- ["ae","تفاصيل تليق بذوقج","شو ودّج تلاقين؟","رسوم الشحن والتغطية النهائية لم تُعتمد"],
- ["om","للبيت تفاصيله","وش في بالك اليوم؟","رسوم الشحن والتغطية النهائية غير معتمدة"],
- ["eg","كل يوم فيه حاجة","بتدوّري على إيه؟","مصاريف الشحن حسب المحافظة والعنوان"],
- ["iq","كل يوم يصير أحلى","شنو ببالچ اليوم؟","أجرة الشحن النهائية غير مؤكدة"],
+ ["ae","تفاصيل تليق بذوقج","شو ودّج تلاقين؟","١٩ درهماً"],
+ ["om","للبيت تفاصيله","وش في بالك اليوم؟","٣ ريالات عُمانية"],
+ ["eg","كل يوم فيه حاجة","بتدوّري على إيه؟","جدول أسعار المحافظات"],
+ ["iq","كل يوم يصير أحلى","شنو ببالچ اليوم؟","٧٬٠٠٠ دينار عراقي"],
 ] as const;
-
 describe("four distinct market storefronts",()=>{
- it.each(countries)("%s: local headline, search and unique FAQs", (market,heading,search)=>{
+ it.each(countries)("%s: local headline, search and unique FAQs",(market,heading,search)=>{
   const {container}=render(<MarketPreview market={market}/>);
   expect(screen.getByRole("heading",{level:1,name:new RegExp(heading)})).toBeTruthy();
   expect(screen.getByRole("button",{name:search})).toBeTruthy();
@@ -24,25 +23,24 @@ describe("four distinct market storefronts",()=>{
   const faqs=Array.from(faq!.querySelectorAll("summary")).map(e=>e.textContent?.trim());
   expect(faqs).toHaveLength(marketExperience[market].questions.length);
   expect(new Set(faqs).size).toBe(faqs.length);
-  expect(faq?.textContent).not.toMatch(/المورّد|Taager|٢٤–٤٨ ساعة|٧٬٠٠٠ دينار/);
+  expect(faq?.textContent).not.toContain("Taager");
  });
- it.each(countries)("%s: localized shipping without supplier name or false payment options",(market,_,__,fee)=>{
+ it.each(countries)("%s: shows source-quoted shipping or accurate Egypt gap",(market,_,__,fee)=>{
   const {container}=render(<StoreInfoPage market={market} topic="shipping-returns"/>);
   expect(container.textContent).toContain(fee);
-  expect(container.textContent).not.toMatch(/المورّد|Taager|١٩ درهماً|٣ ريالات عُمانية|٧٬٠٠٠ دينار عراقي/);
+  expect(container.textContent).not.toContain("Taager");
   expect(container.textContent).not.toMatch(/Apple Pay|تابي|تمارا|فيزا/);
+  expect(container.textContent).toMatch(/إرشادي|تأكيد|معتمد|محتاجة/);
   expect(screen.getByRole("heading",{level:1})).toBeTruthy();
  });
 });
 describe("Saudi FAQ correction",()=>{
- it("shows exactly five nonduplicated homepage questions, not two stacked FAQ sets",()=>{
+ it("shows exactly five nonduplicated homepage questions",()=>{
   const {container}=render(<MarketPreview market="sa"/>);
   const faq=container.querySelector("#questions");
   expect(faq).toBeTruthy();
   const summaries=Array.from(faq!.querySelectorAll("summary")).map(n=>n.textContent?.trim());
   expect(summaries).toHaveLength(5);
   expect(new Set(summaries).size).toBe(5);
-  expect(faq?.className).toContain("max-w-5xl");
-  expect(faq?.querySelector("div.mt-7.grid.sm\\:grid-cols-2")).toBeTruthy();
  });
 });

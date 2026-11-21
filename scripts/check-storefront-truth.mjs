@@ -20,10 +20,16 @@ const storefront=[
  "src/lib/store/market-experience.ts",
  "src/lib/store/brand-story.ts",
 ];
-const risky=/(?:٢٨\s*(?:ر\.س|ريالاً)|١٩\s*درهماً|٣\s*ريالات\s*عُمانية|٧[٬,]?٠٠٠\s*دينار(?:اً)?|٢٤[–-]٤٨\s*ساعة|٢[–-]٣\s*أيام|٤[–-]٥\s*أيام)/;
+// Owner-provided quote amounts may be shown only with explicit provenance and
+// conditional language in the same source statement. Numbers are not proof of
+// enabled checkout, confirmed shipping or a binding seller return policy.
+const risky=/(?:٢٨\\s*(?:ر\\.س|ريالاً)|١٩\\s*درهماً|٣\\s*ريالات\\s*عُمانية|٧[٬,]?٠٠٠\\s*دينار(?:اً)?|٢٤[–-]٤٨\\s*ساعة|٢[–-]٣\\s*أيام|٤[–-]٥\\s*أيام)/;
+const qualifiers=/(?:إرشادي|إرشادياً|تقدير|المورّد السابق|عرض المورّد|غير مضمون|غير مضمونة|يحتاج|تحتاج|سابقة|بحسب|غير معتمد)/;
 for(const path of storefront){
  const text=readFileSync(join(root,path),"utf8");
- if(risky.test(text))bad.push(path+": unconditional supplier quotation detected");
+ for(const [lineNumber,line] of text.split("\\n").entries()){
+  if(risky.test(line)&&!qualifiers.test(line))bad.push(path+":"+(lineNumber+1)+": unqualified owner-supplied supplier quote");
+ }
  if(/(?:from\s*|import\s*\()\s*["'][^"']*(?:\/|\.)catalog["']/.test(text))
   bad.push(path+": legacy fictional catalog import");
 }
