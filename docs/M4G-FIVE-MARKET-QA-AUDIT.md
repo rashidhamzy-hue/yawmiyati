@@ -1,3 +1,5 @@
+> **21 November 2026 M4I update:** Egypt's shipping-fee table, originally missing at the M4G audit, has since been supplied via an image with EGP 95/100/105 destination bands. Preserve the historical audit record below; the *remaining* Egypt blocker is current rate confirmation, unsupported/unknown destinations, legal review and authorization for checkout, not absence of the screenshot. Refer to `docs/M4I-EGYPT-SHIPPING-SCREENSHOT.md`.
+
 # Yawmiyati M4G — Five-Market QA and Evidence-Based Release Audit
 
 **Audit date:** 21 November 2026. **Baseline:** M4F PR #98 merged into `main` at `0adcd41f6b5d89f6c1e3902fdd0d16689f71b668`. **Access:** source repository + GitHub Actions results only. No supplier, deployment, live staging owner account, production database, DNS or paid model was accessed.
