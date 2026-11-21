@@ -25,7 +25,7 @@ it.each(["help","terms","privacy","shipping-returns"] as const)(
   expect(container.textContent).toContain("٢٨ ريالاً سعودياً");
   expect(container.textContent).toContain("المتوقعة");
   expect(container.textContent).toContain("شروط الاسترجاع");
-  expect(container.textContent).toContain("الحقوق النظامية");
+  expect(container.textContent).toContain("حقوقك النظامية");
  }
 });
 it.each(["cart","checkout","order"] as const)(
