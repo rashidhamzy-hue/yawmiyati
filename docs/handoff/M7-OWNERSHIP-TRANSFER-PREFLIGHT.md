@@ -20,6 +20,17 @@
 | Vercel | Connected account showed only unrelated `kabsi-canvas` project, no Yawmiyati/Souq project | No Vercel project transfer is indicated. Do not modify Kabsi |
 | Domains | No Cloudflare zone named `yawmiyati` found by exact-name lookup | Domain registrar/DNS ownership remains a separate owner check; absence of exact-name zone does **not** prove no related domain exists |
 
+## Read-only security advisor snapshot
+
+Supabase project advisor (21 Nov 2026): **health returned zero notices**; security raised:
+- INFO: 30 public tables have RLS enabled without ordinary RLS policies. This may be deliberate deny-by-default plus owner-only RPC access; do **not** add broad table policies just to silence the advisor.
+- WARN: 3 anonymous-executable SECURITY DEFINER RPCs (public read endpoints), and 18 authenticated-executable SECURITY DEFINER RPCs. A security reviewer must verify intended grants, membership checks, safe search_path, public-only data selection and no bypass — warnings alone do not prove an exploit.
+- WARN: leaked-password protection not enabled. Review Auth security configuration and plan availability in the personal destination org.
+
+References: https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable , https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable and https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+
+These notices do **not** justify loosening RLS or running migrations before ownership transfer. Include them in the post-transfer Claude security acceptance checklist.
+
 ## Hard requirement: Lovable GitHub sync before GitHub repository transfer
 
 Lovable docs: https://docs.lovable.dev/integrations/github
