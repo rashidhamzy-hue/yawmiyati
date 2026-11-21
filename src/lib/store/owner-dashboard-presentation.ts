@@ -26,6 +26,14 @@ export function formatRecordedMinor(market:MarketCode,value:string):string {
  const fraction=(abs%unit).toString().padStart(precision,"0");
  return negative+whole+"."+fraction+" "+markets[market].currency;
 }
+/** Preserve large supplier-observed price strings without unsafe Number() conversion. */
+export function formatObservedSupplierPrice(market:MarketCode,minorUnits:string|null):string{
+ if(minorUnits===null)return "Unknown";
+ if(typeof minorUnits!=="string"||!/^[0-9]+$/.test(minorUnits))return "Unknown (invalid observation)";
+ try{return formatRecordedMinor(market,minorUnits);}
+ catch{return "Unknown (invalid observation)";}
+}
+
 /**
  * Always return "not_verified": even an RPC reporting zero blockers cannot
  * authorize live publication or checkout. Missing data is UNKNOWN, not zero.
