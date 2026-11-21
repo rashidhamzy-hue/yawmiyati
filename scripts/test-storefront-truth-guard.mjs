@@ -38,6 +38,14 @@ try{
  if(!bad.stderr.includes("unqualified owner-supplied supplier quote"))throw Error("quote rule did not fire");
  write(paths[1],"export const guidance = 'بحسب عرض المورّد السابق، الشحن ٧٬٠٠٠ دينار عراقي إرشادي ويحتاج تأكيداً قبل الطلب';\n");
  check(true,"qualified_historical_quote");
+ write(paths[1],"export const leaked = 'بحسب عرض المورّد السابق';\n");
+ // The production copy uses double quoted TS strings; exercise that exact form.
+ write(paths[1],'export const leaked = "بحسب عرض المورّد السابق";\n');
+ const leaked=check(false,"upstream_supplier_mentioned_to_customer");
+ if(!leaked.stderr.includes("supplier reference in customer copy"))throw Error("supplier leak rule did not fire");
+ write(paths[1],'export const customer = "الشحن التقديري ٧٬٠٠٠ دينار عراقي؛ السعر يحتاج تأكيداً قبل الطلب";\n');
+ check(true,"customer_branded_estimate");
+
  write(paths[1],"import {catalog} from './catalog';\n");
  check(false,"legacy_catalog_import");
  write(paths[1],"export const safe = true;\n");
