@@ -11,14 +11,14 @@ function Workspace({client,token,market,row,pageOffset}:{client:Client;token:str
  const [reviewAt,R]=useState<string|null>(null),[eligible,E]=useState(false),[blockers,G]=useState<string[]|null>(null);
  const [busy,B]=useState(false),[message,M]=useState(""),[ack,A]=useState(false),[publishAck,PA]=useState(false);
  async function load(){
-  const [content,rows,gates]=await Promise.all([client.candidateContent(token,market,row.woo_product_id),client.candidates(token,market,pageOffset),client.readiness(token,market)]);
+  const [content,rows,gates]=await Promise.all([client.candidateContent(token,market,row.woo_product_id),client.candidates(token,market,pageOffset),client.readiness(token,market,pageOffset)]);
   S(content);T(content.approval?.title??row.title);D(content.approval?.description??"");
   const review=rows.find(x=>x.woo_product_id===row.woo_product_id)?.review;
   R(review?.updated_at??null);
   E(review?.decision==="shortlisted"&&review.supplier_cost_minor!==null&&review.delivery_cost_minor!==null&&review.other_cost_minor!==null&&review.proposed_price_minor!==null);
   G(gates.find(x=>x.woo_product_id===row.woo_product_id)?.blockers??null);
  }
- useEffect(()=>{let alive=true;B(true);Promise.all([client.candidateContent(token,market,row.woo_product_id),client.candidates(token,market,pageOffset),client.readiness(token,market)]).then(([content,rows,gates])=>{
+ useEffect(()=>{let alive=true;B(true);Promise.all([client.candidateContent(token,market,row.woo_product_id),client.candidates(token,market,pageOffset),client.readiness(token,market,pageOffset)]).then(([content,rows,gates])=>{
   if(!alive)return;S(content);T(content.approval?.title??row.title);D(content.approval?.description??"");
   const review=rows.find(x=>x.woo_product_id===row.woo_product_id)?.review;R(review?.updated_at??null);
   E(review?.decision==="shortlisted"&&review.supplier_cost_minor!==null&&review.delivery_cost_minor!==null&&review.other_cost_minor!==null&&review.proposed_price_minor!==null);
