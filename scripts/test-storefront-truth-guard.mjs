@@ -25,6 +25,8 @@ const paths=[
  "src/lib/store/market-policy-pages.ts",
  "src/lib/store/market-experience.ts",
  "src/lib/store/brand-story.ts",
+ "src/lib/store/customer-service-copy.ts",
+ "src/lib/store/shop-assistant.ts",
 ];
 const write=(path,content)=>{const full=join(root,path);mkdirSync(dirname(full),{recursive:true});writeFileSync(full,content);};
 const run=()=>spawnSync(process.execPath,[script],{cwd:root,encoding:"utf8",timeout:10000});
@@ -49,8 +51,12 @@ try{
  write(paths[1],'export const leaked = "بحسب عرض المورّد السابق";\n');
  const leaked=check(false,"upstream_supplier_mentioned_to_customer");
  if(!leaked.stderr.includes("internal source or awkward advisory wording in customer copy"))throw Error("customer copy rule did not fire");
- write(paths[1],'export const customer = "الشحن التقديري ٧٬٠٠٠ دينار عراقي؛ السعر يحتاج تأكيداً قبل الطلب";\n');
- check(true,"customer_branded_estimate");
+ write(paths[1],'export const customer = "تُحدد رسوم التوصيل حسب العنوان وتُراجع مع إجمالي الطلب";\n');
+ check(true,"no_unverified_rate_or_promise");
+ write(paths[1],'export const stale = "الدفع عند الاستلام سيكون متاحاً عند بدء استقبال الطلبات";\n');
+ check(false,"coming_soon_phrase_banned");
+ write(paths[1],'export const stale = "رسوم التوصيل المتوقعة";\n');
+ check(false,"estimated_word_banned");
 
  write(paths[1],"import {catalog} from './catalog';\n");
  check(false,"legacy_catalog_import");
