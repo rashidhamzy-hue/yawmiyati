@@ -53,8 +53,8 @@ describe("M4D owner-supplied historical country policies",()=>{
   expect(Object.values(t).every(x=>x.status==="historic_unverified"&&!x.customerPriceAuthorized&&!x.checkoutEnabled&&!x.supplierConnected)).toBe(true);
   expect(saudiDelivery.shipping).toMatch(/٢٨ ر.س/);
   expect(saudiDelivery.shipping).toMatch(/إرشادي|تأكيد/);
-  expect(marketPolicyPages.ae.groups[1][1]).toMatch(/١٩ درهماً.*إرشادي/);
-  expect(marketPolicyPages.om.groups[1][1]).toMatch(/٣ ريالات عُمانية.*إرشادي/);
+  expect(marketPolicyPages.ae.groups[1][1]).toMatch(/التقديري ١٩ درهماً/);
+  expect(marketPolicyPages.om.groups[1][1]).toMatch(/التقديري ٣ ريالات عُمانية/);
   expect(marketPolicyPages.iq.groups[1][1]).toMatch(/٧٬٠٠٠ دينار عراقي.*إرشادي/);
   expect(marketPolicyPages.eg.groups[1][1]).toMatch(/أسعار الشحن التفصيلية للمحافظات.*مش متاحة/);
  });
