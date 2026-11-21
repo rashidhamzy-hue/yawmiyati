@@ -3,6 +3,7 @@ import {dashboardClient} from "../lib/store/dashboard-client";
 import {markets,type MarketCode} from "../lib/store/markets";
 import {marketPolicyPages} from "../lib/store/market-policy-pages";
 import {saudiDelivery,saudiShippingPage} from "../lib/store/saudi-commerce-content";
+import {historicSupplierTerms} from "../lib/store/historic-supplier-terms";
 
 const base="https://db.example";
 describe("M4D owner API fail-closed transport boundaries",()=>{
@@ -47,6 +48,9 @@ describe("M4D owner API fail-closed transport boundaries",()=>{
 
 describe("M4D owner-supplied historical country policies",()=>{
  it("preserves known supplier quotation amounts while distinguishing live price",()=>{
+  const t=historicSupplierTerms;
+  expect([t.sa.shippingQuote?.amount,t.ae.shippingQuote?.amount,t.om.shippingQuote?.amount,t.eg.shippingQuote,t.iq.shippingQuote?.amount]).toEqual(["28","19","3",null,"7000"]);
+  expect(Object.values(t).every(x=>x.status==="historic_unverified"&&!x.customerPriceAuthorized&&!x.checkoutEnabled&&!x.supplierConnected)).toBe(true);
   expect(saudiDelivery.shipping).toMatch(/٢٨ ر.س/);
   expect(saudiDelivery.shipping).toMatch(/إرشادي|تأكيد/);
   expect(marketPolicyPages.ae.groups[1][1]).toMatch(/١٩ درهماً.*إرشادي/);
