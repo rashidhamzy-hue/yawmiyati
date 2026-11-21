@@ -3,6 +3,8 @@ import {render,screen,waitFor} from "@testing-library/react";
 import {parsePublicListings,PUBLIC_CATEGORY_SLUGS} from "../lib/store/public-catalog";
 import {ApprovedCategoryProductGrid} from "../components/store/ApprovedCategoryProductGrid";
 import {StoreCategoryPage} from "../components/store/StoreCategoryPage";
+import {SEO_EDITORIAL_SLUGS} from "../lib/store/seo-planning";
+import {EDITORIAL_CATEGORIES} from "../components/store/StoreCategoryPage";
 vi.mock("../lib/store/staging-public-config",()=>({publicBrowserConfig:()=>({origin:"https://example.supabase.co/",key:"public-publishable"})}));
 vi.mock("../lib/store/public-catalog",async importOriginal=>{
  const original=await importOriginal<typeof import("../lib/store/public-catalog")>();
@@ -16,6 +18,10 @@ vi.mock("../lib/store/public-catalog",async importOriginal=>{
 });
 const raw={listing_id:"r1",slug:"coffee-pot",title:"إبريق قهوة معتمد",price_minor:"2500",currency:"SAR"};
 describe("M10D proof-based public categories",()=>{
+ it("keeps approved slugs aligned with editorial routes and offline SEO",()=>{
+  expect([...PUBLIC_CATEGORY_SLUGS]).toEqual([...SEO_EDITORIAL_SLUGS]);
+  expect(EDITORIAL_CATEGORIES.map(x=>x.slug)).toEqual([...PUBLIC_CATEGORY_SLUGS]);
+ });
  it("accepts only whitelisted owner-approved assignments; strips all other marketing attributes",()=>{
   const row={...raw,approved_category_slugs:["kitchen"],category_release:"owner_approved",supplier_name:"must_not_leak"};
   const result=parsePublicListings([row],"sa");
