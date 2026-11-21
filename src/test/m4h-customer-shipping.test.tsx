@@ -17,14 +17,14 @@ describe("M4H customer-facing five-country shipping disclosures",()=>{
   const {container}=render(<StoreInfoPage market={market} topic="shipping-returns"/>);
   const displayed=container.textContent??"";
   expect(displayed).not.toMatch(forbidden);
-  expect(displayed).toMatch(/تقدير|إرشادي|تأكيد|معتمد|محتاجة/);
+  expect(displayed).toMatch(/متوقع|قبل|تأكيد|متاح|نؤكد/);
   if(fee)expect(displayed).toContain(fee);
   if(eta)expect(displayed).toContain(eta);
   if(market==="eg"){
    expect(displayed).toContain("٩٥ جنيه");
    expect(displayed).toContain("١٠٠ جنيه");
    expect(displayed).toContain("١٠٥ جنيه");
-   expect(displayed).toContain("السعر لسه غير محدد");
+   expect(displayed).toContain("هنحدد التكلفة بعد التأكد من العنوان");
    expect(historicSupplierTerms.eg.shippingQuote).toBeNull(); // separate older ledger remains historical
   }
  });
@@ -33,7 +33,7 @@ describe("M4H customer-facing five-country shipping disclosures",()=>{
   const displayed=container.textContent??"";
   expect(displayed).not.toMatch(forbidden);
   if(fee)expect(displayed).toContain(fee);
-  if(market==="eg")expect(displayed).toContain("٩٥ / ١٠٠ / ١٠٥ جنيه");
+  if(market==="eg")expect(displayed).toContain("٩٥ أو ١٠٠ أو ١٠٥ جنيه");
   if(eta&&market!=="eg")expect(displayed).toContain(eta);
   expect(displayed).not.toMatch(/تم تأكيد طلبك|تم الدفع بنجاح/);
  });
