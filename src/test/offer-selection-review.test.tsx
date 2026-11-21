@@ -18,3 +18,29 @@ it("shows a local editorial brief only after the owner selects a recommended dem
   fireEvent.click(screen.getByRole("button", { name: "Undo demo approval" }));
   expect(screen.queryByText(/Editorial brief/)).toBeNull();
 });
+
+it("restores only matching approved demo offers and keeps the preview market-specific", () => {
+  localStorage.clear();
+  const open = () => fireEvent.click(screen.getByRole("button", {name: "Open product selection demo"}));
+  const preview = () => screen.queryByRole("region", {name: "Demo product page"});
+  const first = render(<OfferSelectionDemo market="iq" />);
+  open();
+  expect(preview()).toBeNull();
+  fireEvent.click(screen.getAllByRole("button", {name: "Approve for content brief"})[0]);
+  expect(preview()?.lang).toBe("ar-IQ");
+  first.unmount();
+  const other = render(<OfferSelectionDemo market="sa" />);
+  open();
+  expect(preview()).toBeNull();
+  other.unmount();
+  const restored = render(<OfferSelectionDemo market="iq" />);
+  open();
+  expect(preview()?.textContent).toContain("الإجمالي مع الشحن");
+  restored.unmount();
+  const key = localStorage.key(0)!;
+  localStorage.setItem(key, "superseded offer");
+  render(<OfferSelectionDemo market="iq" />);
+  open();
+  expect(preview()).toBeNull();
+  localStorage.clear();
+});
