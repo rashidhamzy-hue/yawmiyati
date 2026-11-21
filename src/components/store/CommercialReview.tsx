@@ -26,8 +26,12 @@ export function CommercialReview({client,token,market}:{client:Client;token:stri
   const id=generation.current,offset=nextOffset;
   pageInFlight.current=true;setLoadingMore(true);setPageError("");
   try{
-   const page=await client.candidates(token,market,offset);
+   const [page,gates]=await Promise.all([client.candidates(token,market,offset),client.readiness(token,market,offset)]);
    if(id!==generation.current)return;
+   setReadiness(previous=>{
+    const ids=new Set(previous.map(item=>item.woo_product_id));
+    return [...previous,...gates.filter(gate=>!ids.has(gate.woo_product_id))];
+   });
    setRows(existing=>{
     const ids=new Set((existing??[]).map(entry=>entry.row.woo_product_id));
     return [...(existing??[]),...page.filter(row=>{
