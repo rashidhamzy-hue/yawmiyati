@@ -54,3 +54,7 @@ Run the end-to-end local checks with `node --test scripts/catalog/prehost.test.m
 ## Review a whole shortlist
 
 Run `npm run catalog -- board <folder>` and open `catalog-review.html`. Select the offers you want, then download the selection file. Claude or the local operator can record those exact decisions in one transaction using `npm run catalog -- batch-approve <folder> <selection-file>` and generate their drafts with `npm run catalog -- batch-draft <folder> <selection-file>`. Both commands re-evaluate the snapshot and reject superseded revisions. Each draft has its own revision-specific filename so interrupted batch exports can be rerun.
+
+## Account-backed pack and price decisions
+
+The review command includes an `accountProposal` for each selected offer. Once the source migration `20261121210000_offline_offer_decisions.sql` has had an authorized rollout, paste a non-demo proposal into **Owner dashboard → Account offer decisions**. Review the exact pack, price and expected contribution, then approve. Sign into the same owner account on another device, select the same country and find the SKU to read or revoke the decision. History is private to the account and country. A stale edit requires a reload. This record approves an assortment proposal only. Customer publication and order routing use their existing separate workflows.
