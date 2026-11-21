@@ -6,6 +6,7 @@ import {MarketPreview} from "../components/store/MarketPreview";
 import {StoreInfoPage,type InfoTopic} from "../components/store/StoreInfoPage";
 import {StoreCommerceGuard} from "../components/store/StoreCommerceGuard";
 import {marketExperience} from "../lib/store/market-experience";
+import {brandStory} from "../lib/store/brand-story";
 import {customerServiceCopy} from "../lib/store/customer-service-copy";
 import {marketPolicyPages} from "../lib/store/market-policy-pages";
 import {saudiShippingPage} from "../lib/store/saudi-commerce-content";
@@ -16,7 +17,7 @@ vi.mock("../lib/store/staging-public-config",()=>({publicBrowserConfig:()=>({ori
 
 const markets=["sa","ae","om","eg","iq"] as const;
 const topics:readonly InfoTopic[]=["help","privacy","terms","shipping-returns"];
-const banned=/المتوقعة|المتوقع|سيكون متاح|سيتم نشر|ستظهر الشروط|سنوضح|بنوضح|هنوضح|راح يتوفر|عند بدء استقبال الطلبات|المورّد السابق|المورد السابق|الشحن الإرشادي|إرشادي|تقديرات سابقة|Taager|Zambeel|TasteWP/i;
+const banned=/المتوقعة|المتوقع|سيكون متاح|سيتم نشر|ستظهر الشروط|سنوضح|بنوضح|هنوضح|راح يتوفر|عند بدء استقبال الطلبات|بدء استقبال الطلبات|قبل بدء الطلبات|مع بدء الطلبات|مع تشغيل الطلبات|المورّد السابق|المورد السابق|الشحن الإرشادي|إرشادي|تقديرات سابقة|Taager|Zambeel|TasteWP/i;
 const unapprovedRate=/٢٨ ر\.س|٢٨ ريالاً سعودياً|١٩ درهماً|٣ ريالات عُمانية|٩٥ جنيه|١٠٠ جنيه|١٠٥ جنيه|٧٬٠٠٠ دينار عراقي/;
 
 describe("M9 consistent five-market customer language",()=>{
@@ -46,7 +47,7 @@ describe("M9 consistent five-market customer language",()=>{
   const c=customerServiceCopy[market];
   expect(JSON.stringify(c)).not.toMatch(banned);
   const page=market==="sa"?saudiShippingPage:marketPolicyPages[market];
-  expect(JSON.stringify([page,marketExperience[market]])).not.toMatch(banned);
+  expect(JSON.stringify([page,marketExperience[market],brandStory[market]])).not.toMatch(banned);
   expect(localShopAnswer("كم رسوم الشحن؟",market,[])).toContain(c.shipping);
   expect(localShopAnswer("كيف الاسترجاع؟",market,[])).toContain(c.returns);
   expect(localShopAnswer("هل الدفع عند الاستلام؟",market,[])).toContain(c.payment);
