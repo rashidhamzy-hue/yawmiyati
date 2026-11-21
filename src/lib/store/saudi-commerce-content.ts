@@ -1,32 +1,30 @@
+import {customerServiceCopy} from "./customer-service-copy";
+
 /**
- * Saudi-facing, non-transactional guidance.
- * Supplier rates, delivery estimates and return windows in the internal policy
- * ledger are unverified quotations, NOT live seller promises or checkout terms.
- * Real publication requires current evidence, local legal review and approval.
+ * Saudi customer-facing service content. The supplier quote ledger remains
+ * INTERNAL and unapproved for a customer shipping fee, ETA or return window.
+ * Checkout release is controlled independently by verified server policy.
  */
+const c=customerServiceCopy.sa;
 export const saudiDelivery={
- payment:"الدفع عند الاستلام سيكون متاحاً مع بدء استقبال الطلبات. حالياً تقدرين تتصفحين، لكن الشراء غير متاح.",
- shipping:"رسوم التوصيل المتوقعة ٢٨ ر.س داخل السعودية. نؤكد المبلغ النهائي قبل الطلب.",
- near:"التوصيل المتوقع للرياض وجدة والدمام خلال ٢–٣ أيام بعد تأكيد الطلب، حسب التوافر.",
- far:"التوصيل المتوقع لبقية المناطق خلال ٤–٥ أيام بعد تأكيد الطلب، وقد تختلف المدة حسب المنطقة.",
- returns:"بنوضح لك شروط الاسترجاع والاستبدال وحقوقك قبل بدء استقبال الطلبات.",
+ payment:c.payment,shipping:c.shipping,near:c.delivery,far:c.confirmation,returns:c.returns
 } as const;
 export const saudiShippingPage={
- title:"الشحن والدفع والاسترجاع",
- intro:"تعرّفي على رسوم التوصيل المتوقعة وطريقة الدفع والاسترجاع. حالياً التصفّح متاح، والشراء يبدأ بعد اكتمال التجهيزات.",
+ title:"الدفع والتوصيل والاسترجاع",
+ intro:c.shippingIntro,
  groups:[
-  ["كيف أدفع؟","الدفع نقداً عند الاستلام سيكون متاحاً عند بدء استقبال الطلبات. حالياً ما نقدّم خدمة الشراء أو الدفع."],
-  ["كم رسوم الشحن؟","رسوم التوصيل المتوقعة ٢٨ ريالاً سعودياً داخل المملكة. نؤكد الرسوم والإجمالي حسب عنوانك قبل إتمام الطلب."],
-  ["كم يستغرق التوصيل؟","مدة التوصيل المتوقعة بعد تأكيد الطلب: ٢–٣ أيام للرياض وجدة والدمام، و٤–٥ أيام لبقية المناطق. قد تختلف المدة حسب المنطقة وتوافر الخدمة."],
-  ["كيف أتأكد من طلبي؟","الطلبات غير متاحة حالياً. عند بدء الخدمة بنوضح لك خطوات التأكيد ومراجعة العنوان وبيانات التواصل."],
-  ["كيف أسترجع أو أستبدل؟","بنوضح شروط الاسترجاع والاستبدال حسب نوع المنتج وحقوقك النظامية قبل بدء استقبال الطلبات."],
-  ["وش لو تأخر التوصيل أو تعذّر الاستلام؟","عند بدء الطلبات، بنوضح لك طرق المتابعة والمساعدة في حال تأخر التوصيل أو احتجنا تفاصيل إضافية عن العنوان."],
-  ["كيف أتابع أو ألغي طلبي؟","حالياً ما نستقبل طلبات. عند بدء الخدمة بنوضح لك طريقة متابعة الطلب أو إلغائه والشروط المتعلقة بذلك."],
+  ["كيف أدفع؟",c.payment],
+  ["كم رسوم الشحن؟",c.shipping],
+  ["كم يستغرق التوصيل؟",c.delivery],
+  ["كيف أتأكد من طلبي؟",c.confirmation],
+  ["كيف أسترجع أو أستبدل؟",c.returns],
+  ["وش لو احتجت مساعدة في التوصيل؟","راجعي تفاصيل عنوانك ورقم الطلب عند طلب المساعدة، حتى يسهل التحقق من الحالة."],
+  ["كيف أتابع أو ألغي طلبي؟",c.tracking],
  ] as readonly (readonly [string,string])[],
 } as const;
 export const saudiHomeQuestions=[
- {question:"أقدر أدفع عند الاستلام؟",answer:"نعم، سيكون متاحاً مع بدء استقبال الطلبات. حالياً التصفّح متاح، لكن الشراء غير مفعّل."},
- {question:"بكم الشحن داخل السعودية؟",answer:"رسوم التوصيل المتوقعة ٢٨ ر.س داخل السعودية، ونؤكد الإجمالي قبل الطلب."},
- {question:"متى يوصلني طلبي؟",answer:"التوصيل المتوقع خلال ٢–٣ أيام للرياض وجدة والدمام و٤–٥ أيام لبقية المناطق بعد تأكيد الطلب، حسب التوافر."},
- {question:"وش إجراءات الاسترجاع؟",answer:"بنوضح شروط الاسترجاع والاستبدال وحقوقك النظامية قبل بدء استقبال الطلبات."},
+ {question:"أقدر أدفع عند الاستلام؟",answer:c.payment},
+ {question:"بكم الشحن داخل السعودية؟",answer:c.shipping},
+ {question:"متى يوصلني طلبي؟",answer:c.delivery},
+ {question:"وش إجراءات الاسترجاع؟",answer:c.returns},
 ] as const;
