@@ -37,6 +37,6 @@ describe("Saudi FAQ",()=>{
   const {container}=render(<MarketPreview market="sa"/>);
   const summaries=Array.from(container.querySelectorAll("#questions summary")).map(n=>n.textContent?.trim());
   expect(summaries).toHaveLength(4);
-  expect(new Set(summaries).size).toBe(5);
+  expect(new Set(summaries).size).toBe(4);
  });
 });
