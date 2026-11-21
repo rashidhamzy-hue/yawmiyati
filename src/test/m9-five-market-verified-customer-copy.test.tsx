@@ -1,4 +1,5 @@
 import {describe,it,expect,vi} from "vitest";
+import {readFileSync} from "node:fs";
 import {render} from "@testing-library/react";
 import type {MarketCode} from "../lib/store/markets";
 import {MarketPreview} from "../components/store/MarketPreview";
@@ -50,6 +51,11 @@ describe("M9 consistent five-market customer language",()=>{
   expect(localShopAnswer("كيف الاسترجاع؟",market,[])).toContain(c.returns);
   expect(localShopAnswer("هل الدفع عند الاستلام؟",market,[])).toContain(c.payment);
   expect(localShopAnswer("كم رسوم الشحن؟",market,[])).not.toMatch(unapprovedRate);
+ });
+ it.each(markets)("%s homepage metadata has no source-specific coming-soon narration",market=>{
+  const route=readFileSync("src/routes/"+market+".index.tsx","utf8");
+  expect(route).not.toMatch(/التصفح متاح والشراء لم يُفعّل بعد|المتوقعة|المتوقع|سيتم نشر|سيكون متاحاً/);
+  expect(route).toContain("noindex,nofollow");
  });
  it("retains internal shipping evidence and refuses to market it as confirmed customer price",()=>{
   const t=historicSupplierTerms;
