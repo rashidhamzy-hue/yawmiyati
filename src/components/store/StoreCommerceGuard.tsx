@@ -34,7 +34,7 @@ export function StoreCommerceGuard({market,type}:{market:MarketCode;type:keyof t
       <a href={path+"#discover"} className="btn-primary inline-flex min-h-12 items-center gap-2">{market==="sa"?"اكتشفي الأقسام":marketExperience[market].discoverCta} <ArrowLeft className="h-4 w-4"/></a>
       <button type="button" onClick={()=>document.dispatchEvent(new CustomEvent("yawmiyati:open-search"))} className="btn-outline inline-flex min-h-12 items-center gap-2"><Search className="h-4 w-4"/> {market==="sa"?"ابحثي في يومياتي":marketExperience[market].searchCta}</button>
      </div>
-     <p className="mt-6 text-xs leading-6 text-muted-foreground">{market==="sa"?"تظهر الأسعار والمنتجات وفق بياناتها المعتمدة. ": "تُعرض الأسعار وخيارات الطلب فقط بناءً على بيانات معتمدة. "}<a href={path+"/info/shipping-returns"} className="font-bold text-primary underline underline-offset-2">تفاصيل الدفع والشحن والاسترجاع</a></p>
+     <p className="mt-6 text-xs leading-6 text-muted-foreground">{market==="sa"?"تصفّحي الأقسام واختاري ما يناسب ذوقك. ": "تُعرض الأسعار وخيارات الطلب فقط بناءً على بيانات معتمدة. "}<a href={path+"/info/shipping-returns"} className="font-bold text-primary underline underline-offset-2">تفاصيل الدفع والشحن والاسترجاع</a></p>
     </div>
    </div>
   </section>
