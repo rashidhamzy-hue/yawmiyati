@@ -37,7 +37,7 @@ describe("M6C candidate and readiness pagination",()=>{
   await expect(invalid.candidates("jwt","sa")).rejects.toThrow("Invalid candidate response");
  });
  it("migration declares isolated authenticated access and bounded offset",()=>{
-  const sql=readFileSync(new URL("../../supabase/migrations/20261121090000_candidate_review_page.sql",import.meta.url),"utf8");
+  const sql=readFileSync("supabase/migrations/20261121090000_candidate_review_page.sql","utf8");
   for(const name of ["dashboard_candidate_review_page","dashboard_catalog_readiness_page"]){
    expect(sql).toContain("public."+name);
    expect(sql).toContain("revoke all on function public."+name+"(text,integer,integer)");
