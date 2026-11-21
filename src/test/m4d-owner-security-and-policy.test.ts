@@ -56,7 +56,7 @@ describe("M4D owner-supplied historical country policies",()=>{
   expect(marketPolicyPages.ae.groups[1][1]).toMatch(/١٩ درهماً.*إرشادي/);
   expect(marketPolicyPages.om.groups[1][1]).toMatch(/٣ ريالات عُمانية.*إرشادي/);
   expect(marketPolicyPages.iq.groups[1][1]).toMatch(/٧٬٠٠٠ دينار عراقي.*إرشادي/);
-  expect(marketPolicyPages.eg.groups[1][1]).toMatch(/جدول أسعار المحافظات.*غير مكتمل/);
+  expect(marketPolicyPages.eg.groups[1][1]).toMatch(/أسعار الشحن التفصيلية للمحافظات.*مش متاحة/);
  });
  it("preserves supplied country delivery timelines as estimates, not promises",()=>{
   const info=JSON.stringify([saudiDelivery,saudiShippingPage,marketPolicyPages]);
@@ -64,9 +64,8 @@ describe("M4D owner-supplied historical country policies",()=>{
   expect(info).toContain("٢–٣ أيام");
   expect(info).toContain("٤–٥ أيام");
   expect(info).toContain("٢–٥ أيام");
-  expect(info).toContain("١٥ يوماً");
-  expect(info).toContain("٣ أيام للإرجاع");
+  expect(info).not.toMatch(/١٥ يوماً|٣ أيام للإرجاع|١٤ يوماً للسلع المعيبة/);
   expect(info).toMatch(/ليست.*النهائية|إرشادي|تقدير/);
-  expect(info).not.toContain("Taager");
+  expect(info).not.toMatch(/المورّد|المورد|Taager/);
  });
 });
