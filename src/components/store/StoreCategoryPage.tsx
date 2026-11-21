@@ -1,5 +1,6 @@
 import {StoreFrame} from "./StoreChrome";
 import {ShoppingAssistant} from "./ShoppingAssistant";
+import {ApprovedCategoryProductGrid} from "./ApprovedCategoryProductGrid";
 import {img} from "@/lib/store/images";
 import {marketExperience} from "@/lib/store/market-experience";
 import type {MarketCode} from "@/lib/store/markets";
@@ -28,6 +29,7 @@ export function StoreCategoryPage({market,slug}:{market:MarketCode;slug:string})
    </section>
    <section className="mt-12 grid gap-7 lg:grid-cols-[1fr_1.1fr]"><div><p className="text-xs font-extrabold text-primary">تفاصيل تلهمك</p><h2 className="mt-2 font-display text-3xl font-bold">اكتشفي ما يناسب يومك</h2><p className="mt-4 text-sm leading-8 text-muted-foreground">تجدين في يومياتي أفكاراً وصوراً تلهمك، بينما تُعرض المنتجات الفعلية فقط بمعلومات معتمدة. البحث يعرض المنتجات المتاحة على مستوى المتجر، ولا يدّعي تصنيف منتجات لم يتم التحقق من فئتها.</p></div>
     <div className="grid grid-cols-2 gap-3">{EDITORIAL_CATEGORIES.filter(x=>x.slug!==slug).slice(0,4).map(x=><a key={x.slug} href={"/"+market+"/c/"+x.slug} className="group overflow-hidden rounded-2xl border bg-card"><img src={x.image} alt="" loading="lazy" className="aspect-[4/3] w-full object-cover transition-transform group-hover:scale-105"/><div className="flex items-center justify-between gap-2 p-3 text-xs font-bold">{x.title}<ArrowLeft className="h-4 w-4 text-primary"/></div></a>)}</div></section>
+   <ApprovedCategoryProductGrid market={market} slug={category.slug} categoryTitle={category.title}/>
   </div>
   <ShoppingAssistant market={market} products={[]}/>
  </StoreFrame>;
