@@ -6,10 +6,10 @@ import {StoreInfoPage} from "../components/store/StoreInfoPage";
 import {marketExperience} from "../lib/store/market-experience";
 
 const countries=[
- ["ae","تفاصيل تليق بذوقج","شو ودّج تلاقين؟","١٩ درهماً"],
- ["om","للبيت تفاصيله","وش في بالك اليوم؟","٣ ريالات عُمانية"],
- ["eg","كل يوم فيه حاجة","بتدوّري على إيه؟","مصاريف الشحن بتختلف حسب المحافظة"],
- ["iq","كل يوم يصير أحلى","شنو ببالچ اليوم؟","٧٬٠٠٠ دينار عراقي"],
+ ["ae","تفاصيل تليق بذوقج","شو ودّج تلاقين؟","رسوم الشحن والتغطية النهائية لم تُعتمد"],
+ ["om","للبيت تفاصيله","وش في بالك اليوم؟","رسوم الشحن والتغطية النهائية غير معتمدة"],
+ ["eg","كل يوم فيه حاجة","بتدوّري على إيه؟","مصاريف الشحن حسب المحافظة والعنوان"],
+ ["iq","كل يوم يصير أحلى","شنو ببالچ اليوم؟","أجرة الشحن النهائية غير مؤكدة"],
 ] as const;
 
 describe("four distinct market storefronts",()=>{
@@ -24,12 +24,12 @@ describe("four distinct market storefronts",()=>{
   const faqs=Array.from(faq!.querySelectorAll("summary")).map(e=>e.textContent?.trim());
   expect(faqs).toHaveLength(marketExperience[market].questions.length);
   expect(new Set(faqs).size).toBe(faqs.length);
-  expect(faq?.textContent).not.toMatch(/الطلبات غير مفعّلة|عند تفعيل الطلبات|المورّد/);
+  expect(faq?.textContent).not.toMatch(/المورّد|Taager|٢٤–٤٨ ساعة|٧٬٠٠٠ دينار/);
  });
  it.each(countries)("%s: localized shipping without supplier name or false payment options",(market,_,__,fee)=>{
   const {container}=render(<StoreInfoPage market={market} topic="shipping-returns"/>);
   expect(container.textContent).toContain(fee);
-  expect(container.textContent).not.toMatch(/المورّد|عند تفعيل الطلبات|الطلبات غير مفعّلة|معلومات تشغيلية/);
+  expect(container.textContent).not.toMatch(/المورّد|Taager|١٩ درهماً|٣ ريالات عُمانية|٧٬٠٠٠ دينار عراقي/);
   expect(container.textContent).not.toMatch(/Apple Pay|تابي|تمارا|فيزا/);
   expect(screen.getByRole("heading",{level:1})).toBeTruthy();
  });

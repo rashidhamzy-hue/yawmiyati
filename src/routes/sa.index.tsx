@@ -4,7 +4,8 @@ import {img} from "@/lib/store/images";
 export const Route=createFileRoute("/sa/")({
  head:()=>({meta:[
   {title:"يومياتي السعودية | تفاصيل صغيرة، حياة أجمل"},
-  {name:"description",content:"اكتشفي أفكار يومياتي للمنزل والقهوة والجمال والعناية والأزياء. تجربة عربية هادئة تجمع الإلهام ومعلومات المنتجات المعتمدة."},
+  {name:"description",content:"اكتشفي أفكار يومياتي للمنزل والقهوة والجمال والعناية والأزياء. التصفح متاح والشراء لم يُفعّل بعد."},
+  {name:"robots",content:"noindex,nofollow"},
   {property:"og:title",content:"يومياتي السعودية | تفاصيل صغيرة، حياة أجمل"},
   {property:"og:description",content:"اختيارات وأفكار يومية للمنزل والجمال والعناية."},
   {property:"og:image",content:img.hero},{name:"twitter:image",content:img.hero}
