@@ -1,0 +1,41 @@
+name: Offline catalog workflow
+on:
+  pull_request:
+    paths:
+      - 'scripts/catalog/**'
+      - 'src/lib/store/**'
+      - '.github/workflows/prehost-catalog.yml'
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test scripts/catalog/prehost.test.mjs
+      - name: Render catalog board and exercise the mobile approval download
+        run: |
+          node scripts/catalog/run.mjs demo "$RUNNER_TEMP/catalog"
+          node scripts/catalog/run.mjs board "$RUNNER_TEMP/catalog"
+          npm install --prefix "$RUNNER_TEMP/catalog-qa" --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          NODE_PATH="$RUNNER_TEMP/catalog-qa/node_modules" node scripts/catalog/board-browser.cjs "$RUNNER_TEMP/catalog/catalog-review.html"
+  private-decisions:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fixture
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify owner access, revocation and stale-write behavior
+        env:
+          PGPASSWORD: fixture
+        run: psql -h localhost -U postgres -d postgres -f scripts/catalog/account-db-check.sql
