@@ -54,9 +54,12 @@ export function dashboardClient(origin: string, publicKey: string, request: type
      if(typeof id!=="string"||!id.trim()||id.length>200||!["approved","rejected"].includes(decision))throw Error("Invalid decision target");
      await call("/rest/v1/rpc/review_recommendation",{p_store:market,p_id:id,p_decision:decision},token);
    },
-   async readiness(token:string,market:MarketCode):Promise<CatalogReadiness[]>{
-     const result=await call("/rest/v1/rpc/dashboard_catalog_readiness",{p_store:market},token);
-     if(!Array.isArray(result)||result.some(r=>!r||!Number.isSafeInteger(r.woo_product_id)||!Array.isArray(r.blockers)))throw Error("Invalid readiness response");
+   async readiness(token:string,market:MarketCode,offset=0):Promise<CatalogReadiness[]>{
+     if(!Number.isSafeInteger(offset)||offset<0||offset>100000)throw Error("Invalid readiness offset");
+     const nextPage=offset>0;
+     const result=await call(nextPage?"/rest/v1/rpc/dashboard_catalog_readiness_page":"/rest/v1/rpc/dashboard_catalog_readiness",
+       nextPage?{p_store:market,p_limit:100,p_offset:offset}:{p_store:market},token);
+     if(!Array.isArray(result)||result.length>100||result.some(r=>!r||!Number.isSafeInteger(r.woo_product_id)||!Array.isArray(r.blockers)))throw Error("Invalid readiness response");
      return result;
    },
    async candidates(token:string,market:MarketCode,offset=0):Promise<CandidateRow[]>{
