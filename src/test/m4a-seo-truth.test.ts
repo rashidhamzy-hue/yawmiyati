@@ -58,19 +58,15 @@ describe("M4A five-country source-only SEO",()=>{
 });
 
 describe("M4A country policy truth",()=>{
- it("does not surface internal supplier quotes as confirmed shipping to customers",()=>{
+ it("never markets unverified supplier quotations or coming-soon promises as shopper terms",()=>{
   const copied=JSON.stringify([saudiDelivery,saudiShippingPage,marketPolicyPages]);
-  expect(copied).toContain("٢٨");
-  expect(copied).toContain("١٩ درهماً");
-  expect(copied).toContain("٣ ريالات عُمانية");
-  expect(copied).toContain("٧٬٠٠٠ دينار عراقي");
-  expect(copied).toMatch(/المتوقعة|المتوقع/);
-  expect(copied).not.toContain("Taager");
+  expect(copied).not.toMatch(/٢٨ ر.س|٢٨ ريالاً|١٩ درهماً|٣ ريالات عُمانية|٧٬٠٠٠ دينار عراقي/);
+  expect(copied).not.toMatch(/المتوقعة|المتوقع|سيكون متاحاً|سيتم نشر|عند بدء استقبال الطلبات|Taager/);
   for(const market of ["ae","om","eg","iq"] as const){
    const page=marketPolicyPages[market];
-   expect(page.groups).toHaveLength(5);
-   expect(JSON.stringify(page)).toMatch(/حالياً|بعد|مخطط|اعتماد|مؤكدة|تأكيد/);
+   expect(page.groups).toHaveLength(6);
+   expect(page.groups[1][1]).toMatch(/العنوان|عنوانج|الموقع|منطقة التوصيل|عنوانچ/);
   }
-  expect(saudiDelivery.shipping).toContain("المتوقعة");
+  expect(saudiDelivery.shipping).toContain("عنوان التسليم");
  });
 });
