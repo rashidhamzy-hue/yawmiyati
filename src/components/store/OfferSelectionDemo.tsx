@@ -58,6 +58,8 @@ export function OfferSelectionDemo({market}: {market: MarketCode}) {
   }
   return <section className="space-y-3 rounded-xl border p-4">
     <button onClick={togglePreview} aria-expanded={open}>{open ? "Hide" : "Open"} product selection demo</button>
+    {open && import.meta.env.DEV && typeof window !== "undefined" && ["localhost","127.0.0.1"].includes(window.location.hostname) &&
+      <p>With the local offer studio running, <a className="underline" href={"http://127.0.0.1:4175/#"+market} target="_blank" rel="noreferrer">test the {markets[market].currency} shopper journey and delivery ledger</a>.</p>}
     {open && <><p>Fictional offers and market evidence. Demo approvals are saved in this browser.</p>
       {storageError && <p role="status">Browser storage is unavailable. Changes apply to this session.</p>}
       <p>{report.read} of {reportedTotal ?? "unknown"} offers read · Coverage {report.coverage} · {report.selected.length} families shortlisted</p>

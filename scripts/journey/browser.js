@@ -13,6 +13,9 @@ function log(event,o=offer,permissions=consent()){
   if(served && !["submitted","confirmed","delivered","refused","returned","payout_credited"].includes(event.action) && (permissions.behavior||permissions.ads)) fetch("/demo/event",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:event.action,offer:o.id,id:event.id,placement:event.placement,campaign:event.campaign,session:event.session,variant:event.variant,...permissions})}).catch(()=>{el("status").textContent="Local analytics unavailable"});
   state.trace.push(...destinations(event,permissions,o));state.trace=state.trace.slice(-120);save();
   el("trace").textContent=JSON.stringify(state.trace.slice(-12),null,2);
+  const behaviorEvents=state.trace.filter(e=>e.sink==="PostHog local"&&e.properties.country===o.market);
+  el("funnel").textContent="Recent local behavior events · "+["impression","product_view","cart_add","checkout_start","submitted"].map(a=>a+" "+behaviorEvents.filter(e=>e.event===a).length).join(" / ");
+
 }
 function track(action){log(envelope(action,offer,context(),crypto.randomUUID()));}
 function cell(row,text){row.insertCell().textContent=text}
@@ -61,6 +64,7 @@ function dashboard(){
     for(const action of options){const b=document.createElement("button");b.textContent=action;b.onclick=()=>transition(order,action);buttons.append(b)}
     if(r.contribution!==null){const g=groups.get(o.id)||{o,total:0,count:0};g.count++;g.total+=r.contribution;groups.set(o.id,g)}
   }
+  el("woo").textContent=local.length?JSON.stringify(local.at(-1).woo,null,2):"No order submitted";
   el("metrics").textContent=local.length+" submitted · "+retained+" retained deliveries · "+money(sales)+" retained door sales · "+money(net)+" resolved-order contribution after assumed ads.";
   const ranked=[...groups.values()].sort((a,b)=>b.total/b.count-a.total/a.count),lead=ranked[0];
   el("recommend").textContent=(lead&&lead.total>0?"Demo homepage candidate: "+lead.o.label+" ("+money(Math.round(lead.total/lead.count))+" mean contribution across "+lead.count+" resolved examples). Ad-test ceiling: "+money(lead.o.maxCpa)+".":"Homepage and ad tests await positive resolved outcomes.")+" All demo shoppers excluded from retargeting. Submitted orders suppressed from cart recovery. Observed commercial sales: 0.";
@@ -91,4 +95,5 @@ el("examples").onclick=async()=>{const rows=zone.rows.filter(r=>r.reason==="Elig
   const o=rows[i%rows.length],order=await record(o,{placement:placements[i],campaign:campaigns[i%2]},"demo-example-"+o.id+"-"+outcome);
   for(const a of ["confirmed",outcome==="refused"?"refused":"delivered",...(outcome==="returned"?["returned"]:outcome==="delivered"?["payout_credited"]:[])])await transition(order,a);
 }dashboard()};
-el("behavior").onchange=el("ads").onchange=impressions;market();if(served)sync();
+el("behavior").onchange=el("ads").onchange=impressions;
+const requestedMarket=location.hash.slice(1);if(catalog.some(z=>z.market===requestedMarket))el("market").value=requestedMarket;market();if(served)sync();

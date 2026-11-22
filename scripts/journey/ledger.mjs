@@ -24,7 +24,15 @@ export function submit(offer,context,key) {
   if(offer.reason!=="Eligible"|| !/^demo-[a-zA-Z0-9-]{1,100}$/.test(key)) throw Error("Invalid checkout");
   const event=envelope("submitted",offer,context,key+"/submitted");
   const meta_data=Object.entries({offer_id:offer.id,country:offer.market,currency:offer.currency,placement:event.placement,campaign:event.campaign,environment:"demo",checkout_id:key}).map(([key,value])=>({key,value}));
-  return {key,offer,context:{placement:event.placement,campaign:event.campaign,session:event.session,variant:event.variant},events:[event],woo:{currency:offer.currency,payment_method:"cod",meta_data},paid:false};
+  // Numeric Woo IDs refer only to the isolated fixture catalog.
+  const productIds={rack:101,hook:102,clip:103,brush:104};
+  const decimal=n=>(n/10**offer.minorDigits).toFixed(offer.minorDigits);
+  const lines=offer.sku==="DEMO-R2"?[{product_id:201,quantity:1}]:
+    offer.parts.map(([part,quantity])=>({product_id:productIds[part],quantity}));
+  const woo={currency:offer.currency,payment_method:"cod",set_paid:false,line_items:lines,
+    shipping_lines:[{method_id:"flat_rate",method_title:"Demo zone",total:decimal(offer.shipping)}],
+    meta_data:[...meta_data,{key:"demo_item_total",value:decimal(offer.price)},{key:"demo_door_total",value:decimal(offer.door)}]};
+  return {key,offer,context:{placement:event.placement,campaign:event.campaign,session:event.session,variant:event.variant},events:[event],woo,paid:false};
 }
 export function advance(order,action) {
   if(order.events.some(e=>e.action===action)) return false;
