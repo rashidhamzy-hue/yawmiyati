@@ -5,6 +5,7 @@ import { DatabaseSync } from "node:sqlite";
 import { mkdirSync, readFileSync, writeFileSync, realpathSync, existsSync, readdirSync, renameSync } from "node:fs";
 import { resolve, relative, sep, isAbsolute } from "node:path";
 import { analyze, editorial, type Snapshot } from "./workspace";
+import { journeyPage } from "../journey/page";
 import { reviewBoard } from "./board";
 import { unpackWoo, refreshWoo } from "./woo-snapshot";
 import { sampleSnapshot } from "./demo";
@@ -84,6 +85,7 @@ if(command==="demo"){
   const cap=Number(process.env.YAWMIYATI_FAMILY_LIMIT??150);
   const review=analyze(snapshot,asOf,cap);
   if(command==="board"){
+    if(snapshot.demo) writeDraft(path("offer-journey.html"),journeyPage());
     writeDraft(path("catalog-review.html"),reviewBoard(review,snapshot.demo));console.log(path("catalog-review.html"));
   } else if(command==="research"){
     const countries={sa:"السعودية",ae:"الإمارات",om:"سلطنة عمان",eg:"مصر",iq:"العراق"};

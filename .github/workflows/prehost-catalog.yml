@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'scripts/catalog/**'
+      - 'scripts/journey/**'
       - 'src/lib/store/**'
       - '.github/workflows/prehost-catalog.yml'
 permissions:
@@ -15,7 +16,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: node --test scripts/catalog/prehost.test.mjs
+      - run: node --test scripts/catalog/prehost.test.mjs scripts/journey/journey.test.mjs
       - run: python3 -m unittest discover -s scripts/catalog -p "*_test.py"
       - name: Render catalog board and exercise the mobile approval download
         run: |
@@ -23,6 +24,7 @@ jobs:
           node scripts/catalog/run.mjs board "$RUNNER_TEMP/catalog"
           npm install --prefix "$RUNNER_TEMP/catalog-qa" --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
           NODE_PATH="$RUNNER_TEMP/catalog-qa/node_modules" node scripts/catalog/board-browser.cjs "$RUNNER_TEMP/catalog/catalog-review.html"
+          NODE_PATH="$RUNNER_TEMP/catalog-qa/node_modules" node scripts/journey/browser-test.cjs "$RUNNER_TEMP/catalog/offer-journey.html"
   private-decisions:
     runs-on: ubuntu-latest
     services:
