@@ -2,7 +2,7 @@ import type { MarketCode } from "../../src/lib/store/markets";
 import { digest, type Snapshot, type RecordInput } from "./workspace";
 
 export type WooPage = {page: number; totalPages: number; totalProducts: number; products: {
-  stock_status?: string; id: number; sku: string; name: string; categories: {name:string}[]; variations: number[];
+  global_unique_id?:string; stock_status?: string; id: number; sku: string; name: string; categories: {name:string}[]; variations: number[];
 }[]};
 
 function canonical(value:unknown):unknown {
@@ -32,7 +32,7 @@ export function unpackWoo(market:MarketCode, pages:WooPage[], observedAt:string)
       const sourceDigest=digest(canonical(p));
       for(const variant of variants){
         const sku=variant || !p.sku?.trim() ? "woo-"+p.id+"-"+variant : p.sku;
-        records.push({woo:{productId:p.id,variationId:variant,observedAt,sourceDigest,...(p.stock_status?{stockStatus:p.stock_status}:{})},productKey:"woo/"+p.id+"/"+variant,offer:{
+        records.push({...(!variant && p.global_unique_id?{packGtin:p.global_unique_id}:{}),woo:{productId:p.id,variationId:variant,observedAt,sourceDigest,...(p.stock_status?{stockStatus:p.stock_status}:{})},productKey:"woo/"+p.id+"/"+variant,offer:{
           market,sku,title:p.name,category:p.categories.map(c=>c.name).join(" / "),components:null,sellerFloor:null,shopperShipping:null,competitor:null,
           observations:[],commercialCostVerified:false,variantsVerified:false,mediaRightsVerified:false,
           economics:{price:null,supplierCost:null,outboundDelivery:null,deliveredFees:null,returnCost:null,adCost:null,deliveryBps:null}

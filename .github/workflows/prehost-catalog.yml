@@ -16,6 +16,7 @@ jobs:
         with:
           node-version: '24'
       - run: node --test scripts/catalog/prehost.test.mjs
+      - run: python3 -m unittest discover -s scripts/catalog -p "*_test.py"
       - name: Render catalog board and exercise the mobile approval download
         run: |
           node scripts/catalog/run.mjs demo "$RUNNER_TEMP/catalog"

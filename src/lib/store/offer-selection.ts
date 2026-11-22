@@ -3,6 +3,7 @@ import { shortlistCandidates, type ShortlistCandidate } from "./offline-catalog-
 import { evaluateCodEvidence, type CodEvidence } from "./pricing";
 
 export type Offer = ShortlistCandidate & {
+  measuredDemand?:number;
   title: string;
   category: string;
   // Component identities and quantities come from explicit supplier evidence.
@@ -24,7 +25,8 @@ export function selectOffers(market: MarketCode, offers: readonly Offer[], repor
     if (seen.has(offer.sku)) throw Error("Duplicate offer SKU");
     seen.add(offer.sku);
     const [research] = shortlistCandidates(market, [offer], asOf, 1);
-    const reasons = [...research.blockers];
+    const useMeasured=research.blockers.includes("incomplete_research") && typeof offer.measuredDemand==="number" && offer.measuredDemand>0 && offer.measuredDemand<=100;
+    const reasons = research.blockers.filter(reason=>!(useMeasured && reason==="incomplete_research"));
     const parts = offer.components ?? [];
     const validParts = parts.length > 0 && parts.every(p => p.id.trim() && Number.isSafeInteger(p.quantity) && p.quantity > 0)
       && new Set(parts.map(p => p.id)).size === parts.length;
@@ -44,7 +46,7 @@ export function selectOffers(market: MarketCode, offers: readonly Offer[], repor
     const contribution = economics.state === "evaluated" ? economics.scenarios[1].expectedContributionMinor : null;
     if (contribution === null) reasons.push(...(economics.state === "incomplete" ? economics.missing.map(k => "missing_" + k) : []));
     else if (BigInt(contribution) <= 0n) reasons.push("nonpositive_expected_margin");
-    return { offer, family, score: research.score, reasons, contribution };
+    return { offer, family, score: useMeasured ? offer.measuredDemand! : research.score, rankingMethod:useMeasured?"regional_demand_then_expected_contribution":"factor_assessment", reasons, contribution };
   });
   const eligible = evaluated.filter(row => !row.reasons.length).sort((a,b) => {
     const scoreDifference = (b.score ?? 0) - (a.score ?? 0);

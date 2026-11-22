@@ -152,3 +152,31 @@ test("refresh retains unchanged enrichment, resets changed stock and archives re
  assert.equal(cli("refresh").status,0);
  capture("01",[product(1)]);assert.notEqual(cli("refresh").status,0);
 });
+
+test("exact-pack measurements rank eligible offers without manual factor scores and export full pages", t=>{
+  const dir=mkdtempSync(join(tmpdir(),"yawm-measured-"));
+  t.after(()=>rmSync(dir,{recursive:true,force:true}));
+  const cli=(action,...args)=>run(process.execPath,["scripts/catalog/run.mjs",action,dir,...args]);
+  assert.equal(cli("demo").status,0);
+  const catalog=JSON.parse(readFileSync(join(dir,"catalog.json")));
+  const sa=catalog.stores.find(s=>s.market==="sa"),samples=[];
+  for(const record of sa.records){
+    record.offer.observations=[];record.packGtin="4006381333931";
+    const price=record.comparisons[0],demand=record.demand[0];
+    samples.push({...price,sku:record.offer.sku,feed:"https://shop.test/feed",packGtin:"04006381333931"},
+      {...demand,sku:record.offer.sku,url:"https://trends.google.com/trends/explore",benchmark:"kitchen"});
+    record.comparisons=[];record.demand=[];
+  }
+  writeFileSync(join(dir,"catalog.json"),JSON.stringify(catalog));
+  writeFileSync(join(dir,"collected-evidence.json"),JSON.stringify({samples}));
+  const review=cli("review");assert.equal(review.status,0,review.stderr);
+  const row=JSON.parse(review.stdout).find(s=>s.market==="sa").decisions.find(d=>d.selected);
+  assert.equal(row.rankingMethod,"regional_demand_then_expected_contribution");
+  const args=["sa",row.sku,row.revision];
+  assert.equal(cli("approve",...args).status,0);
+  assert.equal(cli("draft",...args).status,0);
+  const [packet]=JSON.parse(readFileSync(join(dir,"editorial-batch-sa.json")));
+  assert.equal(packet.proposal.priceMinor,packet.page.priceMinor);
+  assert.deepEqual(packet.page.components,row.components);
+  for(const key of ["category","faq","description","seoTitle","seoDescription"])assert.ok(packet.page[key].length);
+});
