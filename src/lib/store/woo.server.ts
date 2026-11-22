@@ -15,7 +15,7 @@ export function createWooReader(config: WooConfig, request: typeof fetch = fetch
   // Configuration must come from trusted server secrets, never customer input.
   const authorization = "Basic " + btoa(config.consumerKey + ":" + config.consumerSecret);
   async function get(url:URL){
-    const response=await request(url,{headers:{Authorization:authorization,Accept:"application/json"},redirect:"error",signal:AbortSignal.timeout(15000)});
+    const response=await request(url,{method:"GET",headers:{Authorization:authorization,Accept:"application/json"},redirect:"error",signal:AbortSignal.timeout(15000)});
     if(!response.ok)throw Error("Woo request failed: "+response.status);
     return response;
   }
