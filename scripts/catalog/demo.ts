@@ -9,8 +9,10 @@ export function sampleSnapshot():Snapshot {
       const url="https://example.invalid/"+market+"/"+offer.sku;
       const productKey=offer.sku;
       const contents=(offer.components??[]).map(p=>(p.id==="rack"?"رف مطبخ":"خطّاف")+" × "+p.quantity.toLocaleString(markets[market].locale)).join("، ");
-      return {offer:{...offer,observations:offer.observations.map(o=>({...o,source:url+"/"+o.factor}))},productKey,
-        comparisons:[{market,productKey,currency:markets[market].currency,seller:"Fictional comparison shop",url,observedAt:demoDate,price:offer.economics.price!,shipping:0}],
+      // Illustrate the three alternatives on an explicitly fictional mixed pack.
+      const demoFee=offer.sku==="DEMO-KIT"?Math.floor(offer.economics.price!/20):0;
+      return {...(demoFee?{targetContributionMinor:demoFee}:{}),offer:{...offer,shopperShipping:demoFee,observations:offer.observations.map(o=>({...o,source:url+"/"+o.factor}))},productKey,
+        comparisons:[{market,productKey,currency:markets[market].currency,seller:"Fictional comparison shop",url,observedAt:demoDate,price:offer.economics.price!,shipping:demoFee}],
         demand:[{market,productKey,url:url+"/search-interest",metric:"search_interest_index",observedAt:demoDate,value:75}],
         facts:[{id:"title",text:offer.title,source:url},{id:"contents",text:"تحتوي العبوة على "+contents+".",source:url}],
         faq:[{question:"ماذا تتضمن العبوة؟",factId:"contents"}],media:[]};
