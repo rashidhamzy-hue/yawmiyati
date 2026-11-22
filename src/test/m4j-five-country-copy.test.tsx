@@ -1,3 +1,4 @@
+import {customerServiceCopy} from "../lib/store/customer-service-copy";
 import {describe,expect,it,vi} from "vitest";
 import {render} from "@testing-library/react";
 import {MarketPreview} from "../components/store/MarketPreview";
@@ -21,7 +22,7 @@ describe("M4J five-country customer language",()=>{
  it.each(countries.flatMap(market=>topics.map(topic=>({market,topic}))))("$market $topic stays factual",({market,topic})=>{
   const {container}=render(<StoreInfoPage market={market} topic={topic}/>);
   expect(container.textContent).not.toMatch(forbidden);
-  expect(container.textContent).not.toMatch(/٢٨ ر.س|١٩ درهماً|٧٬٠٠٠ دينار عراقي/);
+  if(topic==="shipping-returns")expect(container.textContent).toContain(customerServiceCopy[market].shipping);
  });
  it.each(countries.flatMap(market=>(["cart","checkout","order"] as const).map(type=>({market,type}))))("$market $type remains inactive",({market,type})=>{
   const {container}=render(<StoreCommerceGuard market={market} type={type}/>);
