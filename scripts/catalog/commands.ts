@@ -1,3 +1,5 @@
+import {execFileSync} from "node:child_process";
+import {fileURLToPath} from "node:url";
 import { createHash, randomUUID } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import { mkdirSync, readFileSync, writeFileSync, realpathSync, existsSync, readdirSync, renameSync } from "node:fs";
@@ -10,7 +12,7 @@ import { demoDate } from "../../src/lib/store/offer-selection-demo";
 import { markets } from "../../src/lib/store/markets";
 
 const [command, directory, ...args] = process.argv.slice(2);
-if (!directory || !["demo","woo","refresh","research","review","board","approve","revoke","draft","batch-approve","batch-draft"].includes(command)) throw Error("Usage: catalog <demo|woo|refresh|research|review|board|approve|revoke|draft|batch-approve|batch-draft> <workspace> [market SKU revision]");
+if (!directory || !["demo","woo","refresh","collect","research","review","board","approve","revoke","draft","batch-approve","batch-draft"].includes(command)) throw Error("Usage: catalog <demo|woo|refresh|collect|research|review|board|approve|revoke|draft|batch-approve|batch-draft> <workspace> [market SKU revision]");
 const root=resolve(directory), path=(name:string)=>resolve(root,name);
 function writeDraft(name:string,data:string) {
   const temp=path("draft-"+randomUUID()+".tmp");
@@ -50,6 +52,20 @@ if(command==="demo"){
 } else {
   const original=readFileSync(path("catalog.json"),"utf8");
   const snapshot:Snapshot=JSON.parse(original);
+  if(command==="collect")execFileSync("python3",[fileURLToPath(new URL("./collect.py",import.meta.url)),root],{stdio:"inherit"});
+  const collected=path("collected-evidence.json");
+  if(existsSync(collected)){
+    const recordsByKey=new Map<string,typeof snapshot.stores[number]["records"]>();
+    for(const store of snapshot.stores)for(const record of store.records){
+      const key=JSON.stringify([store.market,record.productKey]);const rows=recordsByKey.get(key)??[];rows.push(record);recordsByKey.set(key,rows);
+    }
+    for(const sample of JSON.parse(readFileSync(collected,"utf8")).samples){
+      for(const record of recordsByKey.get(JSON.stringify([sample.market,sample.productKey]))??[]){
+        if(sample.sku!==record.offer.sku)continue;
+        if(sample.metric==="search_interest_index")record.demand.push(sample);else if(sample.packGtin===record.packGtin?.padStart(14,"0"))record.comparisons.push(sample);
+      }
+    }
+  }
   const inbox=path("evidence");
   if(existsSync(inbox)){
     for(const name of readdirSync(inbox).filter(n=>n.endsWith(".json")).sort()){
@@ -78,12 +94,13 @@ if(command==="demo"){
         demandSearch:"https://trends.google.com/trends/explore?"+new URLSearchParams({geo:store.market.toUpperCase(),q:offer.title}),
         verifiedComparisons:review.find(r=>r.market===store.market)?.decisions.find(d=>d.sku===offer.sku)?.comparison??null};
     })),null,2));
-  } else if(command==="review") console.log(JSON.stringify(review.map(r=>({market:r.market,read:r.read,reported:r.reportedTotal,coverage:r.coverage,
+  } else if(command==="review"||command==="collect") console.log(JSON.stringify(review.map(r=>({market:r.market,read:r.read,reported:r.reportedTotal,coverage:r.coverage,
     target:Math.min(100,cap),shortfall:Math.max(0,Math.min(100,cap)-r.selected.length),decisions:r.decisions.map(d=>({...d,accountProposal:d.selected?{schema:"yawmiyati-offer-1",demo:snapshot.demo,market:r.market,sku:d.sku,title:d.title,revision:d.revision,priceMinor:d.proposedPriceMinor,expectedContributionMinor:d.expectedContributionMinor,components:d.components}:null}))})),null,2));
   else {
     const batch=command==="batch-approve" || command==="batch-draft";
     const items=batch ? JSON.parse(readFileSync(resolve(args[0]??path("selected-offers.json")),"utf8")) : [{market:args[0],sku:args[1],revision:args[2]}];
     if(!Array.isArray(items)||items.length<1||items.length>750)throw Error("Invalid selection file");
+    const packets=new Map<string,unknown[]>();
     const targets=items.map(({market,sku,revision})=>{
     const store=review.find(r=>r.market===market);
     const row=store?.decisions.find(r=>r.sku===sku);
@@ -107,7 +124,7 @@ if(command==="demo"){
         const record=snapshot.stores.find(s=>s.market===market)!.records.find(r=>r.offer.sku===sku)!;
         const page=editorial(record,revision);
         const esc=(text:string)=>text.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!));
-        const gallery=record.media.map(m=>{
+        const images=record.media.map(m=>{
           const base=realpathSync(path("media"));
           const file=realpathSync(resolve(base,m.file));
           const rel=relative(base,file);
@@ -116,8 +133,9 @@ if(command==="demo"){
           const png=bytes.subarray(0,8).equals(Buffer.from("89504e470d0a1a0a","hex"));
           const jpeg=bytes[0]===255 && bytes[1]===216 && bytes[2]===255;
           if(bytes.length>5_000_000 || !(png||jpeg) || createHash("sha256").update(bytes).digest("hex")!==m.checksum)throw Error("Invalid or changed approved media");
-          return '<img loading="lazy" src="data:image/'+(png?'png':'jpeg')+';base64,'+bytes.toString("base64")+'" alt="'+esc(m.alt)+'">';
+          return {alt:m.alt,src:"data:image/"+(png?"png":"jpeg")+";base64,"+bytes.toString("base64")};
         });
+        const gallery=images.map(m=>'<img loading="lazy" src="'+m.src+'" alt="'+esc(m.alt)+'">');
         const {locale,currency,minorDigits}=markets[store.market];
         const fmt=(n:number)=>new Intl.NumberFormat(locale,{style:"currency",currency,minimumFractionDigits:minorDigits,maximumFractionDigits:minorDigits}).format(n/10**minorDigits);
         const total=row.proposedPriceMinor!+record.offer.shopperShipping!;
@@ -128,8 +146,17 @@ if(command==="demo"){
         writeDraft(out,html);
         writeDraft(path("draft-"+revision+".json"),JSON.stringify({schema:"yawmiyati-draft-1",demo:snapshot.demo,
           market,sku,revision,woo:record.woo??null,title:field("title"),description:field("description"),editorial:page},null,2));
+        const proposal={schema:"yawmiyati-offer-1",demo:snapshot.demo,market,sku,title:field("title"),revision,priceMinor:row.proposedPriceMinor,expectedContributionMinor:row.expectedContributionMinor,components:row.components};
+        const packet={schema:"yawmiyati-editorial-2",demo:snapshot.demo,market,sku,revision,woo:record.woo,proposal,
+          cost:{supplier:record.offer.economics.supplierCost,delivery:record.offer.economics.outboundDelivery,other:record.offer.economics.deliveredFees},
+          page:{title:field("title"),description:field("description"),seoTitle:field("seoTitle"),seoDescription:field("seoDescription"),
+            category:record.offer.category,components:row.components,images,faq:page.faq,priceMinor:row.proposedPriceMinor,shippingMinor:record.offer.shopperShipping}};
+        const entries=packets.get(market)??[];entries.push(packet);packets.set(market,entries);
         console.log(out);
       }
+      }
+      for(const [code,entries] of packets){
+        writeDraft(path("editorial-batch-"+code+".json"),JSON.stringify(entries));
       }
       db.exec("COMMIT");
     } finally { db.close(); }
