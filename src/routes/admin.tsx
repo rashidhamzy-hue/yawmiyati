@@ -1,3 +1,4 @@
+import {EditorialImport} from "../components/store/EditorialImport";
 import { AccountOfferReview } from "../components/store/AccountOfferReview";
 import { OfferSelectionDemo } from "../components/store/OfferSelectionDemo";
 import {publicBrowserConfig} from "@/lib/store/staging-public-config";
@@ -99,6 +100,7 @@ function OwnerDashboard(){
  {performance&&<section id="performance" className="space-y-4 rounded-[1.75rem] border bg-card p-6 shadow-soft"><h2 className="text-xl font-bold">Recorded performance · last {performance.window_days} days</h2>
  <div className="grid gap-3 sm:grid-cols-3">{[["Recorded orders",performance.orders.recorded],["Delivered statuses",performance.orders.delivered],["Failed statuses",performance.orders.failed],["Returned statuses",performance.orders.returned],["Cancelled statuses",performance.orders.cancelled],["Ledger entries",performance.ledger.entries],["Recorded net · ledger observation",formatRecordedMinor(market,performance.ledger.recorded_net_minor)],["Observed ad spend · ledger observation",formatRecordedMinor(market,performance.marketing_observations.spend_minor)],["Marketing observations",performance.marketing_observations.records]].map(([label,value])=><div key={String(label)} className="rounded border p-3"><p className="text-xs text-muted-foreground">{label}</p><p className="break-all text-xl font-bold">{value}</p></div>)}</div>
  <ul className="list-inside list-disc text-xs text-muted-foreground">{performance.warnings.map(w=><li key={w}>{w}</li>)}</ul></section>}
+ {data&&reviewClient&&<EditorialImport catalog={catalog} key={market} market={market} client={reviewClient} token={token}/>}
  {data&&reviewClient&&<AccountOfferReview key={market} market={market} client={reviewClient} token={token}/>}
  {data&&<OfferSelectionDemo key={market} market={market}/>}
  {data&&<OwnerActionQueue market={market} catalog={catalog} recommendations={recommendations} policy={policy}/>}
