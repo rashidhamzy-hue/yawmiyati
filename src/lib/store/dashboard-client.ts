@@ -40,6 +40,8 @@ export function dashboardClient(origin: string, publicKey: string, request: type
    return response.json();
  }
  return {
+   async importEditorial(token:string,market:MarketCode,items:unknown[]){return call("/rest/v1/rpc/import_editorial_batch",{p_store:market,p_items:items},token);},
+   async ownerEditorial(token:string,market:MarketCode,id:string){return call("/rest/v1/rpc/owner_editorial_page",{p_store:market,p_listing:id},token);},
    async offerDecision(token:string,market:MarketCode,sku:string){
      return call("/rest/v1/rpc/owner_offer_decision",{p_store:market,p_sku:sku},token);
    },
