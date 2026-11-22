@@ -21,6 +21,6 @@ it("keeps assistant COD, shipping and returns consistent with published service 
   expect(localShopAnswer("هل الدفع عند الاستلام؟",market,[])).toBe(customerServiceCopy[market].payment);
   expect(localShopAnswer("كم رسوم الشحن؟",market,[])).toContain(customerServiceCopy[market].shipping);
   expect(localShopAnswer("كيف الاسترجاع؟",market,[])).toBe(customerServiceCopy[market].returns);
-  expect(localShopAnswer("كم رسوم الشحن؟",market,[])).not.toMatch(/٢٨ ر.س|١٩ درهماً|٣ ريالات|٩٥ جنيه|٧٬٠٠٠ دينار/);
+  expect(localShopAnswer("كم رسوم الشحن؟",market,[])).not.toMatch(/شحن مجاني|حسب عنوانك/);
  }
 });
