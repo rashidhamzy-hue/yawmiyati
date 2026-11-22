@@ -4,7 +4,7 @@ import {useEffect,useRef,useState,type FormEvent} from "react";
 import {Bot,MessageCircle,Send,ShieldCheck,Sparkles,X} from "lucide-react";
 import type {MarketCode} from "@/lib/store/markets";
 import type {PublicListing} from "@/lib/store/public-catalog";
-import {countryName,marketGreeting,localShopAnswer,SHOP_ASSISTANT_SUGGESTIONS,type ShopMessage} from "@/lib/store/shop-assistant";
+import {countryName,marketGreeting,serviceAnswer,localShopAnswer,SHOP_ASSISTANT_SUGGESTIONS,type ShopMessage} from "@/lib/store/shop-assistant";
 
 const apiEnabled=import.meta.env.VITE_YAWMIYATI_SHOP_ASSISTANT_API_ENABLED==="true";
 const {origin:supabaseUrl,key:publishableKey}=publicBrowserConfig(import.meta.env.VITE_YAWMIYATI_SUPABASE_URL,import.meta.env.VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY);
@@ -42,7 +42,7 @@ export function ShoppingAssistant({market,products}:{market:MarketCode;products:
   setBusy(true);setDraft("");
   setMessages(prev=>[...prev.slice(-15),{role:"visitor",text:question}]);
   let reply=localShopAnswer(question,market,products);
-  if(apiEnabled && !asksAboutPayment(question)){
+  if(apiEnabled && !asksAboutPayment(question) && !serviceAnswer(question,market)){
    try{
     const timeout=AbortSignal.timeout(12000);
     const signal=AbortSignal.any([controller.signal,timeout]);
