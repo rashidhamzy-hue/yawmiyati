@@ -16,7 +16,7 @@ export function serviceAnswer(query:string,market:MarketCode){
  if(/(شحن|توصيل|يوصل|بيوصل|shipping|delivery)/i.test(query)){
   if(market==="eg"){
    for(const band of egyptScreenshotShippingEvidence.bands){
-    const destination=band.destinations.find(name=>query.includes(name));
+    const destination=band.destinations.find(name=>query.trim().replace(/[؟?.!]+$/, "").trim().endsWith(name));
     if(destination)return "مصاريف الشحن إلى "+destination+" "+Number(band.amountEgp).toLocaleString("ar-EG")+" جنيه. "+service.delivery;
    }
   }
