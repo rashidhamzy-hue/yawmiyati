@@ -39,15 +39,17 @@ describe("M4I Egypt screenshot shipping evidence is advisory only",()=>{
   expect(customer).not.toMatch(/المورّد|المورد|Taager|تاجر/);
   expect(customer).toContain("مصاريف الشحن");
   expect(customer).not.toContain("المتوقعة");
-  expect(customer).not.toMatch(/٩٥ جنيه|١٠٠ جنيه|١٠٥ جنيه/);
+  for(const price of ["٩٥ جنيه","١٠٠ جنيه","١٠٥ جنيه"])expect(customer).toContain(price);
  });
- it("preserves every screenshot destination internally but publishes no unauthorized customer rate",()=>{
+ it("displays all thirty named destinations under their recorded fees",()=>{
   const destinations=egyptScreenshotShippingEvidence.bands.flatMap(x=>x.destinations);
   for(const {destinations:group} of rows){
    for(const city of group)expect(destinations).toContain(city);
   }
   const shipping=marketPolicyPages.eg.groups[1][1];
-  expect(shipping).toContain("منطقة التوصيل");
-  expect(shipping).not.toMatch(/٩٥ جنيه|١٠٠ جنيه|١٠٥ جنيه|المتوقعة/);
+  expect(shipping).toContain("القاهرة");
+  for(const band of egyptScreenshotShippingEvidence.bands){
+   expect(marketPolicyPages.eg.groups).toContainEqual([Number(band.amountEgp).toLocaleString("ar-EG")+" جنيه",band.destinations.join("، ")]);
+  }
  });
 });
