@@ -18,7 +18,7 @@ vi.mock("../lib/store/staging-public-config",()=>({publicBrowserConfig:()=>({ori
 const markets=["sa","ae","om","eg","iq"] as const;
 const topics:readonly InfoTopic[]=["help","privacy","terms","shipping-returns"];
 const banned=/المتوقعة|المتوقع|سيكون متاح|سيتم نشر|ستظهر الشروط|سنوضح|بنوضح|هنوضح|راح يتوفر|عند بدء استقبال الطلبات|بدء استقبال الطلبات|قبل بدء الطلبات|مع بدء الطلبات|مع تشغيل الطلبات|المورّد السابق|المورد السابق|الشحن الإرشادي|إرشادي|تقديرات سابقة|Taager|Zambeel|TasteWP/i;
-const unapprovedRate=/٢٨ ر\.س|٢٨ ريالاً سعودياً|١٩ درهماً|٣ ريالات عُمانية|٩٥ جنيه|١٠٠ جنيه|١٠٥ جنيه|٧٬٠٠٠ دينار عراقي/;
+const fees={sa:"٢٨",ae:"١٩",om:"٣",eg:"٩٥",iq:"٧٬٠٠٠"} as const;
 
 describe("M9 consistent five-market customer language",()=>{
  it.each(markets)("%s: homepage shipping, payments, FAQ and highlights use evergreen copy",market=>{
@@ -27,7 +27,7 @@ describe("M9 consistent five-market customer language",()=>{
   expect(text).toContain("يومياتي");
   expect(container.querySelector("#questions")?.textContent).toContain(customerServiceCopy[market].payment);
   expect(text).not.toMatch(banned);
-  expect(text).not.toMatch(unapprovedRate);
+  expect(text).toContain(fees[market]);
   expect(text).toMatch(/الشحن|التوصيل/);
   expect(text).not.toMatch(/طلبك مؤكد|تم الدفع|تم شحن طلبك/);
  });
@@ -35,7 +35,7 @@ describe("M9 consistent five-market customer language",()=>{
   const {container}=render(<StoreInfoPage market={market} topic={topic}/>);
   const text=container.textContent??"";
   expect(text).not.toMatch(banned);
-  expect(text).not.toMatch(unapprovedRate);
+  if(topic==="shipping-returns")expect(text).toContain(fees[market]);
   if(topic==="shipping-returns")expect(text).toMatch(/استرجاع|إرجاع/);
  });
  it.each(markets.flatMap(market=>(["cart","checkout","order"] as const).map(type=>({market,type}))))("$market $type: explicit non-transactional guard remains",({market,type})=>{
@@ -56,7 +56,7 @@ describe("M9 consistent five-market customer language",()=>{
   expect(localShopAnswer("كم رسوم الشحن؟",market,[])).toContain(c.shipping);
   expect(localShopAnswer("كيف الاسترجاع؟",market,[])).toContain(c.returns);
   expect(localShopAnswer("هل الدفع عند الاستلام؟",market,[])).toContain(c.payment);
-  expect(localShopAnswer("كم رسوم الشحن؟",market,[])).not.toMatch(unapprovedRate);
+  expect(localShopAnswer("كم رسوم الشحن؟",market,[])).toContain(fees[market]);
  });
  it.each(markets)("%s homepage metadata has no source-specific coming-soon narration",market=>{
   const route=readFileSync("src/routes/"+market+".index.tsx","utf8");
