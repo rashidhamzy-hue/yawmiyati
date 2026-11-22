@@ -29,6 +29,9 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-gold: var(--gold);
+  --color-photo-foreground: var(--photo-foreground);
+  --color-photo-accent: var(--photo-accent);
+  --color-photo-scrim: var(--photo-scrim);
   --color-success: var(--success);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
@@ -64,6 +67,9 @@
   --accent: oklch(0.92 0.045 75);
   --accent-foreground: oklch(0.32 0.05 60);
   --gold: oklch(0.7 0.11 75);
+  --photo-foreground: oklch(0.99 0.005 85);
+  --photo-accent: oklch(0.9 0.065 80);
+  --photo-scrim: oklch(0.15 0.01 60);
   --success: oklch(0.52 0.1 155);
   --destructive: oklch(0.55 0.2 27);
   --destructive-foreground: oklch(0.985 0 0);
@@ -79,7 +85,7 @@
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
   --shadow-soft: 0 12px 32px -18px color-mix(in oklab, var(--foreground) 35%, transparent);
-  --gradient-hero: linear-gradient(to left, color-mix(in oklab, var(--foreground) 70%, transparent), transparent 75%);
+  --gradient-hero: linear-gradient(to left, color-mix(in oklab, var(--photo-scrim) 82%, transparent), color-mix(in oklab, var(--photo-scrim) 52%, transparent) 58%, color-mix(in oklab, var(--photo-scrim) 18%, transparent));
 }
 
 @layer base {
@@ -117,6 +123,19 @@ html { scroll-behavior: smooth; scroll-padding-top: 7rem; }
 .skip-link { position: fixed; z-index: 100; top: -100px; right: 12px; border-radius: 12px; padding: 12px 18px; background: var(--primary); color: var(--primary-foreground); }
 .skip-link:focus { top: 12px; }
 summary::-webkit-details-marker { display: none; }
+.storefront-hero { display: flex; min-height: 340px; }
+.storefront-hero-title { font-size: 32px; letter-spacing: 0; }
+.storefront-category-strip { display: grid; grid-auto-flow: column; grid-auto-columns: 88px; gap: 12px; overflow-x: auto; padding: 4px 4px 8px; scroll-snap-type: x proximity; }
+.storefront-category-strip > a { scroll-snap-align: start; }
+@media (min-width: 640px) {
+  .storefront-hero { min-height: 380px; }
+  .storefront-hero-title { font-size: 44px; }
+  .storefront-category-strip { grid-auto-flow: row; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+}
+@media (min-width: 1024px) {
+  .storefront-hero { min-height: 410px; }
+  .storefront-hero-title { font-size: 56px; }
+}
 @media (prefers-reduced-motion: reduce) {
  html { scroll-behavior: auto; }
  *,*::before,*::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }

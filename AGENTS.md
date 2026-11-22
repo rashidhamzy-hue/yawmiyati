@@ -34,3 +34,6 @@ The external Supabase project skhtunkknshvolturqlm is independently managed; Lov
 
 ## Storefront design preservation (20 Nov 2026)
 The owner explicitly requires the original Lovable Saudi storefront visual identity (hero photograph, rich category imagery, editorial sections, branded header/footer, desktop and mobile layouts) to remain visible even when no products are yet published or Supabase environment variables are absent. Never replace it with a plain staging dashboard or demo-only conditional. The customer storefront can display clear prelaunch/empty states, but not fabricated prices, delivery promises, ratings, or orders. Reuse this visual system for all five country stores. The temporary TasteWP Saudi Woo setup was retired at the owner's request; future supplier connectors require new hosted credentials and explicit approval.
+
+## Shared storefront presentation
+Keep homepage hierarchy in the shared `MarketPreview` presentation, with market-specific content supplied by existing identity modules; this prevents country storefronts diverging while retaining their catalog guards and dedicated search/product experiences.

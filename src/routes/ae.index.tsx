@@ -10,6 +10,7 @@ export const Route=createFileRoute("/ae/")({
   {name:"description",content:description},
   {property:"og:title",content:title},
   {property:"og:description",content:description},
+  {property:"og:type",content:"website"},
   {property:"og:image",content:img[marketExperience.ae.heroImage]},
   {name:"twitter:card",content:"summary_large_image"},
   {name:"twitter:image",content:img[marketExperience.ae.heroImage]},

@@ -8,6 +8,7 @@ export const Route=createFileRoute("/sa/")({
   {name:"robots",content:"noindex,nofollow"},
   {property:"og:title",content:"يومياتي السعودية | تفاصيل صغيرة، حياة أجمل"},
   {property:"og:description",content:"اختيارات وأفكار يومية للمنزل والجمال والعناية."},
+  {property:"og:type",content:"website"},{name:"twitter:card",content:"summary_large_image"},
   {property:"og:image",content:img.hero},{name:"twitter:image",content:img.hero}
  ]}),component:()=> <MarketPreview market="sa"/>
 });
