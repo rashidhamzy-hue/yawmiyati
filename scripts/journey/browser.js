@@ -16,7 +16,7 @@ function log(event,o=offer,permissions=consent()){
 }
 function track(action){log(envelope(action,offer,context(),crypto.randomUUID()));}
 function cell(row,text){row.insertCell().textContent=text}
-function resetCart(){cart=null;key=null;review=false;el("confirm").hidden=true;el("status").textContent="";}
+function resetCart(){el("bump").hidden=true;cart=null;key=null;review=false;el("confirm").hidden=true;el("status").textContent="";}
 function renderShop(){
   el("packs").replaceChildren();
   const visible=zone.rows.filter(r=>r.reason==="Eligible"&&r.label.includes(el("query").value.trim()));
@@ -32,7 +32,7 @@ function loadZone(){
   resetCart();el("query").value="";renderShop();impressions();
   const best=offer;el("decision").textContent=best.kind+" leads on projected contribution per submitted order. Target "+money(best.target)+" after acquisition cost "+money(best.ad)+".";
   el("comparison").replaceChildren();
-  for(const r of zone.rows){const tr=el("comparison").insertRow();for(const v of [r.kind,money(r.door),money(r.expected),money(r.maxCpa),r.reason!=="Eligible"?r.reason:r===best?"Recommended":"Lower projected contribution"])cell(tr,v);tr.title="Floor "+money(r.floor)+" · supplier cost "+money(r.cost)+" · available packs "+r.stock+" · matched demo door price "+money(r.comparableDoor)}
+  for(const r of zone.rows){const tr=el("comparison").insertRow();for(const v of [r.kind,money(r.door),money(r.expected),money(r.maxCpa),r.stock+" / "+money(r.floor)+" / "+money(r.cost),r.reason!=="Eligible"?r.reason:r===best?"Recommended":"Lower projected contribution"])cell(tr,v);tr.title="Floor "+money(r.floor)+" · supplier cost "+money(r.cost)+" · available packs "+r.stock+" · matched demo door price "+money(r.comparableDoor)}
   el("assumptions").textContent="Demo assumptions per 100 submissions: 80 retained, 15 refused, 5 returned. Shipping "+money(best.freight)+". Refusal / return fees "+money(best.refusalFee)+" / "+money(best.returnFee)+". Stock and resale prices are fixtures. Recorded return terms: "+zone.terms;
   dashboard();
 }
@@ -68,7 +68,20 @@ function dashboard(){
 el("market").onchange=market;el("zone").onchange=loadZone;
 el("placement").onchange=el("campaign").onchange=()=>{resetCart();impressions()};
 el("query").onchange=()=>{el("placement").value="search";const subject=offer||zone.rows[0];log(envelope("search",subject,context(),crypto.randomUUID()),subject);renderShop();impressions()};
-el("add").onclick=()=>{resetCart();cart={offer,context:context()};key="demo-"+crypto.randomUUID();track("cart_add");el("status").textContent="أُضيف إلى السلة"};
+el("add").onclick=()=>{resetCart();cart={offer,context:context()};key="demo-"+crypto.randomUUID();track("cart_add");showBump();el("status").textContent="أُضيف إلى السلة"};
+function addOn(){
+  const kit=zone.rows.find(r=>r.sku==="DEMO-KIT"&&r.reason==="Eligible");
+  if(cart?.offer.kind==="Single"&&kit&&kit.expected>=cart.offer.expected)return kit;
+}
+function showBump(){
+  const kit=addOn();el("bump").hidden=!kit;
+  if(kit)el("bump").textContent="أضيفي خطّاف تنظيم مقابل "+money(kit.door-cart.offer.door);
+}
+el("bump").onclick=()=>{const kit=addOn();if(!kit)return;
+  const ctx=cart.context;log(envelope("cart_remove",cart.offer,ctx,crypto.randomUUID()),cart.offer);
+  cart={offer:kit,context:ctx};key="demo-"+crypto.randomUUID();review=false;el("confirm").hidden=true;
+  offer=kit;renderShop();track("bundle_select");track("cart_add");showBump();el("status").textContent="تم تحديث السلة";
+};
 el("remove").onclick=()=>{if(cart)log(envelope("cart_remove",cart.offer,cart.context,crypto.randomUUID()),cart.offer);resetCart()};
 el("checkout").onclick=()=>{if(!cart){const o=offer||zone.rows[0];log(envelope("checkout_error",o,context(),crypto.randomUUID()),o);el("status").textContent="السلة فارغة";return}
   for(const a of ["checkout_start","checkout_review"])log(envelope(a,cart.offer,cart.context,crypto.randomUUID()),cart.offer);

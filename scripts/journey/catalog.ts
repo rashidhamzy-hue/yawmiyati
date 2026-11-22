@@ -15,11 +15,19 @@ export function journeyCatalog(market: MarketCode) {
   const fraction = (p: number) => Math.round(base * p / 100);
   const regular = {sku:"DEMO-R1", label:"رف مطبخ واحد", kind:"Single", price:base, floor:fraction(80), cost:fraction(48), stock:24, parts:[["rack",1]]};
   const pair = {sku:"DEMO-R2", label:"عبوة رفّين", kind:"Supplier pack SKU", price:fraction(170), floor:fraction(145), cost:fraction(78), stock:8, parts:[["rack",2]]};
+  // Distinct market quotes are synthetic. A fixed supplier SKU can have its own stock.
+  if(market==="iq") pair.stock=0;
+  if(market==="om") pair.cost=fraction(116);
+  const kit={...regular,sku:"DEMO-KIT",label:"رف مع خطّاف تنظيم",kind:"Yawmiyati kit",price:fraction(137),floor:fraction(105),cost:fraction(64),stock:Math.min(regular.stock,6),parts:[["rack",1],["hook",1]]};
   const offers = [regular, pair,
     {...regular, label:"رفّان بخصم الكمية", kind:"Two units at quantity tier", price:fraction(177),floor:fraction(152),cost:fraction(89),stock:Math.floor(regular.stock/2),parts:[["rack",2]]},
-    {...regular,sku:"DEMO-KIT",label:"رف مع خطّاف تنظيم",kind:"Yawmiyati kit",price:fraction(137),floor:fraction(105),cost:fraction(64),stock:Math.min(regular.stock,6),parts:[["rack",1],["hook",1]]},
+    kit,
     {...pair, label:"عبوة رفّين مع توصيل مجاني",kind:"Seller-funded shipping"},
     {...regular,sku:"DEMO-CLIP",label:"مشبك شعر",kind:"Low-margin control",cost:market==="eg"?20000:fraction(96), floor:market==="eg"?22000:base,price:market==="eg"?22000:base,parts:[["clip",1]]}];
+  // Egyptian screenshots give separate conditional prices for the clip. The cheaper
+  // acquisition cost and floor apply only to the additional cart item in this kit.
+  if(market==="eg") offers.push({...kit,sku:"DEMO-BRUSH-CLIP",label:"فرشاة شعر مع مشبك",kind:"Brush + optional clip",cost:35400+13100,
+    floor:58300+13600,price:73500,stock:12,parts:[["brush",1],["clip",1]]});
   return zones.map((zone,index) => {
     const freight=parseMinorUnits(market,zone.amount);
     const refusalFee=market==="eg"?500:fraction(4);
