@@ -1,3 +1,4 @@
+import {customerServiceCopy} from "@/lib/store/customer-service-copy";
 import {paymentAnswer} from "../../../supabase/functions/_shared/payment-policy";
 import {ShoppingAssistant} from "./ShoppingAssistant";
 import {StoreFrame} from "./StoreChrome";
@@ -36,7 +37,7 @@ const chapters={
   ["دقة المعلومات","قد تتغير تفاصيل المنتجات. المرجع هو وصف المنتج وبيانات الطلب المعروضة عند المراجعة."]
  ]},
  "shipping-returns":{title:"الدفع والتوصيل والاسترجاع",intro:"تفاصيل الدفع والتوصيل وحقوق الاسترجاع حسب بلد التسوق.",groups:[
-  ["رسوم التوصيل","تختلف رسوم التوصيل بحسب العنوان والبلد والمنتج. راجعي مبلغ الشحن ضمن تفاصيل الطلب."],
+  ["رسوم التوصيل","راجعي رسوم التوصيل في صفحة الشحن الخاصة ببلدك."],
   ["طريقة الدفع",paymentAnswer],
   ["الاسترجاع والاستبدال","يخضع طلب الإرجاع أو الاستبدال لحالة المنتج وحقوق المستهلك والأنظمة ذات الصلة."],
   ["متابعة الطلب","تستند حالة الطلب إلى رقم طلب مسجّل وصحيح، ولا يُنشئ المساعد طلباً من المحادثة."]
@@ -47,12 +48,12 @@ const saudiInfo={
   ["كيف أدفع؟",paymentAnswer],
   ["كيف أبحث عن منتج؟","اضغطي علامة البحث أو تصفّحي الأقسام. تظهر مواصفات وأسعار المنتجات التي لها بيانات معتمدة."],
   ["كيف أدفع؟",paymentAnswer],
-  ["كيف أعرف وقت التوصيل؟","تعتمد تفاصيل التوصيل على المدينة والعنوان وتجهيز المنتج. راجعي معلومات الشحن المرتبطة بوجهتك."],
+  ["كيف أعرف وقت التوصيل؟",customerServiceCopy.sa.delivery],
   ["كيف أتابع أو أرجع الطلب؟","راجعي رقم الطلب وبياناته للتتبّع، واطلعي على حقوق الإرجاع والاستبدال المرتبطة بالمنتج."]
  ]},
  terms:{title:"شروط استخدام الموقع",intro:"تفاصيل التصفح والمنتجات والطلبات في يومياتي.",groups:[
   ["معلومات المنتجات","الصور التحريرية للتعريف بالأقسام. معلومات المنتجات المعتمدة تظهر في صفحاتها، مع المواصفات والأسعار."],
-  ["الأسعار والدفع",paymentAnswer+" تختلف الأسعار ورسوم التوصيل بحسب المنتج والعنوان."],
+  ["الأسعار والدفع",paymentAnswer+" "+customerServiceCopy.sa.shipping],
   ["الطلبات والتأكيد","راجعي الكميات والعنوان ورقم التواصل وإجمالي الطلب عند إرسال بياناته."],
   ["الاسترجاع","يخضع الإرجاع والاستبدال لشروط المنتج وحقوقك النظامية. لا تستثني معلومات الموقع الحقوق المقررة للمستهلك."]
  ]},
@@ -106,7 +107,7 @@ export function StoreInfoPage({market,topic}:{market:MarketCode;topic:InfoTopic}
      </div>
      <div className="mt-5 rounded-[1.5rem] border bg-muted/40 p-5 text-sm leading-7 text-muted-foreground">
       <ShieldCheck className="mb-2 h-5 w-5 text-primary"/>
-      {topic==="privacy"?"لا تشاركي أي معلومات حساسة في البحث أو محادثة المساعد.":topic==="terms"?"راجعي وصف كل منتج ومعلوماته قبل تقديم الطلب، مع الاحتفاظ بحقوقك كمستهلكة.":"تُراجع رسوم التوصيل وشروط الاسترجاع وفق العنوان والمنتج وحقوق المستهلك في بلدك."}
+      {topic==="privacy"?"لا تشاركي أي معلومات حساسة في البحث أو محادثة المساعد.":topic==="terms"?"راجعي وصف كل منتج ومعلوماته قبل تقديم الطلب، مع الاحتفاظ بحقوقك كمستهلكة.":customerServiceCopy[market].shipping}
      </div>
      <div className="mt-8 flex flex-wrap gap-3 text-sm">{([{label:"مركز المساعدة",id:"help"},{label:"الدفع والتوصيل",id:"shipping-returns"},{label:"الخصوصية",id:"privacy"},{label:"الشروط",id:"terms"}] as const).filter(x=>x.id!==topic).map(x=><a key={x.id} href={"/"+market+"/info/"+x.id} className="inline-flex min-h-11 items-center rounded-full border bg-card px-4 font-bold text-primary hover:bg-primary-soft">{x.label}</a>)}</div>
     </div>

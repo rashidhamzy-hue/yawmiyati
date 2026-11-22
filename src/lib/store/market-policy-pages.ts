@@ -1,3 +1,4 @@
+import {egyptScreenshotShippingEvidence} from "./egypt-shipping-evidence";
 import type {MarketCode} from "./markets";
 import {customerServiceCopy} from "./customer-service-copy";
 
@@ -23,7 +24,9 @@ const page=(market:Country):MarketPolicyPage=>{
  const [pay,ship,delivery,confirm,returns]=questions[market];
  return {
   title:heading[market],intro:c.shippingIntro,
-  groups:[[pay,c.payment],[ship,c.shipping],[delivery,c.delivery],
+  groups:[[pay,c.payment],[ship,c.shipping],
+   ...(market==="eg"?egyptScreenshotShippingEvidence.bands.map(band=>[Number(band.amountEgp).toLocaleString("ar-EG")+" جنيه",band.destinations.join("، ")] as const):[]),
+   [delivery,c.delivery],
    [confirm,c.confirmation],[returns,c.returns],[
      market==="eg"?"أتابع طلبي إزاي؟":market==="iq"?"شلون أتابع الطلب؟":"كيف أتابع الطلب؟",
      c.tracking

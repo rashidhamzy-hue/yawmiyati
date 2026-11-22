@@ -21,8 +21,8 @@ it("shows verified-safe Saudi service details and protected navigation",()=>{
  expect(container.textContent).toContain(customerServiceCopy.sa.returns);
  expect(container.textContent).not.toMatch(/المتوقعة|سيكون متاحاً|سيتم نشر|٢٨ ريالاً|Taager/);
 });
-it("does not turn owner-supplied Egypt screenshot estimates into public shipping prices",()=>{
+it("shows all three Egyptian shipping prices",()=>{
  const {container}=render(<StoreInfoPage market="eg" topic="shipping-returns"/>);
  expect(container.textContent).toContain(customerServiceCopy.eg.shipping);
- expect(container.textContent).not.toMatch(/٩٥ جنيه|١٠٠ جنيه|١٠٥ جنيه|المتوقعة/);
+ for(const fee of ["٩٥ جنيه","١٠٠ جنيه","١٠٥ جنيه"])expect(container.textContent).toContain(fee);
 });

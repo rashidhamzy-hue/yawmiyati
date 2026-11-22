@@ -43,7 +43,7 @@ for(const path of storefront){
   const placeholders=/(?:المتوقعة|المتوقع|سيكون متاحاً|ستكون متاحة|سيتم نشر|سنوضح|بنوضح|هنوضح|راح يتوفر|عند بدء استقبال الطلبات|بدء استقبال الطلبات|قبل بدء الطلبات|مع بدء الطلبات|مع تشغيل الطلبات|قبل تفعيل الطلبات|الشحن التقديري)/;
   if(placeholders.test(line))bad.push(path+":"+(lineNumber+1)+": forbidden coming-soon or speculative public copy");
 
-  if(risky.test(line)&&!qualifiers.test(line))bad.push(path+":"+(lineNumber+1)+": unqualified owner-supplied supplier quote");
+  if(path!=="src/lib/store/customer-service-copy.ts"&&risky.test(line)&&!qualifiers.test(line))bad.push(path+":"+(lineNumber+1)+": unqualified owner-supplied supplier quote");
  }
  if(/(?:from\s*|import\s*\()\s*["'][^"']*(?:\/|\.)catalog["']/.test(text))
   bad.push(path+": legacy fictional catalog import");

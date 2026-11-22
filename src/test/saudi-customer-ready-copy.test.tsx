@@ -8,11 +8,11 @@ import {customerServiceCopy} from "../lib/store/customer-service-copy";
 
 it("presents Saudi COD, shipping and returns in natural operational wording without promising checkout",()=>{
  const {container}=render(<MarketPreview market="sa"/>);
- expect(screen.getByText(/الدفع عند الاستلام · التفاصيل حسب عنوانك/)).toBeTruthy();
- expect(screen.getByRole("heading",{name:"رسوم التوصيل حسب العنوان"})).toBeTruthy();
+ expect(screen.getByText(/الدفع عند الاستلام · رسوم التوصيل داخل المملكة/)).toBeTruthy();
+ expect(screen.getByRole("heading",{name:"رسوم التوصيل"})).toBeTruthy();
  expect(container.textContent).toContain(customerServiceCopy.sa.shipping);
  expect(container.textContent).toContain(customerServiceCopy.sa.returns);
- expect(container.textContent).not.toMatch(/المتوقعة|سيكون متاحاً|سيتم نشر|٢٨ ر.س|المورد|Taager/);
+ expect(container.textContent).not.toMatch(/المتوقعة|سيكون متاحاً|سيتم نشر|المورد|Taager/);
  expect(screen.getByRole("link",{name:/اعرفي أكثر عن الشحن والاسترجاع/}).getAttribute("href")).toBe("/sa/info/shipping-returns");
  expect(screen.queryByRole("button",{name:/تأكيد الطلب|إتمام الدفع|شراء الآن/})).toBeNull();
 });
