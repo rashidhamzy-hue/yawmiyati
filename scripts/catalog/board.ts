@@ -19,7 +19,7 @@ export function reviewBoard(report:ReturnType<typeof analyze>, demo:boolean){
   }).join("");
   return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Yawmiyati catalog review</title>
 <style>*{box-sizing:border-box}body{max-width:1150px;margin:auto;padding:clamp(16px,4vw,48px);background:#f7f5ef;color:#1c3228;font:1rem/1.5 system-ui}h1{font-size:clamp(2.1rem,6vw,4rem);letter-spacing:-.055em;margin:.4em 0}h2{margin-bottom:0}section{margin:2.5rem 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}article{background:#fff;border:1px solid #d7dcd6;border-radius:12px;padding:18px;overflow-wrap:anywhere}h3{margin:0;font-size:1.25rem}dt,small{color:#536457}dd{margin:0 0 .5rem;font-weight:650}label,summary{cursor:pointer}label{display:block;margin-top:1rem}button{font:inherit;border:0;border-radius:8px;background:#204f39;color:white;padding:12px 18px;cursor:pointer}button:disabled{opacity:.55}footer{background:#f7f5ef;padding:12px 0;position:sticky;bottom:0;border-top:1px solid #b3c0b6}</style>
-<h1>Catalog review</h1><p>${demo?"Fictional five-market catalog. ":""}Select the offers you want to approve.</p>${sections}
+<h1>Catalog review</h1>${demo?'<p><a href="offer-journey.html">Open the five-store offer and delivery demo</a></p>':''}<p>${demo?"Fictional five-market catalog. ":""}Select the offers you want to approve.</p>${sections}
 <footer><button disabled>Download selected offers</button> <output>0 selected</output></footer>
 <script>
 const controls=[...document.querySelectorAll("input")],button=document.querySelector("button");
