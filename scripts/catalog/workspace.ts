@@ -4,12 +4,12 @@ import { markets, type MarketCode } from "../../src/lib/store/markets";
 import { selectOffers, type Offer } from "../../src/lib/store/offer-selection";
 import { validateEditorialPackage, type EditorialPackage } from "../../src/lib/store/offline-editorial-package";
 
-type PriceSample = { market: MarketCode; currency: string; productKey: string; seller: string;
+type PriceSample = { feed?:string; packGtin?:string; market: MarketCode; currency: string; productKey: string; seller: string;
   url: string; observedAt: string; price: number; shipping: number | null };
-type DemandSample = { market: MarketCode; productKey: string; url: string; observedAt: string;
+type DemandSample = { benchmark?:string; market: MarketCode; productKey: string; url: string; observedAt: string;
   metric: "search_interest_index"; value: number };
 type Fact = { id: string; text: string; source: string };
-export type RecordInput = { targetContributionMinor?:number; woo?: {productId:number;variationId:number;observedAt:string;sourceDigest?:string;stockStatus?:string}; offer: Offer; productKey: string; comparisons: PriceSample[]; demand: DemandSample[];
+export type RecordInput = { packGtin?:string; searchTerm?:string; targetContributionMinor?:number; woo?: {productId:number;variationId:number;observedAt:string;sourceDigest?:string;stockStatus?:string}; offer: Offer; productKey: string; comparisons: PriceSample[]; demand: DemandSample[];
   facts: Fact[]; faq: { question: string; factId: string }[]; media: { file: string; checksum: string; alt: string; factId: string; rights: string }[] };
 export type Snapshot = {version: 1; demo: boolean; stores: { market: MarketCode; observedAt?:string; reportedTotal: number | null; records: RecordInput[] }[]};
 const urlOK = (s: string) => { try {const u = new URL(s); return u.protocol === "https:" && !u.username && !u.password;} catch {return false;} };
@@ -67,7 +67,9 @@ export function analyze(snapshot: Snapshot, asOf: string, limit = 150) {
         if(price===null)price=minimum;
         else if(minimum===null || price<minimum)price=null;
       }
-      return {...offer, ...(record.woo?.stockStatus && record.woo.stockStatus !== "instock" ? {stockVerifiedAt:""} : {}),economics:{...offer.economics,price}, competitor: lowest ? {source: lowest.url, deliveredMinor: lowest.price+lowest.shipping!, observedAt:lowest.observedAt} : null,
+      const regionalDemand=demand.filter(d=>d.benchmark && new URL(d.url).hostname==="trends.google.com").sort((a,b)=>Date.parse(b.observedAt)-Date.parse(a.observedAt))[0];
+      const hasPackEvidence=matches.some(c=>c.feed && urlOK(c.feed) && record.packGtin && c.packGtin===record.packGtin.padStart(14,"0"));
+      return {...offer, measuredDemand:hasPackEvidence && regionalDemand ? regionalDemand.value : undefined, ...(record.woo?.stockStatus && record.woo.stockStatus !== "instock" ? {stockVerifiedAt:""} : {}),economics:{...offer.economics,price}, competitor: lowest ? {source: lowest.url, deliveredMinor: lowest.price+lowest.shipping!, observedAt:lowest.observedAt} : null,
         observations:[...offer.observations.filter(o=>o.factor !== "demand" && o.verified === true && urlOK(o.source)),
           ...demand.map(d=>({factor:"demand" as const, market, sku:offer.sku, score:d.value, source:d.url, verified:true, observedAt:d.observedAt}))]};
     });
@@ -79,7 +81,7 @@ export function analyze(snapshot: Snapshot, asOf: string, limit = 150) {
         proposedPriceMinor:row.offer.economics.price, sellerFloorMinor:row.offer.sellerFloor, targetContributionMinor:input.targetContributionMinor??null, expectedContributionMinor:row.contribution, familyWinner:winners.get(row.family)??null,
         disposition:row.reasons.length?"held":result.selected.includes(row)?"selected":winners.has(row.family)?"alternative_pack":"outside_family_limit",
         comparisons:input.comparisons, components:row.offer.components, reasons:row.reasons, score:row.score, comparison:row.offer.competitor,
-        research:row.offer.observations, revision:digest([1,snapshot.demo,market,input,row.offer.economics.price,row.offer.competitor,row.score,row.contribution])};
+        rankingMethod:row.rankingMethod, research:row.offer.observations, revision:digest([1,snapshot.demo,market,input,row.offer.economics.price,row.offer.competitor,row.score,row.contribution])};
     })};
   });
 }
