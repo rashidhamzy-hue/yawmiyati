@@ -25,6 +25,7 @@ describe("M9 consistent five-market customer language",()=>{
   const {container}=render(<MarketPreview market={market}/>);
   const text=container.textContent??"";
   expect(text).toContain("يومياتي");
+  expect(container.querySelector("#questions")?.textContent).toContain(customerServiceCopy[market].payment);
   expect(text).not.toMatch(banned);
   expect(text).not.toMatch(unapprovedRate);
   expect(text).toMatch(/الشحن|التوصيل/);
@@ -46,6 +47,10 @@ describe("M9 consistent five-market customer language",()=>{
  it.each(markets)("%s: source modules and local assistant agree without unverified price",market=>{
   const c=customerServiceCopy[market];
   expect(JSON.stringify(c)).not.toMatch(banned);
+  expect(c.paymentHeading).toBe("الدفع عند الاستلام");
+  expect(c.payment).toBe("الدفع عند الاستلام فقط. لا يتوفر الدفع الإلكتروني عبر الموقع.");
+  for(const question of ["هل الدفع أونلاين متاح؟","هل تقبلون البطاقة عند الباب؟","Apple Pay available?"])
+   expect(localShopAnswer(question,market,[])).toBe(c.payment);
   const page=market==="sa"?saudiShippingPage:marketPolicyPages[market];
   expect(JSON.stringify([page,marketExperience[market],brandStory[market]])).not.toMatch(banned);
   expect(localShopAnswer("كم رسوم الشحن؟",market,[])).toContain(c.shipping);
