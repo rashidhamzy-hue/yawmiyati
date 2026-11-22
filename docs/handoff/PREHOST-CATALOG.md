@@ -62,3 +62,13 @@ The review command includes an `accountProposal` for each selected offer. Once t
 ## Refresh an existing Woo workspace
 
 Replace the saved woo-pages.json export and run `npm run catalog -- refresh <folder>`. Supply complete Woo pages for every market included in that refresh. Other markets keep their current snapshots. The command archives catalog.json under catalog-history before replacing it. It reports added, changed, unchanged and removed rows using market, Woo product ID and variation ID. Unchanged source payloads retain their research and editorial inputs. Changed payloads and legacy rows without source fingerprints return to evidence review. Each newer observation produces a new approval revision. An out-of-stock or backordered source cannot pass the stock check. Coverage describes the exported Woo catalog. When testing the real plugin, reconcile its catalog against Taager separately.
+
+## Collect market evidence and import complete product pages
+
+Create research-sources.json in the private catalog folder. Configure each active country once with its participating merchants’ HTTPS Google-format RSS feed URLs and one consistent search benchmark for that country, for example:
+
+    {"sa":{"feeds":["https://merchant.example/feed.xml"],"benchmark":"مطبخ"}}
+
+Replace the example URL with an approved real merchant feed. Run `npm run catalog -- collect <folder>` before opening the board. The collector matches pack GTIN, currency, stock and country-wide delivery price. It compares each product search term with the country benchmark on Google Trends. The resulting score is relative search interest, not sales volume. Look in collected-evidence.json for source failures and unmatched offers. Missing economics, stock, rights and component evidence continue to hold products out of selection. A variation needs its own verified pack identifier.
+
+After shortlist approval, batch-draft exports editorial-batch-<country>.json. On the owner dashboard, choose the country, open **Batch product pages**, load that file, preview the complete pages and approve. Large batches transfer in chunks. After an interruption, retry the same file to reuse successful drafts. After a new login, open a saved preview by its catalog title. Demo files stay offline. Existing drafts with conflicting revisions require individual review. Customer visibility still depends on the existing catalog release process.
