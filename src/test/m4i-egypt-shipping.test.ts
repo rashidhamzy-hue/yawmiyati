@@ -47,7 +47,7 @@ describe("M4I Egypt screenshot shipping evidence is advisory only",()=>{
    for(const city of group)expect(destinations).toContain(city);
   }
   const shipping=marketPolicyPages.eg.groups[1][1];
-  expect(shipping).toContain("القاهرة");
+  expect(shipping).toContain("للقاهرة");
   for(const band of egyptScreenshotShippingEvidence.bands){
    expect(marketPolicyPages.eg.groups).toContainEqual([Number(band.amountEgp).toLocaleString("ar-EG")+" جنيه",band.destinations.join("، ")]);
   }
