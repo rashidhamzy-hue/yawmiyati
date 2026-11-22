@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: node --test scripts/catalog/egypt-import-check.test.mjs scripts/catalog/prehost.test.mjs scripts/journey/journey.test.mjs
+      - run: node --test scripts/catalog/connected.test.mjs scripts/catalog/egypt-import-check.test.mjs scripts/catalog/prehost.test.mjs scripts/journey/journey.test.mjs
       - run: python3 -m unittest discover -s scripts/catalog -p "*_test.py"
       - name: Render catalog board and exercise the mobile approval download
         run: |

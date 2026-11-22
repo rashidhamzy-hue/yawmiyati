@@ -7,13 +7,14 @@ import { resolve, relative, sep, isAbsolute } from "node:path";
 import { analyze, editorial, type Snapshot } from "./workspace";
 import { journeyPage } from "../journey/page";
 import { reviewBoard } from "./board";
+import { configuration,pullInventory } from "./connected";
 import { unpackWoo, refreshWoo } from "./woo-snapshot";
 import { sampleSnapshot } from "./demo";
 import { demoDate } from "../../src/lib/store/offer-selection-demo";
 import { markets } from "../../src/lib/store/markets";
 
 const [command, directory, ...args] = process.argv.slice(2);
-if (!directory || !["demo","woo","refresh","collect","research","review","board","approve","revoke","draft","batch-approve","batch-draft"].includes(command)) throw Error("Usage: catalog <demo|woo|refresh|collect|research|review|board|approve|revoke|draft|batch-approve|batch-draft> <workspace> [market SKU revision]");
+if (!directory || !["demo","sync","woo","refresh","collect","research","review","board","approve","revoke","draft","batch-approve","batch-draft"].includes(command)) throw Error("Usage: catalog <demo|sync|woo|refresh|collect|research|review|board|approve|revoke|draft|batch-approve|batch-draft> <workspace> [market SKU revision]");
 const root=resolve(directory), path=(name:string)=>resolve(root,name);
 function writeDraft(name:string,data:string) {
   const temp=path("draft-"+randomUUID()+".tmp");
@@ -35,17 +36,29 @@ if(command==="demo"){
   analyze(snapshot,new Date().toISOString());
   writeFileSync(path("catalog.json"),JSON.stringify(snapshot,null,2),{flag:"wx"});
   console.log("Private Woo snapshot written. Add verified economics, research and content evidence before selection.");
-} else if(command==="refresh"){
+} else if(command==="refresh"||command==="sync"){
+  let updates;
+  if(command==="sync"){
+    const market=args[0] as keyof typeof markets;
+    if(!Object.hasOwn(markets,market))throw Error("Select a single market: sa, ae, om, eg or iq");
+    const config=configuration(market,process.env);
+    mkdirSync(root,{recursive:true,mode:0o700});
+    const capture=await pullInventory(config);
+    if(capture.pages[0].totalProducts===0)throw Error("Connected Woo catalog is empty. Upstream discovery is unverified. Existing candidates preserved.");
+    updates={[market]:capture};
+  }else updates=JSON.parse(readFileSync(path("woo-pages.json"),"utf8"));
   const db=new DatabaseSync(path("owner.sqlite"));
   try {
     db.exec("PRAGMA busy_timeout=5000; BEGIN IMMEDIATE");
-    const previous=readFileSync(path("catalog.json"),"utf8");
-    const {snapshot,changes}=refreshWoo(JSON.parse(previous),JSON.parse(readFileSync(path("woo-pages.json"),"utf8")));
+    const previous=existsSync(path("catalog.json"))?readFileSync(path("catalog.json"),"utf8"):null;
+    if(previous===null&&command==="refresh")throw Error("Missing catalog.json");
+    const initial:Snapshot={version:1,demo:false,stores:(Object.keys(markets) as (keyof typeof markets)[]).map(market=>({market,records:[],reportedTotal:null}))};
+    const {snapshot,changes}=refreshWoo(previous===null?initial:JSON.parse(previous),updates);
     analyze(snapshot,new Date().toISOString());
     const archive=path("catalog-history");
     mkdirSync(archive,{recursive:true,mode:0o700});
-    const backup=resolve(archive,createHash("sha256").update(previous).digest("hex")+".json");
-    if(!existsSync(backup))writeDraft(backup,previous);
+    const backup=previous===null?null:resolve(archive,createHash("sha256").update(previous).digest("hex")+".json");
+    if(backup&&previous!==null&&!existsSync(backup))writeDraft(backup,previous);
     writeDraft(path("catalog.json"),JSON.stringify(snapshot,null,2));
     db.exec("COMMIT");
     console.log(JSON.stringify({changes,backup},null,2));
