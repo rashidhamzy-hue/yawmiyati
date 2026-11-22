@@ -10,7 +10,7 @@ Use Node 24. Run from the repository root.
     node scripts/catalog/run.mjs board /tmp/yawmiyati-demo
     node scripts/journey/server.mjs /tmp/yawmiyati-demo
 
-The local studio at http://127.0.0.1:4175 supports five markets and Egypt’s three shipping bands. See scripts/journey/README.md for consent, attribution, Woo metadata, COD state transitions, replay and payout semantics. The offline owner catalog, research and approval workflow is documented in docs/handoff/PREHOST-CATALOG.md. The normal storefront runs with the repo dev command. The catalog is first on every country home. With zero released listings it shows illustrated product types linking to their departments. Empty-state cards never assert an available SKU or price.
+The local studio at http://127.0.0.1:4175 supports five markets and Egypt’s three shipping bands. See scripts/journey/README.md for consent, attribution, Woo metadata, COD state transitions, replay and payout semantics. The offline owner catalog, research and approval workflow is documented in docs/handoff/PREHOST-CATALOG.md. The normal storefront runs with the repo dev command. The catalog is first on every country home. With zero released listings it shows illustrated product types linking to their departments. The four browse photographs are optimized WebP copies of the existing Lovable project assets p1, p6, p8 and p4, shipped in public/browse so a standalone checkout of this repository can render them. They illustrate departments. Empty-state cards never assert an available SKU or price.
 
 ## Automated catalog intake
 

@@ -37,6 +37,8 @@ async function main(){
      assert.equal(await page.getByRole("heading",{level:1}).count(),1,label+": main heading count");
      const firstTile=page.locator("#collection nav a, #collection article a").first();
      assert.ok(await firstTile.count(),label+": first shopping tile missing");
+     const tilePhoto=firstTile.locator("img");
+     if(await tilePhoto.count())assert.ok(await tilePhoto.evaluate(async img=>{await img.decode();return img.naturalWidth>0}),label+": missing product-type photograph");
      const firstBox=await firstTile.boundingBox();
      assert.ok(firstBox&&firstBox.y+60<900,label+": first shopping tile below viewport");
      const lovProxyImages=await page.locator('main img[src^="/__l5e/"]').count();

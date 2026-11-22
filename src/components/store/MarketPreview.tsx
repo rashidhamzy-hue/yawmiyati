@@ -38,17 +38,17 @@ function SectionIntro({eyebrow,title,description}:{eyebrow:string;title:string;d
 }
 // Product-type photography links to a department until released listings are available.
 const browseTiles=[
- {image:img.p1,title:"خفّاقات الحليب",department:"kitchen"},
- {image:img.p6,title:"أدوات تصفيف الشعر",department:"beauty"},
- {image:img.p8,title:"عبوات التوابل",department:"organize"},
- {image:img.p4,title:"أطقم الحمّام",department:"home"},
+ {image:"/browse/coffee-frother.webp",title:"خفّاقات الحليب",department:"kitchen"},
+ {image:"/browse/hair-styling.webp",title:"أدوات تصفيف الشعر",department:"beauty"},
+ {image:"/browse/spice-jars.webp",title:"عبوات التوابل",department:"organize"},
+ {image:"/browse/bath-set.webp",title:"أطقم الحمّام",department:"home"},
 ] as const;
 function BrowseProducts({market}:{market:MarketCode}){
  return <nav aria-label="تصفّحي حسب نوع المنتج" className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-5">
   {browseTiles.map(tile=>{
    const category=categories.find(c=>c.slug===tile.department)!;
    return <a key={tile.image} href={`/${market}/c/${category.slug}`} className="group overflow-hidden rounded-xl border bg-card">
-    <img src={tile.image} alt="" width={360} height={270} onError={e=>{if(e.currentTarget.getAttribute("src")!==category.picture)e.currentTarget.src=category.picture}} className="aspect-[4/3] w-full bg-muted object-cover"/>
+    <img src={tile.image} alt="" width={360} height={270} className="aspect-square w-full bg-[#efe6d7] object-contain"/>
     <div className="space-y-1 p-3 sm:p-4"><span className="block font-bold">{tile.title}</span><span className="inline-flex items-center gap-1 text-xs text-primary">تصفّحي {category.name} <ArrowLeft size={14}/></span></div>
    </a>
   })}
