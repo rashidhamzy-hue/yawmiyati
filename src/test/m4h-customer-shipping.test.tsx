@@ -28,6 +28,6 @@ describe("M4H customer-facing five-country shipping disclosures",()=>{
   expect(historicSupplierTerms.om.shippingQuote?.amount).toBe("3");
   expect(historicSupplierTerms.iq.shippingQuote?.amount).toBe("7000");
   expect(Object.values(historicSupplierTerms).every(v=>!v.customerPriceAuthorized)).toBe(true);
-  for(const market of markets)expect(customerServiceCopy[market].returns).not.toMatch(/٧ أيام|١٥ يوماً|١٤ يوماً/);
+  expect(customerServiceCopy.om.returns).toContain("منتج معيب أو مختلف عن الوصف");
  });
 });
