@@ -20,6 +20,9 @@ describe("M4H customer-facing five-country shipping disclosures",()=>{
   const text=container.textContent??"";
   expect(text).not.toMatch(forbidden);
   expect(text).toContain(customerServiceCopy[market].shipping);
+  const links=Array.from(container.querySelectorAll("footer a[aria-current], footer a[aria-label^='متجر ']"));
+  expect(links.map(link=>link.textContent)).toEqual(["السعودية","الإمارات","عُمان","مصر","العراق"]);
+  expect(links.find(link=>link.getAttribute("aria-current")==="page")?.getAttribute("href")).toBe("/"+market);
   expect(text).not.toMatch(/تم تأكيد طلبك|تم الدفع بنجاح/);
  });
  it("keeps quoted country figures in internal evidence without inventing public return promises",()=>{
