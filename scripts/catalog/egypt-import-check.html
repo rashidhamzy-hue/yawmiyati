@@ -1,0 +1,67 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Egypt import check · Yawmiyati</title><style>
+*{box-sizing:border-box}body{max-width:820px;margin:auto;padding:clamp(20px,5vw,48px);font:17px/1.6 system-ui;color:#23372e;background:#faf8f3}h1{font-family:Georgia,serif;line-height:1.15}section{background:white;padding:20px;border:1px solid #d8dfd6;border-radius:12px}input,button{font:inherit;max-width:100%}button{background:#245640;color:white;border:0;border-radius:6px;padding:9px 14px}button:disabled{opacity:.45}pre{overflow:auto;font:14px/1.5 monospace}</style>
+<h1>Egypt import check</h1><p>Open the product CSV from your Egypt WooCommerce test store. The check runs in this browser. The report contains the matching test rows, selected numeric values, and counts of relevant columns. Review it before sharing.</p>
+<section><label>WooCommerce product export (CSV) <input id="file" type="file" accept=".csv,text/csv"></label><p id="status" role="status"></p><button disabled id="save">Download report</button><pre id="preview"></pre></section>
+<script id="core">
+function csvRows(text) {
+  text=text.replace(/^\uFEFF/,'');let rows=[],row=[],value='',quoted=false,closed=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(quoted){if(c!=='"')value+=c;else if(text[i+1]==='"'){value+='"';i++}else{quoted=false;closed=true}continue}
+    if(c===','){row.push(value);value='';closed=false;continue}
+    if(c==='\r'||c==='\n'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(value);rows.push(row);row=[];value='';closed=false;continue}
+    if(closed||c==='"'&&value!=='')throw Error("Malformed CSV quoting");
+    if(c==='"')quoted=true;else value+=c;
+  }
+  if(quoted)throw Error("Unclosed CSV cell");
+  if(value||row.length||closed){row.push(value);rows.push(row)}
+  return rows.filter(r=>r.length>1||r[0]!=='');
+}
+function inspectCsv(text) {
+  const [headers,...rows]=csvRows(text);
+  if(!headers||!rows.length)throw Error("The export contains no product rows.");
+  const names=headers.map(x=>x.trim().toLowerCase());
+  const col=n=>names.indexOf(n);
+  if(col("sku")<0||col("name")<0||new Set(names).size!==names.length)throw Error("Use the native WooCommerce product CSV with English column headers and unique columns.");
+  const groups={
+    supplier_cost:/^(?:taager_|supplier_|wholesale_)(?:product_)?(?:cost|price)$/,
+    selling_floor:/^(?:(?:taager|supplier)_)?min(?:imum)?_(?:selling|sale)_price$/,
+    quantity_tier:/quantity_(?:discount|break|tier)|tier(?:ed)?_pric/,
+    extra_item:/extra_(?:cart_)?item|add_?on_pric/,
+    components:/pack_(?:contents|components)|bundle_(?:items|components)|bundled_items/
+  };
+  const candidates=names.map((n,i)=>{if(!n.startsWith("meta:"))return null;
+    const k=n.slice(5).trim().toLowerCase().replace(/^_+/,"").replace(/[- ]+/g,"_");
+    if(/secret|token|password|auth|credential|private|email|phone|address|customer|user/.test(k))return null;
+    const group=Object.keys(groups).find(g=>groups[g].test(k));return group?{i,group}:null}).filter(Boolean);
+  const products=[];
+  for(const row of rows){
+    if(row.length!==headers.length)throw Error("A row has a different number of columns from the header.");
+    const get=n=>col(n)<0?"":row[col(n)].trim(),sku=get("sku"),title=get("name");
+    let item=null;
+    if(sku==="EG030501CKKA99")item="cool-clean-three-pack";
+    else if(sku==="EG030107CLAN99")item="cool-clean-component";
+    else if(/cool clean|كول كلين/i.test(title))item="cleaner-title-match";
+    else if(/hair clip|مشبك|توك[ةه]/i.test(title))item="hair-clip-title-match";
+    else if(/فرشاة|فرشاه|hair brush|steam brush/i.test(title))item="brush-title-match";
+    if(!item)continue;
+    const numeric=s=>/^\d{1,9}(?:\.\d{1,3})?$/.test(s)?s:null;
+    const evidence={};
+    for(const {i,group} of candidates)if(row[i].trim()){
+      const entry=evidence[group]??={populatedColumns:0,numericValues:[]};entry.populatedColumns++;
+      if(["supplier_cost","selling_floor"].includes(group)&&numeric(row[i].trim())!==null)entry.numericValues.push(numeric(row[i].trim()));
+    }
+    products.push({item,wooId:numeric(get("id")),sku:/^EG[A-Z0-9]{5,22}$/.test(sku)?sku:null,regularPrice:numeric(get("regular price")),salePrice:numeric(get("sale price")),stock:numeric(get("stock")),candidateMetadata:evidence});
+  }
+  return {format:1,requestedMarket:"Egypt",source:"WooCommerce product CSV",currencyVerification:"Verify EGP in store settings. Product CSV does not establish currency.",rowsInspected:rows.length,matchingRows:products.length,products,interpretation:"Title matches require owner confirmation. Candidate metadata requires comparison with the exact Taager SKU and price context. Missing values mean unobserved in this export. Quantity tables and arbitrary metadata values are omitted."};
+}
+</script><script>
+let report;
+file.onchange=async()=>{report=null;save.disabled=true;preview.textContent="";try{
+  const f=file.files[0];if(!f)return;if(f.size>10000000)throw Error("Export just the sample products (10 MB maximum).");
+  report=inspectCsv(await f.text());preview.textContent=JSON.stringify(report,null,2);document.querySelector("#status").textContent=report.matchingRows+" matching product rows found.";save.disabled=false;
+}catch(e){document.querySelector("#status").textContent=e.message}};
+save.onclick=()=>{if(!report)return;const a=document.createElement("a");a.download="egypt-woo-field-report.json";a.href=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:"application/json"}));a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+</script></html>
