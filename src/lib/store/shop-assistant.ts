@@ -1,3 +1,4 @@
+import {asksAboutPayment} from "../../../supabase/functions/_shared/payment-policy";
 import type {MarketCode} from "./markets";
 import type {PublicListing} from "./public-catalog";
 import {customerServiceCopy} from "./customer-service-copy";
@@ -12,6 +13,7 @@ export function localShopAnswer(question:string,market:MarketCode,products:reado
  const query=question.trim().toLowerCase();
  if(!query)return "اكتبي سؤالك لأساعدك في استكشاف يومياتي.";
  if(query.length>500)return "سؤالك طويل جداً. اختصريه إلى ٥٠٠ حرف أو أقل.";
+ if(asksAboutPayment(query))return customerServiceCopy[market].payment;
  if(/(قسم|أقسام|تصنيف|فئات|اختار|اختيار|category|categories)/i.test(query))
   return "يمكنك استكشاف: "+groups.join("، ")+". اختاري القسم الذي يناسب اهتماماتك، أو ابحثي باسم منتج في قسم المنتجات.";
  if(/(منتج|منتجات|متاح|موجود|عرض|products|stock|available)/i.test(query)){
@@ -19,7 +21,6 @@ export function localShopAnswer(question:string,market:MarketCode,products:reado
   return "هذه أسماء بعض المنتجات الظاهرة في الكتالوج: "+products.slice(0,4).map(p=>p.title).join("، ")+". يمكنك فتح كل منتج لقراءة تفاصيله.";
  }
  const service=customerServiceCopy[market];
- if(/(دفع|استلام|كاش|cod|payment)/i.test(query))return service.payment;
  if(/(استرجاع|إرجاع|استبدال|مرتجع|return|refund)/i.test(query))return service.returns;
  if(/(شحن|توصيل|shipping|delivery)/i.test(query))return service.shipping+" "+service.delivery;
  if(/(متابعة|تتبع|track|tracking|طلبي)/i.test(query))return service.tracking;

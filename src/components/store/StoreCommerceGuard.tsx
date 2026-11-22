@@ -30,6 +30,7 @@ export function StoreCommerceGuard({market,type}:{market:MarketCode;type:keyof t
      <p className="text-sm font-extrabold text-primary">{entry.eyebrow}</p>
      <h1 className="mt-3 font-display text-3xl font-extrabold leading-tight sm:text-4xl">{titles[market][type]??entry.title}</h1>
      <p className="mt-5 text-sm leading-8 text-muted-foreground sm:text-base">{type==="order"?copy.tracking:copy.preCheckoutNotice}</p>
+     {type!=="order"&&<p className="mt-2 text-sm">{copy.payment}</p>}
      <div className="mt-8 flex flex-wrap gap-3">
       <a href={path+"#discover"} className="btn-primary inline-flex min-h-12 items-center gap-2">{market==="sa"?"اكتشفي الأقسام":marketExperience[market].discoverCta} <ArrowLeft className="h-4 w-4"/></a>
       <button type="button" onClick={()=>document.dispatchEvent(new CustomEvent("yawmiyati:open-search"))} className="btn-outline inline-flex min-h-12 items-center gap-2"><Search className="h-4 w-4"/> {market==="sa"?"ابحثي في يومياتي":marketExperience[market].searchCta}</button>

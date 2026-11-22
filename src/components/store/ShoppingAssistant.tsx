@@ -1,3 +1,4 @@
+import {asksAboutPayment} from "../../../supabase/functions/_shared/payment-policy";
 import {publicBrowserConfig} from "@/lib/store/staging-public-config";
 import {useEffect,useRef,useState,type FormEvent} from "react";
 import {Bot,MessageCircle,Send,ShieldCheck,Sparkles,X} from "lucide-react";
@@ -41,7 +42,7 @@ export function ShoppingAssistant({market,products}:{market:MarketCode;products:
   setBusy(true);setDraft("");
   setMessages(prev=>[...prev.slice(-15),{role:"visitor",text:question}]);
   let reply=localShopAnswer(question,market,products);
-  if(apiEnabled){
+  if(apiEnabled && !asksAboutPayment(question)){
    try{
     const timeout=AbortSignal.timeout(12000);
     const signal=AbortSignal.any([controller.signal,timeout]);

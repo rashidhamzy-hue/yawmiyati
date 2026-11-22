@@ -73,7 +73,7 @@ async function main(){
        assert.equal(policyResponse?.status(),200,label+": country policy HTTP error");
        await page.locator("h1").first().waitFor({state:"visible"});
        const text=await page.locator("main").innerText();
-       assert.ok(text.includes("الاستلام")||text.includes("كاش"),label+": local COD guidance missing");
+       assert.ok(text.includes("الدفع عند الاستلام"),label+": local COD guidance missing");
        assert.ok(!text.includes("تاجر"),label+": supplier name leaked into customer policy");
        await page.screenshot({path:path.join(output,label+"-shipping.png"),fullPage:true,animations:"disabled"});
        const story=await page.goto(base+"/"+market+"/story",{waitUntil:"domcontentloaded",timeout:30000});

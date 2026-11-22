@@ -1,3 +1,4 @@
+import {paymentLabel} from "../../../supabase/functions/_shared/payment-policy";
 import { useState } from "react";
 import { ImageOff } from "lucide-react";
 import type { MarketCode } from "./markets";
@@ -28,6 +29,7 @@ export function ApprovedProductGallery({detail,market,extras}:{detail:PublicDeta
     </div>
     <div className="space-y-5">
       <h1 className="text-2xl font-extrabold leading-relaxed">{product.title}</h1>
+      <p className="text-sm">{paymentLabel}</p>
       <p className="text-xl font-bold">{product.price}</p>
       {product.description.trim()&&<p className="whitespace-pre-wrap break-words text-sm leading-7 text-muted-foreground">{product.description}</p>}
       {product.variants.length>0&&<fieldset className="space-y-2"><legend className="text-sm font-bold">الخيارات المعتمدة</legend><div className="flex flex-wrap gap-2">{product.variants.map(v=><button key={v.id} type="button" aria-pressed={chosenVariant?.id===v.id} onClick={()=>setVariantId(v.id)} className={`min-h-11 rounded-xl border px-4 py-2 text-sm ${chosenVariant?.id===v.id?"border-primary bg-muted font-bold":""}`}>{v.label}</button>)}</div><p className="text-xs text-muted-foreground">اختيار للعرض فقط؛ لا توجد معلومات مخزون أو شراء مؤكدة.</p></fieldset>}
