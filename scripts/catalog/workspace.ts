@@ -9,7 +9,7 @@ type PriceSample = { feed?:string; packGtin?:string; market: MarketCode; currenc
 type DemandSample = { benchmark?:string; market: MarketCode; productKey: string; url: string; observedAt: string;
   metric: "search_interest_index"; value: number };
 type Fact = { id: string; text: string; source: string };
-export type RecordInput = { packGtin?:string; searchTerm?:string; targetContributionMinor?:number; woo?: {productId:number;variationId:number;observedAt:string;sourceDigest?:string;stockStatus?:string}; offer: Offer; productKey: string; comparisons: PriceSample[]; demand: DemandSample[];
+export type RecordInput = { packGtin?:string; searchTerm?:string; targetContributionMinor?:number; woo?: {parentEvidence?:{regular:string|null;sale:string|null;stock:string|null;signals:{group:string;amount:string|null;revision:string}[]};productId:number;variationId:number;observedAt:string;sourceDigest?:string;stockStatus?:string}; offer: Offer; productKey: string; comparisons: PriceSample[]; demand: DemandSample[];
   facts: Fact[]; faq: { question: string; factId: string }[]; media: { file: string; checksum: string; alt: string; factId: string; rights: string }[] };
 export type Snapshot = {version: 1; demo: boolean; stores: { market: MarketCode; observedAt?:string; reportedTotal: number | null; records: RecordInput[] }[]};
 const urlOK = (s: string) => { try {const u = new URL(s); return u.protocol === "https:" && !u.username && !u.password;} catch {return false;} };

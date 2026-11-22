@@ -36,10 +36,33 @@ const values:{icon:LucideIcon;title:string;description:string}[]=[
 function SectionIntro({eyebrow,title,description}:{eyebrow:string;title:string;description?:string|undefined}){
  return <div className="space-y-2"><p className="text-xs font-extrabold tracking-wider text-primary">{eyebrow}</p><h2 className="font-display text-2xl font-extrabold leading-tight sm:text-3xl md:text-4xl">{title}</h2>{description&&<p className="max-w-2xl text-sm leading-8 text-muted-foreground md:text-base">{description}</p>}</div>;
 }
+// Product-type photography links to a department until released listings are available.
+const browseTiles=[
+ {image:"/browse/coffee-frother.webp",title:"خفّاقات الحليب",department:"kitchen"},
+ {image:"/browse/hair-styling.webp",title:"أدوات تصفيف الشعر",department:"beauty"},
+ {image:"/browse/spice-jars.webp",title:"عبوات التوابل",department:"organize"},
+ {image:"/browse/bath-set.webp",title:"أطقم الحمّام",department:"home"},
+] as const;
+function BrowseProducts({market}:{market:MarketCode}){
+ return <nav aria-label="تصفّحي حسب نوع المنتج" className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-5">
+  {browseTiles.map(tile=>{
+   const category=categories.find(c=>c.slug===tile.department)!;
+   return <a key={tile.image} href={`/${market}/c/${category.slug}`} className="group overflow-hidden rounded-xl border bg-card">
+    <img src={tile.image} alt="" width={360} height={270} className="aspect-square w-full bg-[#efe6d7] object-contain"/>
+    <div className="space-y-1 p-3 sm:p-4"><span className="block font-bold">{tile.title}</span><span className="inline-flex items-center gap-1 text-xs text-primary">تصفّحي {category.name} <ArrowLeft size={14}/></span></div>
+   </a>
+  })}
+ </nav>;
+}
 function ShopCard({item,market}:{item:PublicListing;market:MarketCode}){
- return <article className="group flex h-full flex-col overflow-hidden rounded-lg border border-border/70 bg-card shadow-soft transition-transform duration-300 hover:-translate-y-1">
-  <a href={`/${market}/p/${encodeURIComponent(item.slug)}`} className="grid aspect-[4/4.7] place-items-center bg-muted" aria-label={item.title}><Package className="h-12 w-12 text-primary/35" aria-hidden="true"/></a>
-  <div className="flex flex-1 flex-col gap-3 p-4"><a href={`/${market}/p/${encodeURIComponent(item.slug)}`} className="font-bold leading-7 hover:text-primary">{item.title}</a><p className="mt-auto text-lg font-extrabold text-primary">{formatListingPrice(item,market)}</p><span className="text-xs text-muted-foreground">تفاصيل المنتج</span></div>
+ const href=`/${market}/p/${encodeURIComponent(item.slug)}`;
+ return <article className="group h-full overflow-hidden rounded-xl border border-border/70 bg-card shadow-soft transition-shadow hover:shadow-md">
+  <a href={href} aria-label={item.title} className="flex h-full min-h-36 flex-col gap-3 p-4 focus-visible:outline focus-visible:outline-primary sm:p-5">
+   <Package className="h-5 w-5 text-primary/70" aria-hidden="true"/>
+   <h3 className="text-base font-bold leading-6 group-hover:text-primary sm:text-lg">{item.title}</h3>
+   <p className="mt-auto text-lg font-extrabold text-primary">{formatListingPrice(item,market)}</p>
+   <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">تفاصيل المنتج <ArrowLeft size={14} aria-hidden="true"/></span>
+  </a>
  </article>;
 }
 export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{market:MarketCode;slug?:string;searchOnly?:boolean;initialSearch?:string}){
@@ -70,12 +93,36 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
  const matchedIds=new Set(localMatches.map(x=>x.listing_id));
  const matching=[...localMatches,...remoteMatches.filter(x=>!matchedIds.has(x.listing_id))];
  const suggestions=suggestEditorialCategories(term);
+ const homePage=!searchOnly&&!slug;
+ const browseEmpty=homePage&&!term.trim()&&(!origin||!key||rows?.length===0);
  return <div dir="rtl" data-yawmiyati-market={market} className="min-h-screen overflow-x-clip bg-background text-foreground">
   <a href="#main-content" className="skip-link">تخطي إلى المحتوى</a>
   <div className="bg-primary px-4 py-2.5 text-center text-[11px] font-bold tracking-wide text-primary-foreground sm:text-xs">{experience.announcement}</div>
   <StoreHeader market={market}/>
 
   <main id="main-content">
+   {searchOnly&&<section aria-label="اكتشفي المنتجات" className="mx-auto max-w-7xl px-4 pt-5 sm:px-6 lg:px-8">
+    <div className="relative isolate flex min-h-[200px] items-center overflow-hidden rounded-[1.75rem] bg-foreground sm:min-h-[260px]">
+     <img src={img["cat-home"]} alt="" className="absolute inset-0 h-full w-full object-cover object-center" fetchPriority="high"/>
+     <div className="absolute inset-0 bg-gradient-to-l from-black/80 via-black/45 to-black/15"/>
+     <div className="relative p-7 text-white sm:p-11"><span className="text-xs font-bold text-[#f5dab1]">البحث في يومياتي</span><h1 className="mt-3 font-display text-3xl font-extrabold sm:text-4xl">{experience.searchCta}</h1><p className="mt-3 max-w-xl text-sm leading-7 text-white/85">ابحثي باسم المنتج، أو اكتشفي الأقسام والأفكار اللي تناسب ذوقك.</p></div>
+    </div>
+   </section>}
+   <section id="collection" className={"mx-auto max-w-7xl scroll-mt-4 px-4 pb-16 sm:px-6 lg:px-8 "+(searchOnly||slug?"pt-8 sm:pt-12":"pt-4 sm:pt-6")}>
+    <div className="flex flex-wrap items-end justify-between gap-5"><SectionIntro eyebrow={shopName} title={slug?"تفاصيل المنتج":searchOnly?"ابحثي في منتجات يومياتي":experience.collectionTitle} description={slug?undefined:searchOnly?"البحث يفهم اختلاف كتابة الكلمات العربية، الكلمات القريبة، وأسماء المنتجات المتاحة للعرض.":undefined}/>{!slug&&<label className="relative block w-full sm:w-auto"><Search className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"/><input type="search" className="field w-full pr-12 sm:w-72" value={term} onChange={e=>setTerm(e.target.value)} placeholder="ابحثي بين المنتجات" aria-label="بحث المنتجات المعتمدة"/></label>}</div>
+    {!slug&&<div className={(searchOnly||term.trim()?"mt-5 flex":"hidden")+" flex-wrap items-center gap-2"} aria-label="اقتراحات البحث">
+      {(term.trim()?suggestions:SEARCH_GROUPS).slice(0,6).map(group=><a key={group.slug} href={path+"/c/"+group.slug} className="inline-flex min-h-10 items-center rounded-full border border-border bg-card px-4 text-xs font-bold text-primary transition-colors hover:border-primary/40 hover:bg-primary-soft">{group.title}</a>)}
+      {term.trim()&&<Button variant="outline" onClick={()=>setTerm("")} className="min-h-11 rounded-full px-4 text-xs font-semibold text-muted-foreground">مسح البحث</Button>}
+    </div>}
+    {browseEmpty?<BrowseProducts market={market}/>:!origin||!key?<EmptyProducts title="تعرّفي على مجموعات يومياتي" message="تظهر هنا المنتجات التي تتوافر لها بيانات معتمدة. اكتشفي أقسام البيت والجمال والعناية."/>
+    :error?<div role="alert" className="mt-8 rounded-3xl border bg-card p-8 text-center"><h3 className="font-bold">تعذّر تحميل المنتجات في الوقت الحالي</h3><Button variant="outline" className="mt-4 min-h-11" onClick={()=>setAttempt(v=>v+1)}>إعادة المحاولة</Button></div>
+    :rows===null?<div role="status" aria-live="polite" className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">{Array.from({length:4},(_,i)=><div key={i} className="animate-pulse rounded-2xl border bg-card p-3"><div className="aspect-square rounded-xl bg-muted"/><div className="mt-3 h-4 w-3/4 rounded bg-muted"/><div className="mt-3 h-4 w-1/2 rounded bg-muted"/></div>)}</div>
+    :slug?detail?<div className="mt-8"><ReleasedEditorial key={market+slug} origin={origin} apiKey={key} market={market} slug={slug} fallback={<ApprovedProductGallery key={detail.listing_id} market={market} detail={detail}/>}/>
+      <div className="mt-8"><h3 className="mb-4 font-display text-xl font-extrabold">اختيارات أخرى من يومياتي</h3>{relatedVerifiedProducts(detail,rows).length?<div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{relatedVerifiedProducts(detail,rows).map(item=><ShopCard key={item.listing_id} item={item} market={market}/>)}</div>:<p className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">تصفحي المزيد من الأقسام والمنتجات المعتمدة في يومياتي.</p>}</div></div>
+    :<EmptyProducts title="هذا المنتج غير موجود في الكتالوج" message="قد تتغير حالة المنتجات بحسب اعتماد البيانات والتوافر."/>
+    :matching.length?<div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">{matching.map(item=><ShopCard key={item.listing_id} item={item} market={market}/>)}</div>
+    :<EmptyProducts title={rows.length?"لم نجد منتجات مطابقة":"من هنا تبدأ اختياراتك"} message={rows.length?"جرّبي البحث بكلمة مختلفة.":"تصفّحي الأقسام واستكشفي الأفكار اللي تعجبك."}/>}
+   </section>
    {!slug&&!searchOnly&&<>
     <section aria-label="مقدمة يومياتي" className="storefront-hero relative isolate overflow-hidden bg-foreground">
      <img src={img[experience.heroImage]} srcSet={editorialSrcSet(img[experience.heroImage])} sizes="100vw" alt={experience.heroAlt} fetchPriority="high" width={1600} height={900} className="absolute inset-0 h-full w-full object-cover object-center"/>
@@ -95,28 +142,6 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
      <nav aria-label="تسوقي حسب القسم" className="storefront-category-strip mt-4">{orderedCategories.map(c=><a key={c.slug} href={path+"/c/"+c.slug} className="group flex min-w-0 flex-col items-center gap-2 rounded-lg px-1 py-1 text-center"><div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border border-border bg-muted sm:h-20 sm:w-20"><img src={c.picture} srcSet={editorialSrcSet(c.picture)} sizes="(max-width: 640px) 64px, 80px" alt="" width={80} height={80} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"/></div><h3 className="text-xs font-bold leading-5 group-hover:text-primary sm:text-sm">{c.name}</h3></a>)}</nav>
     </section>
    </>}
-   {searchOnly&&<section aria-label="اكتشفي المنتجات" className="mx-auto max-w-7xl px-4 pt-5 sm:px-6 lg:px-8">
-    <div className="relative isolate flex min-h-[200px] items-center overflow-hidden rounded-[1.75rem] bg-foreground sm:min-h-[260px]">
-     <img src={img["cat-home"]} alt="" className="absolute inset-0 h-full w-full object-cover object-center" fetchPriority="high"/>
-     <div className="absolute inset-0 bg-gradient-to-l from-black/80 via-black/45 to-black/15"/>
-     <div className="relative p-7 text-white sm:p-11"><span className="text-xs font-bold text-[#f5dab1]">البحث في يومياتي</span><h1 className="mt-3 font-display text-3xl font-extrabold sm:text-4xl">{experience.searchCta}</h1><p className="mt-3 max-w-xl text-sm leading-7 text-white/85">ابحثي باسم المنتج، أو اكتشفي الأقسام والأفكار اللي تناسب ذوقك.</p></div>
-    </div>
-   </section>}
-   <section id="collection" className={"mx-auto max-w-7xl scroll-mt-4 px-4 pb-16 sm:px-6 lg:px-8 "+(searchOnly||slug?"pt-8 sm:pt-12":"pt-7 sm:pt-10")}>
-    <div className="flex flex-wrap items-end justify-between gap-5"><SectionIntro eyebrow={shopName} title={slug?"تفاصيل المنتج":searchOnly?"ابحثي في منتجات يومياتي":experience.collectionTitle} description={slug?undefined:searchOnly?"البحث يفهم اختلاف كتابة الكلمات العربية، الكلمات القريبة، وأسماء المنتجات المتاحة للعرض.":"اكتشفي المنتجات وتفاصيلها وأسعارها في مكان واحد، واختاري اللي يناسبك."}/>{!slug&&<label className="relative block w-full sm:w-auto"><Search className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"/><input type="search" className="field w-full pr-12 sm:w-72" value={term} onChange={e=>setTerm(e.target.value)} placeholder="ابحثي بين المنتجات" aria-label="بحث المنتجات المعتمدة"/></label>}</div>
-    {!slug&&<div className={(searchOnly||term.trim()?"mt-5 flex":"hidden")+" flex-wrap items-center gap-2"} aria-label="اقتراحات البحث">
-      {(term.trim()?suggestions:SEARCH_GROUPS).slice(0,6).map(group=><a key={group.slug} href={path+"/c/"+group.slug} className="inline-flex min-h-10 items-center rounded-full border border-border bg-card px-4 text-xs font-bold text-primary transition-colors hover:border-primary/40 hover:bg-primary-soft">{group.title}</a>)}
-      {term.trim()&&<Button variant="outline" onClick={()=>setTerm("")} className="min-h-11 rounded-full px-4 text-xs font-semibold text-muted-foreground">مسح البحث</Button>}
-    </div>}
-    {!origin||!key?<EmptyProducts title="تعرّفي على مجموعات يومياتي" message="تظهر هنا المنتجات التي تتوافر لها بيانات معتمدة. اكتشفي أقسام البيت والجمال والعناية."/>
-    :error?<div role="alert" className="mt-8 rounded-3xl border bg-card p-8 text-center"><h3 className="font-bold">تعذّر تحميل المنتجات في الوقت الحالي</h3><Button variant="outline" className="mt-4 min-h-11" onClick={()=>setAttempt(v=>v+1)}>إعادة المحاولة</Button></div>
-    :rows===null?<div role="status" aria-live="polite" className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">{Array.from({length:4},(_,i)=><div key={i} className="animate-pulse rounded-2xl border bg-card p-3"><div className="aspect-square rounded-xl bg-muted"/><div className="mt-3 h-4 w-3/4 rounded bg-muted"/><div className="mt-3 h-4 w-1/2 rounded bg-muted"/></div>)}</div>
-    :slug?detail?<div className="mt-8"><ReleasedEditorial key={market+slug} origin={origin} apiKey={key} market={market} slug={slug} fallback={<ApprovedProductGallery key={detail.listing_id} market={market} detail={detail}/>}/>
-      <div className="mt-8"><h3 className="mb-4 font-display text-xl font-extrabold">اختيارات أخرى من يومياتي</h3>{relatedVerifiedProducts(detail,rows).length?<div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{relatedVerifiedProducts(detail,rows).map(item=><ShopCard key={item.listing_id} item={item} market={market}/>)}</div>:<p className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">تصفحي المزيد من الأقسام والمنتجات المعتمدة في يومياتي.</p>}</div></div>
-    :<EmptyProducts title="هذا المنتج غير موجود في الكتالوج" message="قد تتغير حالة المنتجات بحسب اعتماد البيانات والتوافر."/>
-    :matching.length?<div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">{matching.map(item=><ShopCard key={item.listing_id} item={item} market={market}/>)}</div>
-    :<EmptyProducts title={rows.length?"لم نجد منتجات مطابقة":"من هنا تبدأ اختياراتك"} message={rows.length?"جرّبي البحث بكلمة مختلفة.":"تصفّحي الأقسام واستكشفي الأفكار اللي تعجبك."}/>}
-   </section>
    {!slug&&!searchOnly&&<>
     <section className="mx-auto grid max-w-7xl gap-5 px-4 pt-0 sm:grid-cols-2 sm:px-6 lg:px-8">
      <div className="group relative min-h-[260px] sm:min-h-[320px] overflow-hidden rounded-lg"><img src={img["cat-beauty"]} srcSet={editorialSrcSet(img["cat-beauty"])} sizes="(max-width: 640px) 100vw, 50vw" alt="مجموعة مستوحاة من الجمال والعناية" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"/><div className="absolute inset-0 bg-gradient-to-t from-photo-scrim/80 via-photo-scrim/10 to-transparent"/><div className="absolute bottom-0 p-7 text-photo-foreground"><p className="text-xs font-bold text-photo-foreground/80">العناية تبدأ من التفاصيل</p><h3 className="mt-2 font-display text-2xl font-extrabold">{experience.beautyTitle}</h3><a href={path+"/c/beauty"} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-photo-foreground px-5 py-2 text-sm font-extrabold text-foreground transition-colors hover:bg-photo-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-photo-foreground">اكتشفي عالم العناية <ArrowLeft className="h-4 w-4" aria-hidden="true"/></a></div></div>
@@ -124,10 +149,10 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
     </section>
     <section id="story" aria-labelledby="story-title" className="mx-auto grid max-w-7xl items-center gap-6 px-4 py-12 sm:grid-cols-[1fr_2fr] sm:px-6 lg:gap-12 lg:px-8">
      <img src={img[market==="sa"?"cat-kitchen":market==="ae"?"cat-fashion":market==="om"?"cat-home":market==="eg"?"cat-kitchen":"cat-wellness"]} srcSet={editorialSrcSet(img[market==="sa"?"cat-kitchen":market==="ae"?"cat-fashion":market==="om"?"cat-home":market==="eg"?"cat-kitchen":"cat-wellness"])} sizes="(max-width: 640px) 100vw, 33vw" alt="تفاصيل من عالم يومياتي" width={600} height={400} loading="lazy" className="aspect-[3/2] w-full rounded-lg object-cover"/>
-     <div><p className="text-xs font-bold text-primary">{brandStory[market].kicker}</p><h2 id="story-title" className="mt-2 font-display text-2xl font-extrabold leading-9">{brandStory[market].turningTitle}</h2><p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">{brandStory[market].turning}</p><Button asChild variant="link" className="mt-3 h-auto min-h-11 px-0 font-bold"><a href={path+"/story"}>اقرئي قصتنا <ArrowUpLeft aria-hidden="true"/></a></Button><Button asChild variant="link" className="mr-4 mt-3 h-auto min-h-11 px-0 font-bold"><a href={path+"#discover"} onClick={e=>{const el=document.getElementById("discover");if(el){e.preventDefault();el.scrollIntoView({behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});}}}>اختاري اللي يعجبك <ArrowLeft aria-hidden="true"/></a></Button></div>
+     <div><p className="text-xs font-bold text-primary">{brandStory[market].kicker}</p><h2 id="story-title" className="mt-2 font-display text-2xl font-extrabold leading-9">{brandStory[market].turningTitle}</h2><p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">{brandStory[market].turning}</p><Button asChild variant="link" className="mt-3 h-auto min-h-11 px-0 font-bold"><a href={path+"/story"}>اقرئي قصتنا كاملة <ArrowUpLeft aria-hidden="true"/></a></Button><Button asChild variant="link" className="mr-4 mt-3 h-auto min-h-11 px-0 font-bold"><a href={path+"#discover"} onClick={e=>{const el=document.getElementById("discover");if(el){e.preventDefault();el.scrollIntoView({behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});}}}>اختاري اللي يعجبك <ArrowLeft aria-hidden="true"/></a></Button></div>
     </section>
     <section aria-label="قيم يومياتي" className="border-y border-border bg-primary-soft"><div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:grid-cols-3 sm:px-6 lg:px-8">{values.map(({icon:Icon,title,description})=><div key={title} className="flex items-start gap-3"><Icon className="mt-1 h-5 w-5 shrink-0 text-primary" aria-hidden="true"/><div><h2 className="text-sm font-extrabold">{title}</h2><p className="mt-1 text-xs leading-6 text-muted-foreground">{description}</p></div></div>)}</div></section>
-    {market==="sa"?<section aria-label="الدفع والتوصيل في السعودية" className="mx-auto grid max-w-7xl gap-5 px-4 pt-10 sm:grid-cols-3 sm:px-6 lg:px-8"><div><h2 className="text-sm font-bold">الدفع عند الاستلام</h2><p className="mt-2 text-xs leading-6 text-muted-foreground">{saudiDelivery.payment}</p></div><div><h2 className="text-sm font-bold">رسوم التوصيل</h2><p className="mt-2 text-xs leading-6 text-muted-foreground">{saudiDelivery.shipping}</p></div><div><h2 className="text-sm font-bold">التوصيل والاسترجاع</h2><p className="mt-2 text-xs leading-6 text-muted-foreground">{saudiDelivery.near}</p><Button asChild variant="link" className="mt-2 h-auto min-h-11 px-0 text-xs"><a href={path+"/info/shipping-returns"}>تفاصيل الشحن والاسترجاع <ArrowLeft aria-hidden="true"/></a></Button></div></section>:<MarketPromiseStrip market={market}/>}
+    {market==="sa"?<section aria-label="الدفع والتوصيل في السعودية" className="mx-auto grid max-w-7xl gap-5 px-4 pt-10 sm:grid-cols-3 sm:px-6 lg:px-8"><div><h2 className="text-sm font-bold">الدفع عند الاستلام</h2><p className="mt-2 text-xs leading-6 text-muted-foreground">{saudiDelivery.payment}</p></div><div><h2 className="text-sm font-bold">رسوم التوصيل</h2><p className="mt-2 text-xs leading-6 text-muted-foreground">الدفع عند الاستلام · {saudiDelivery.shipping}</p></div><div><h2 className="text-sm font-bold">التوصيل والاسترجاع</h2><p className="mt-2 text-xs leading-6 text-muted-foreground">{saudiDelivery.near}</p><Button asChild variant="link" className="mt-2 h-auto min-h-11 px-0 text-xs"><a href={path+"/info/shipping-returns"}>اعرفي أكثر عن الشحن والاسترجاع <ArrowLeft aria-hidden="true"/></a></Button></div></section>:<MarketPromiseStrip market={market}/>}
     <section id="questions" className="mx-auto max-w-5xl scroll-mt-4 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"><div className="max-w-2xl"><SectionIntro eyebrow="كل ما تحتاجين معرفته" title={experience.faqTitle} description={experience.faqDescription}/><a href={path+"/info/shipping-returns"} className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-primary underline underline-offset-4">تفاصيل الشحن والاسترجاع <ArrowLeft className="h-4 w-4" aria-hidden="true"/></a></div><div className="mt-7 grid items-start gap-3 sm:grid-cols-2">{(market==="sa"?saudiHomeQuestions:experience.questions).map((q,i)=><details key={q.question} className="group rounded-2xl border bg-card px-5 py-4" open={undefined}><summary className="flex min-h-8 cursor-pointer list-none items-center justify-between gap-3 font-extrabold marker:hidden">{q.question}<ChevronDown className="h-5 w-5 shrink-0 text-primary transition-transform group-open:rotate-180" aria-hidden="true"/></summary><p className="pb-2 pt-3 text-sm leading-8 text-muted-foreground">{q.answer}</p></details>)}</div></section>
    </>}
   </main>
