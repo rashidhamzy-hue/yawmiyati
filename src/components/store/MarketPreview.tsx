@@ -55,9 +55,14 @@ function BrowseProducts({market}:{market:MarketCode}){
  </nav>;
 }
 function ShopCard({item,market}:{item:PublicListing;market:MarketCode}){
- return <article className="group flex h-full flex-col overflow-hidden rounded-lg border border-border/70 bg-card shadow-soft transition-transform duration-300 hover:-translate-y-1">
-  <a href={`/${market}/p/${encodeURIComponent(item.slug)}`} className="grid aspect-[4/4.7] place-items-center bg-muted" aria-label={item.title}><Package className="h-12 w-12 text-primary/35" aria-hidden="true"/></a>
-  <div className="flex flex-1 flex-col gap-3 p-4"><a href={`/${market}/p/${encodeURIComponent(item.slug)}`} className="font-bold leading-7 hover:text-primary">{item.title}</a><p className="mt-auto text-lg font-extrabold text-primary">{formatListingPrice(item,market)}</p><span className="text-xs text-muted-foreground">تفاصيل المنتج</span></div>
+ const href=`/${market}/p/${encodeURIComponent(item.slug)}`;
+ return <article className="group h-full overflow-hidden rounded-xl border border-border/70 bg-card shadow-soft transition-shadow hover:shadow-md">
+  <a href={href} aria-label={item.title} className="flex h-full min-h-36 flex-col gap-3 p-4 focus-visible:outline focus-visible:outline-primary sm:p-5">
+   <Package className="h-5 w-5 text-primary/70" aria-hidden="true"/>
+   <h3 className="text-base font-bold leading-6 group-hover:text-primary sm:text-lg">{item.title}</h3>
+   <p className="mt-auto text-lg font-extrabold text-primary">{formatListingPrice(item,market)}</p>
+   <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">تفاصيل المنتج <ArrowLeft size={14} aria-hidden="true"/></span>
+  </a>
  </article>;
 }
 export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{market:MarketCode;slug?:string;searchOnly?:boolean;initialSearch?:string}){
