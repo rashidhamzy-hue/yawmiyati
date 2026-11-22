@@ -32,6 +32,29 @@ function priceForTarget(offer:Offer, ceiling:number, target:number) {
   return chosen;
 }
 
+// Compare alternatives for this exact supplier pack and quoted delivery zone.
+// Shopper-paid freight is outside merchandise revenue. A subsidy adds a
+// delivered-order expense; failed-order logistics are already in COD evidence.
+export function promotionReview(offer:Offer,target:number|undefined,reasons:readonly string[]) {
+  const {price, deliveredFees}=offer.economics;
+  const shipping=offer.shopperShipping;
+  if(reasons.length || !money(target) || target===0 || !money(price) || price===0 ||
+     !money(shipping) || !money(deliveredFees) || !money(price+shipping))return [];
+  const minimum=priceForTarget(offer,price,target);
+  if(minimum===null)return [];
+  const candidates=[{kind:"regular",item:price,subsidy:0}];
+  if(minimum<price)candidates.push({kind:"maximum_item_discount",item:minimum,subsidy:0});
+  if(shipping>0 && money(deliveredFees+shipping))candidates.push({kind:"merchant_funded_shipping",item:price,subsidy:shipping});
+  return candidates.flatMap(({kind,item,subsidy})=>{
+    const result=evaluateCodEvidence({...offer.economics,price:item,deliveredFees:deliveredFees+subsidy});
+    if(result.state!=="evaluated")return [];
+    const expected=BigInt(result.scenarios[1].expectedContributionMinor);
+    return [{kind,itemMinor:item,shopperShippingMinor:shipping-subsidy,doorTotalMinor:item+shipping-subsidy,
+      expectedContributionMinor:expected.toString(),downsideContributionMinor:result.scenarios[0].expectedContributionMinor,
+      meetsTarget:expected>=BigInt(target),requiresShippingVerification:subsidy>0}];
+  });
+}
+
 export function analyze(snapshot: Snapshot, asOf: string, limit = 150) {
   if (snapshot.version !== 1 || typeof snapshot.demo !== "boolean" || !Array.isArray(snapshot.stores) ||
     snapshot.stores.length !== 5 || new Set(snapshot.stores.map(s=>s.market)).size !== 5) throw Error("Supply all five distinct store snapshots");
@@ -80,6 +103,7 @@ export function analyze(snapshot: Snapshot, asOf: string, limit = 150) {
       return {sku:row.offer.sku, title:row.offer.title, category:row.offer.category, selected:result.selected.includes(row),
         proposedPriceMinor:row.offer.economics.price, sellerFloorMinor:row.offer.sellerFloor, targetContributionMinor:input.targetContributionMinor??null, expectedContributionMinor:row.contribution, familyWinner:winners.get(row.family)??null,
         disposition:row.reasons.length?"held":result.selected.includes(row)?"selected":winners.has(row.family)?"alternative_pack":"outside_family_limit",
+        promotionOptions:promotionReview(row.offer,input.targetContributionMinor,row.reasons),
         comparisons:input.comparisons, components:row.offer.components, reasons:row.reasons, score:row.score, comparison:row.offer.competitor,
         rankingMethod:row.rankingMethod, research:row.offer.observations, revision:digest([1,snapshot.demo,market,input,row.offer.economics.price,row.offer.competitor,row.score,row.contribution])};
     })};
