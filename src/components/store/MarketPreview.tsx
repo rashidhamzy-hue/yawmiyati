@@ -47,12 +47,12 @@ const browseTiles=[
  {image:"/browse/bath-set.webp",title:"أطقم الحمّام",department:"home"},
 ] as const;
 function BrowseProducts({market}:{market:MarketCode}){
- return <nav aria-label="تصفّحي حسب نوع المنتج" className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-5">
+ return <nav aria-label="تصفّحي حسب نوع المنتج" className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-4">
   {browseTiles.map(tile=>{
    const category=categories.find(c=>c.slug===tile.department)!;
-   return <a key={tile.image} href={`/${market}/c/${category.slug}`} className="group overflow-hidden rounded-xl border bg-card">
-    <img src={tile.image} alt="" width={360} height={270} className="aspect-square w-full bg-[#efe6d7] object-contain"/>
-    <div className="space-y-1 p-3 sm:p-4"><span className="block font-bold">{tile.title}</span><span className="inline-flex items-center gap-1 text-xs text-primary">تصفّحي {category.name} <ArrowLeft size={14}/></span></div>
+   return <a key={tile.image} href={`/${market}/c/${category.slug}`} className="group flex min-w-0 items-center gap-2 rounded-xl border bg-card p-2 sm:gap-3">
+    <img src={tile.image} alt="" width={360} height={270} className="h-14 w-12 shrink-0 rounded-lg bg-[#efe6d7] object-cover sm:h-20 sm:w-16"/>
+    <div className="min-w-0 space-y-1"><span className="block text-sm font-bold sm:text-base">{tile.title}</span><span className="inline-flex items-center gap-1 text-xs text-primary">{category.name} <ArrowLeft size={14}/></span></div>
    </a>
   })}
  </nav>;
@@ -118,6 +118,19 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
   <StoreHeader market={market}/>
 
   <main id="main-content">
+   {homePage&&<section id="store-hero" aria-label="مقدمة يومياتي" className="relative isolate flex min-h-[210px] overflow-hidden sm:min-h-[260px] lg:min-h-[320px] bg-foreground">
+     <img src={img[experience.heroImage]} srcSet={editorialSrcSet(img[experience.heroImage])} sizes="100vw" alt={experience.heroAlt} fetchPriority="high" width={1600} height={900} className="absolute inset-0 h-full w-full object-cover object-center"/>
+     <div className="absolute inset-0 bg-hero-fade"/>
+     <div className="relative mx-auto flex w-full max-w-7xl flex-col justify-center px-5 py-5 text-photo-foreground sm:px-6 sm:py-7 lg:px-8">
+      <p className="mb-3 flex items-center gap-2 text-xs font-bold"><Sparkles className="h-4 w-4" aria-hidden="true"/>{experience.eyebrow}</p>
+      <h1 className="max-w-2xl text-[1.75rem] sm:text-4xl lg:text-5xl font-display font-extrabold leading-tight">{experience.heroStart}<br/><span className="text-photo-accent">{experience.heroAccent}</span></h1>
+      <p className="mt-3 hidden max-w-md text-sm sm:block leading-7 text-photo-foreground/90 sm:text-base">{experience.heroDescription}</p>
+      <div className="mt-4 flex flex-wrap gap-2">
+       <Button asChild className="h-auto min-h-11 rounded-full bg-photo-foreground px-5 py-3 font-extrabold text-foreground hover:bg-photo-accent"><a href={path+"#collection"}>اكتشفي المنتجات <ArrowLeft aria-hidden="true"/></a></Button>
+       <Button variant="outline" onClick={()=>document.dispatchEvent(new CustomEvent("yawmiyati:open-search"))} className="h-auto min-h-11 rounded-full border-photo-foreground/60 bg-transparent px-5 py-3 text-photo-foreground hover:bg-photo-foreground/15 hover:text-photo-foreground"><Search aria-hidden="true"/>{experience.searchCta}</Button>
+      </div>
+     </div>
+    </section>}
    {searchOnly&&<section aria-label="اكتشفي المنتجات" className="mx-auto max-w-7xl px-4 pt-5 sm:px-6 lg:px-8">
     <div className="relative isolate flex min-h-[200px] items-center overflow-hidden rounded-[1.75rem] bg-foreground sm:min-h-[260px]">
      <img src={img["cat-home"]} alt="" className="absolute inset-0 h-full w-full object-cover object-center" fetchPriority="high"/>
@@ -126,7 +139,7 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
     </div>
    </section>}
    <section id="collection" className={"mx-auto max-w-7xl scroll-mt-4 px-4 pb-16 sm:px-6 lg:px-8 "+(searchOnly||slug?"pt-8 sm:pt-12":"pt-4 sm:pt-6")}>
-    <div className="flex flex-wrap items-end justify-between gap-5"><SectionIntro eyebrow={shopName} title={slug?"تفاصيل المنتج":searchOnly?"ابحثي في منتجات يومياتي":experience.collectionTitle} description={slug?undefined:searchOnly?"البحث يفهم اختلاف كتابة الكلمات العربية، الكلمات القريبة، وأسماء المنتجات المتاحة للعرض.":undefined}/>{!slug&&<label className="relative block w-full sm:w-auto"><Search className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"/><input type="search" className="field w-full pr-12 sm:w-72" value={term} onChange={e=>setTerm(e.target.value)} placeholder="ابحثي بين المنتجات" aria-label="بحث المنتجات المعتمدة"/></label>}</div>
+    <div className="flex flex-wrap items-end justify-between gap-5">{homePage?<h2 className="font-display text-xl font-extrabold sm:text-3xl">{experience.collectionTitle}</h2>:<SectionIntro eyebrow={shopName} title={slug?"تفاصيل المنتج":searchOnly?"ابحثي في منتجات يومياتي":experience.collectionTitle} description={slug?undefined:searchOnly?"البحث يفهم اختلاف كتابة الكلمات العربية، الكلمات القريبة، وأسماء المنتجات المتاحة للعرض.":undefined}/>} {searchOnly&&<label className="relative block w-full sm:w-auto"><Search className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"/><input type="search" className="field w-full pr-12 sm:w-72" value={term} onChange={e=>setTerm(e.target.value)} placeholder="ابحثي بين المنتجات" aria-label="بحث المنتجات المعتمدة"/></label>}</div>
     {!slug&&<div className={(searchOnly||term.trim()?"mt-5 flex":"hidden")+" flex-wrap items-center gap-2"} aria-label="اقتراحات البحث">
       {(term.trim()?suggestions:SEARCH_GROUPS).slice(0,6).map(group=><a key={group.slug} href={path+"/c/"+group.slug} className="inline-flex min-h-10 items-center rounded-full border border-border bg-card px-4 text-xs font-bold text-primary transition-colors hover:border-primary/40 hover:bg-primary-soft">{group.title}</a>)}
       {term.trim()&&<Button variant="outline" onClick={()=>setTerm("")} className="min-h-11 rounded-full px-4 text-xs font-semibold text-muted-foreground">مسح البحث</Button>}
@@ -144,19 +157,6 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
     :<EmptyProducts title={rows.length?"لم نجد منتجات مطابقة":"من هنا تبدأ اختياراتك"} message={rows.length?"جرّبي البحث بكلمة مختلفة.":"تصفّحي الأقسام واستكشفي الأفكار اللي تعجبك."}/>}
    </section>
    {!slug&&!searchOnly&&<>
-    <section aria-label="مقدمة يومياتي" className="storefront-hero relative isolate overflow-hidden bg-foreground">
-     <img src={img[experience.heroImage]} srcSet={editorialSrcSet(img[experience.heroImage])} sizes="100vw" alt={experience.heroAlt} fetchPriority="high" width={1600} height={900} className="absolute inset-0 h-full w-full object-cover object-center"/>
-     <div className="absolute inset-0 bg-hero-fade"/>
-     <div className="relative mx-auto flex w-full max-w-7xl flex-col justify-center px-5 py-8 text-photo-foreground sm:px-6 sm:py-10 lg:px-8">
-      <p className="mb-3 flex items-center gap-2 text-xs font-bold"><Sparkles className="h-4 w-4" aria-hidden="true"/>{experience.eyebrow}</p>
-      <h1 className="storefront-hero-title max-w-2xl font-display font-extrabold leading-tight">{experience.heroStart}<br/><span className="text-photo-accent">{experience.heroAccent}</span></h1>
-      <p className="mt-4 max-w-md text-sm leading-7 text-photo-foreground/90 sm:text-base">{experience.heroDescription}</p>
-      <div className="mt-5 flex flex-wrap gap-3">
-       <Button asChild className="h-auto min-h-11 rounded-full bg-photo-foreground px-5 py-3 font-extrabold text-foreground hover:bg-photo-accent"><a href={path+"#collection"}>اكتشفي المنتجات <ArrowLeft aria-hidden="true"/></a></Button>
-       <Button variant="outline" onClick={()=>document.dispatchEvent(new CustomEvent("yawmiyati:open-search"))} className="h-auto min-h-11 rounded-full border-photo-foreground/60 bg-transparent px-5 py-3 text-photo-foreground hover:bg-photo-foreground/15 hover:text-photo-foreground"><Search aria-hidden="true"/>{experience.searchCta}</Button>
-      </div>
-     </div>
-    </section>
     <section id="discover" aria-labelledby="discover-title" className="mx-auto max-w-7xl scroll-mt-4 px-4 pt-6 sm:px-6 lg:px-8">
      <div className="flex items-center justify-between gap-3"><h2 id="discover-title" className="font-display text-lg font-extrabold sm:text-xl">{experience.discoverTitle}</h2><span className="hidden text-xs text-muted-foreground sm:inline">على ذوقك، من البيت للعناية</span></div>
      <nav aria-label="تسوقي حسب القسم" className="storefront-category-strip mt-4">{orderedCategories.map(c=><a key={c.slug} href={path+"/c/"+c.slug} className="group flex min-w-0 flex-col items-center gap-2 rounded-lg px-1 py-1 text-center"><div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border border-border bg-muted sm:h-20 sm:w-20"><img src={c.picture} srcSet={editorialSrcSet(c.picture)} sizes="(max-width: 640px) 64px, 80px" alt="" width={80} height={80} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"/></div><h3 className="text-xs font-bold leading-5 group-hover:text-primary sm:text-sm">{c.name}</h3></a>)}</nav>

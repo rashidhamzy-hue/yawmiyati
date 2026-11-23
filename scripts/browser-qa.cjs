@@ -35,6 +35,10 @@ async function main(){
      }));
      assert.ok(overflow.page<=overflow.viewport+2,label+": horizontal overflow "+JSON.stringify(overflow));
      assert.equal(await page.getByRole("heading",{level:1}).count(),1,label+": main heading count");
+     const hero=page.locator("main > #store-hero:first-child");
+     assert.equal(await hero.count(),1,label+": country hero must open the homepage");
+     assert.equal(await page.locator("#store-hero + #collection").count(),1,label+": shelf must follow the hero");
+     if(width===390)await page.screenshot({path:path.join(output,label+"-first-screen.png"),animations:"disabled"});
      const firstTile=page.locator("#collection nav a, #collection article a").first();
      assert.ok(await firstTile.count(),label+": first shopping tile missing");
      const tilePhoto=firstTile.locator("img");
