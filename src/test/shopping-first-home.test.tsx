@@ -12,7 +12,7 @@ vi.mock("../lib/store/public-catalog",async load=>{
 import {MarketPreview} from "../components/store/MarketPreview";
 afterEach(cleanup);
 describe("shopping-first homes with a released product",()=>{
- it.each(Object.keys(markets) as MarketCode[])("shows the local product, price and detail link before the hero in %s",async market=>{
+ it.each(Object.keys(markets) as MarketCode[])("shows the local product, price and detail link immediately after the hero in %s",async market=>{
   const {container}=render(<MarketPreview market={market}/>);
   const shelf=container.querySelector("#collection") as HTMLElement;
   await waitFor(()=>expect(shelf.querySelector("article")).toBeTruthy());
@@ -20,7 +20,9 @@ describe("shopping-first homes with a released product",()=>{
   expect(within(card).getAllByRole("link")[0]?.getAttribute("href")).toBe("/"+market+"/p/coffee-frother");
   expect(within(card).getByText("خفّاقة حليب")).toBeTruthy();
   expect(card.querySelector("p")?.textContent?.trim()).toBeTruthy();
-  expect(container.querySelector("main")?.firstElementChild?.id).toBe("collection");
+  const hero=container.querySelector("main")?.firstElementChild;
+  expect(hero?.id).toBe("store-hero");
+  expect(hero?.nextElementSibling).toBe(shelf);
   expect(shelf.querySelector("nav")).toBeNull();
  });
 });
