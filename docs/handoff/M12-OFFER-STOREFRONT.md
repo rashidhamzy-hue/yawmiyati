@@ -31,7 +31,7 @@ Integer minor units with BigInt. Each cart line is a separate shipment with its 
 ## Fixture isolation
 
 * Loaded only by a dynamic import inside `if (import.meta.env.VITE_YAWMIYATI_OFFER_FIXTURES === "true")`; without the flag the chunk is not emitted (verified by `--build .output` in Commerce checks).
-* Rendered only on loopback/`.test` hosts; elsewhere the hook reports `off`.
+* Rendered only on loopback/`.test` hosts; on other hosts or if fixture loading fails, the fixture build returns an empty catalog.
 * In fixture mode the storefront makes **zero** Supabase requests (asserted in the browser journey).
 * Every screen shows a fixture notice. Values are fictional and deliberately not the historic supplier quotes or Egypt screenshot bands.
 
@@ -49,4 +49,4 @@ QA_OFFER_BASE_URL=http://127.0.0.1:4176 node scripts/offer-journey-qa.cjs
 
 1. A release-gated public RPC returning `yawmiyati.offer_version.v1` per market (additive Supabase migration under the owner-approved exception; owner approval required). Then `offer-source.ts` gains a `catalog` branch that calls it and drops fixtures.
 2. Owner approval UI writing revision + digest (M11D), backed by real supplier floors, costs, stock and dated comparisons.
-3. Checkout submission, consent/attribution and order lifecycle remain OFF until explicit owner authorization (stage 6).
+3. Join a local-only order submission to the existing simulated lifecycle and owner review. Verify replay, refusals, returns and payout separately. Live submission, tracking and fulfilment remain off.
