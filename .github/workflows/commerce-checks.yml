@@ -22,5 +22,8 @@ jobs:
       - run: node scripts/check-m4g-release-boundary.mjs
       - run: node scripts/check-m4h-handoff.mjs
       - run: node scripts/check-handoff-manifest.mjs
+      - run: node scripts/check-offer-fixture-isolation.mjs
       - run: bun run build
+      # The default build must ship no storefront offer fixtures.
+      - run: node scripts/check-offer-fixture-isolation.mjs --build .output
       - run: bun run test

@@ -6,6 +6,7 @@ on:
       - "package.json"
       - "bun.lock"
       - "scripts/browser-qa.cjs"
+      - "scripts/offer-journey-qa.cjs"
       - "scripts/check-storefront-truth.mjs"
       - "scripts/test-storefront-truth-guard.mjs"
       - "scripts/check-m4g-release-boundary.mjs"
@@ -39,6 +40,17 @@ jobs:
           exit 1
       - name: Exercise all 5 markets at 4 viewports
         run: node scripts/browser-qa.cjs
+      - name: Run local storefront with isolated offer fixtures
+        run: |
+          VITE_YAWMIYATI_OFFER_FIXTURES=true bun run dev --host 127.0.0.1 --port 4176 > /tmp/yawmiyati-offers.log 2>&1 &
+          for n in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:4176/sa/ >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/yawmiyati-offers.log
+          exit 1
+      - name: Exercise pack, add-on, cart and door total in 5 markets (fixtures, no orders)
+        run: node scripts/offer-journey-qa.cjs
       - name: Start isolated owner preview with ephemeral local credential
         run: |
           TOKEN=$(node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("hex"))')
@@ -59,7 +71,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: yawmiyati-browser-qa
-          path: artifacts/browser-qa/
+          path: |
+            artifacts/browser-qa/
+            artifacts/offer-journey/
           retention-days: 7
           if-no-files-found: warn
       - name: Show server log after failure
@@ -67,3 +81,4 @@ jobs:
         run: |
           tail -n 120 /tmp/yawmiyati-vite.log || true
           tail -n 120 /tmp/yawmiyati-m2d-preview.log || true
+          tail -n 120 /tmp/yawmiyati-offers.log || true

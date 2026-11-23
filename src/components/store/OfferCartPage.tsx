@@ -1,0 +1,64 @@
+import { AlertTriangle, ArrowLeft, Lock, Trash2, Truck } from "lucide-react";
+import { paymentLabel } from "../../../supabase/functions/_shared/payment-policy";
+import type { MarketCode } from "@/lib/store/markets";
+import { formatMinor, priceOfferCart, type ApprovedOfferVersion, type PricedLine } from "@/lib/store/offer-version";
+import { removeOfferLine, setOfferZone, useOfferCart } from "@/lib/store/offer-cart";
+import { FixtureNotice } from "./OfferProductPanel";
+
+const money = (market: MarketCode, minor: bigint) => minor > 0n ? formatMinor(market, minor) : "مشمول";
+const problem: Record<Exclude<PricedLine["status"], "ok">, string> = {
+  missing: "هذا المنتج لم يعد معروضاً. احذفيه من السلة.",
+  changed: "تغيّرت تفاصيل هذا العرض بعد إضافته. احذفيه وأعيدي اختياره من صفحة المنتج.",
+  unavailable_in_zone: "هذه العبوة غير متاحة لمنطقة التوصيل المختارة.",
+};
+
+/** Cart and checkout review for approved offer versions. Never submits an order. */
+export function OfferCartPage({ market, type, versions }: { market: MarketCode; type: "cart" | "checkout"; versions: readonly ApprovedOfferVersion[] }) {
+  const cart = useOfferCart(market);
+  const priced = priceOfferCart(cart, versions);
+  const path = "/" + market;
+  const review = type === "checkout";
+  return <section className="mx-auto max-w-4xl px-4 pb-20 pt-7 sm:px-6 sm:pt-10 lg:px-8" aria-labelledby="offer-cart-title">
+    <nav aria-label="مسار الصفحة" className="mb-4 text-sm text-muted-foreground"><a href={path} className="hover:text-primary">يومياتي</a> / {review ? "مراجعة الطلب" : "السلة"}</nav>
+    <h1 id="offer-cart-title" className="font-display text-3xl font-extrabold">{review ? "مراجعة الطلب" : "سلتك"}</h1>
+    <div className="mt-4"><FixtureNotice /></div>
+
+    {priced.zones.length > 1 && <label className="mt-6 block text-sm font-extrabold">منطقة التوصيل
+      <select value={priced.zone?.zone_id ?? ""} onChange={e => setOfferZone(market, e.target.value)} className="field mt-2 block min-h-12 w-full sm:w-80" aria-label="منطقة التوصيل">
+        {!priced.zone && <option value="" disabled>اختاري المنطقة</option>}
+        {priced.zones.map(z => <option key={z.zone_id} value={z.zone_id}>{z.label} · {money(market, BigInt(z.delivery_minor))}</option>)}
+      </select></label>}
+
+    <ul className="mt-6 space-y-3" aria-label="منتجات السلة">{priced.lines.map((row, i) => <li key={i} className="flex gap-4 rounded-2xl border bg-card p-4" data-cart-line={row.line.slug + ":" + row.line.pack_id}>
+      {row.version?.image && <img src={row.version.image.url} alt="" className="h-20 w-20 shrink-0 rounded-xl bg-[#efe6d7] object-contain" />}
+      <div className="min-w-0 flex-1 space-y-1 text-sm">
+        <a href={path + "/p/" + encodeURIComponent(row.line.slug)} className="block font-extrabold hover:text-primary">{row.version?.title ?? row.line.slug}</a>
+        <p className="text-muted-foreground">{row.pack?.label ?? "عبوة غير متاحة"}</p>
+        {row.status === "ok" ? <dl className="grid grid-cols-[auto_1fr] gap-x-3 text-xs">
+          <dt>السعر</dt><dd className="font-bold">{money(market, row.price_minor)}</dd>
+          <dt className="flex items-center gap-1"><Truck className="h-3.5 w-3.5" aria-hidden="true" />التوصيل</dt><dd className="font-bold">{money(market, row.delivery_minor)}</dd>
+          <dt className="font-extrabold">عند الاستلام</dt><dd className="font-extrabold text-primary">{money(market, row.door_minor)}</dd>
+        </dl> : <p role="alert" className="flex items-start gap-2 text-xs font-bold text-destructive"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />{problem[row.status]}</p>}
+      </div>
+      {!review && <button type="button" onClick={() => removeOfferLine(market, i)} aria-label={"حذف " + (row.version?.title ?? "المنتج") + " من السلة"} className="tap grid h-11 w-11 shrink-0 place-items-center rounded-full border hover:text-destructive"><Trash2 className="h-4 w-4" /></button>}
+    </li>)}</ul>
+
+    {priced.lines.filter(l => l.status === "ok").length > 1 && <p className="mt-3 text-xs text-muted-foreground">يصل كل منتج في شحنة مستقلة، لذلك تُحتسب رسوم التوصيل لكل منتج.</p>}
+
+    <section aria-label="الإجمالي عند الاستلام" className="mt-6 rounded-2xl border bg-card p-5">
+      <div className="flex items-center justify-between text-lg"><span className="font-extrabold">الإجمالي عند الاستلام</span>
+        <span className="font-extrabold text-primary" data-cart-door-total>{priced.zone ? money(market, priced.total_door_minor) : "اختاري منطقة التوصيل"}</span></div>
+      <p className="mt-1 text-xs text-muted-foreground">{paymentLabel}{priced.zone ? " · " + priced.zone.label : ""}</p>
+      {!priced.checkoutReady && priced.lines.length > 0 && <p className="mt-3 text-xs font-bold text-destructive">راجعي العناصر المعلّمة قبل متابعة الطلب.</p>}
+      {review ? <div className="mt-5 space-y-3">
+        <button type="button" disabled className="btn-primary inline-flex min-h-12 w-full items-center justify-center gap-2 opacity-60 sm:w-auto" aria-describedby="orders-off-note"><Lock className="h-4 w-4" aria-hidden="true" />تأكيد الطلب</button>
+        <p id="orders-off-note" className="text-xs leading-6 text-muted-foreground">استقبال الطلبات غير مفعّل في هذه البيئة. لا تُجمع بيانات شخصية ولا يُنشأ أي طلب.</p>
+        <a href={path + "/cart"} className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-primary">تعديل السلة <ArrowLeft className="h-4 w-4" aria-hidden="true" /></a>
+      </div> : <div className="mt-5 flex flex-wrap gap-3">
+        {priced.checkoutReady ? <a href={path + "/checkout"} className="btn-primary inline-flex min-h-12 items-center gap-2">مراجعة الطلب <ArrowLeft className="h-4 w-4" aria-hidden="true" /></a>
+          : <span aria-disabled="true" className="btn-primary inline-flex min-h-12 items-center gap-2 opacity-50">مراجعة الطلب</span>}
+        <a href={path + "#collection"} className="btn-outline inline-flex min-h-12 items-center">متابعة التسوق</a>
+      </div>}
+    </section>
+  </section>;
+}

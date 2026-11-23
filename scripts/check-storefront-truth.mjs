@@ -19,6 +19,8 @@ const storefront=[
  "src/components/store/StoreCategoryPage.tsx",
  "src/components/store/StoreSearchOverlay.tsx",
  "src/components/store/ShoppingAssistant.tsx",
+ "src/components/store/OfferProductPanel.tsx",
+ "src/components/store/OfferCartPage.tsx",
  "src/lib/store/saudi-commerce-content.ts",
  "src/lib/store/market-policy-pages.ts",
  "src/lib/store/market-experience.ts",

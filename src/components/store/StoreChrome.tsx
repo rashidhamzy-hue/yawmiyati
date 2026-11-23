@@ -1,6 +1,8 @@
 import {useEffect,useRef,useState} from "react";
 import type {ReactNode} from "react";
-import {ChevronDown,Home,LayoutGrid,Menu,Search,X,HelpCircle} from "lucide-react";
+import {ChevronDown,Home,LayoutGrid,Menu,Search,ShoppingBag,X,HelpCircle} from "lucide-react";
+import {useOfferVersions} from "@/lib/store/offer-source";
+import {useOfferCart} from "@/lib/store/offer-cart";
 import {StoreSearchOverlay} from "./StoreSearchOverlay";
 import {marketIdentity} from "@/lib/store/market-identity";
 import {marketExperience} from "@/lib/store/market-experience";
@@ -9,6 +11,12 @@ import {markets,type MarketCode} from "@/lib/store/markets";
 const countryCodes:MarketCode[]=["sa","ae","om","eg","iq"];
 const navLinks=[["الأقسام","#discover"],["المنتجات","#collection"],["قصتنا","/story"],["الأسئلة الشائعة","#questions"]] as const;
 
+/** Cart shortcut appears only while approved offers are active and this market's cart has selections. */
+function OfferCartLink({market}:{market:MarketCode}){
+ const offers=useOfferVersions(market),cart=useOfferCart(market);
+ if(offers.state!=="ready"||!cart.lines.length)return null;
+ return <a href={"/"+market+"/cart"} aria-label={"السلة، "+cart.lines.length+" منتج"} className="tap relative grid place-items-center rounded-full border border-border bg-card transition-colors hover:border-primary/40 hover:text-primary"><ShoppingBag className="h-[19px] w-[19px]"/><span className="absolute -left-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-extrabold text-primary-foreground" data-offer-cart-count>{cart.lines.length}</span></a>;
+}
 export function StoreHeader({market}:{market:MarketCode}){
  const [menu,setMenu]=useState(false);
  const [searchOpen,setSearchOpen]=useState(false);
@@ -53,6 +61,7 @@ export function StoreHeader({market}:{market:MarketCode}){
       <p className="border-t px-3 py-2 text-[11px] leading-5 text-muted-foreground">كل متجر يعرض الأسعار والمنتجات الخاصة ببلده.</p>
      </div>
     </details>
+    <OfferCartLink market={market}/>
     <button type="button" onClick={()=>setSearchOpen(true)} aria-label="افتح بحث يومياتي" aria-haspopup="dialog" className="tap grid place-items-center rounded-full border border-border bg-card transition-colors hover:border-primary/40 hover:text-primary"><Search className="h-[19px] w-[19px]"/></button>
     <button type="button" className="tap grid place-items-center rounded-full border border-border bg-card transition-colors hover:border-primary/40 lg:hidden" onClick={()=>setMenu(v=>!v)} aria-label={menu?"إغلاق القائمة":"فتح القائمة"} aria-expanded={menu} aria-controls="mobile-yawmiyati-menu">{menu?<X className="h-5 w-5"/>:<Menu className="h-5 w-5"/>}</button>
    </div>
