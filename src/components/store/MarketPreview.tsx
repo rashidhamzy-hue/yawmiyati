@@ -11,6 +11,7 @@ import {marketIdentity} from "@/lib/store/market-identity";
 import {marketExperience} from "@/lib/store/market-experience";
 import {brandStory} from "@/lib/store/brand-story";
 import {saudiHomeQuestions} from "@/lib/store/saudi-commerce-content";
+import {curateCatalog} from "@/lib/store/curated-merchandising";
 import {relatedVerifiedProducts} from "@/lib/store/verified-merchandising";
 import {ReleasedEditorial} from "./EditorialPage";
 import {ApprovedProductGallery} from "@/lib/store/ApprovedProductExperience";
@@ -100,7 +101,7 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
   const timer=setTimeout(()=>{void fetchPublicSearch(origin,key,market,term).then(result=>{if(alive)setRemoteSearch({query:term,rows:result});}).catch(()=>{if(alive)setRemoteSearch(null);});},280);
   return()=>{alive=false;clearTimeout(timer);};
  },[market,rows,slug,term,offers.state]);
- const localMatches=rows?(term.trim()?smartCatalogSearch(term,rows,100):rows):[];
+ const localMatches=rows?(term.trim()?smartCatalogSearch(term,rows,100):!searchOnly&&!slug?curateCatalog(rows,experience.categoryOrder):rows):[];
  useEffect(()=>setVisibleCount(16),[market,term]);
  const remoteMatches=remoteSearch?.query===term?remoteSearch.rows:[];
  const matchedIds=new Set(localMatches.map(x=>x.listing_id));
