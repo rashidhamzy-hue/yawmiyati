@@ -47,7 +47,7 @@ const saudiInfo={
  help:{title:"كيف نقدر نساعدك؟",intro:"كل ما تحتاجينه لاختيار المنتج والتعرّف على تفاصيل التسوق.",groups:[
   ["كيف أدفع؟",paymentAnswer],
   ["كيف أبحث عن منتج؟","اضغطي علامة البحث أو تصفّحي الأقسام. تظهر مواصفات وأسعار المنتجات التي لها بيانات معتمدة."],
-  ["كيف أدفع؟",paymentAnswer],
+  ["أين أجد تفاصيل رسوم التوصيل؟",customerServiceCopy.sa.shipping],
   ["كيف أعرف وقت التوصيل؟",customerServiceCopy.sa.delivery],
   ["كيف أتابع أو أرجع الطلب؟","راجعي رقم الطلب وبياناته للتتبّع، واطلعي على حقوق الإرجاع والاستبدال المرتبطة بالمنتج."]
  ]},
@@ -64,9 +64,16 @@ const saudiInfo={
   ["روابط الخدمات","تخضع المواقع الخارجية لسياسات الخصوصية الخاصة بها."]
  ]},
 } as const;
+const localHelpText:Record<MarketCode,{asideTitle:string;asideDescription:string;assistantTitle:string;assistantDescription:string;searchLabel:string;answerHeading:string}>={
+ sa:{asideTitle:"خلّينا نسهّل عليك الاختيار",asideDescription:"ابدئي باستكشاف الأقسام، أو استخدمي البحث للوصول إلى المنتج اللي يناسبك.",assistantTitle:"مساعدة تناسب سؤالك",assistantDescription:"اسألي مساعد يومياتي عن الأقسام والمنتجات المعروضة. الإجابات تعتمد على البيانات المتاحة.",searchLabel:"البحث في يومياتي",answerHeading:"كل ما تحتاجين معرفته"},
+ ae:{asideTitle:"اختياراتك أسهل مع يومياتي",asideDescription:"تصفّحي الأقسام أو دوّري على المنتج اللي يناسب ذوقج.",assistantTitle:"عندج سؤال؟",assistantDescription:"اسألي مساعد يومياتي عن الأقسام والمنتجات المعروضة. الإجابات من المعلومات المتاحة.",searchLabel:"ابحثي في يومياتي",answerHeading:"إجابات تفيدج"},
+ om:{asideTitle:"اختاري براحة",asideDescription:"استكشفي الأقسام أو استخدمي البحث للوصول إلى المنتج المناسب لك.",assistantTitle:"مساعدة تناسب سؤالك",assistantDescription:"اسألي مساعد يومياتي عن الأقسام والمنتجات المعروضة، بحسب المعلومات المتاحة.",searchLabel:"البحث في يومياتي",answerHeading:"إجابات تهمّك"},
+ eg:{asideTitle:"هتلاقي اللي على ذوقك",asideDescription:"لفّي على الأقسام أو دوري على الحاجة اللي بتدوري عليها من البحث.",assistantTitle:"عندك سؤال؟",assistantDescription:"اسألي مساعد يومياتي عن الأقسام والحاجات المعروضة. الردود حسب المعلومات المتاحة.",searchLabel:"دوري في يومياتي",answerHeading:"كل اللي محتاجة تعرفيه"},
+ iq:{asideTitle:"اختيارچ صار أسهل",asideDescription:"لفّي على الأقسام أو دوّري على الشي اللي يناسب ذوقچ.",assistantTitle:"عندچ سؤال؟",assistantDescription:"اسألي مساعد يومياتي عن الأقسام والمنتجات المعروضة. الأجوبة حسب المعلومات المتاحة.",searchLabel:"دوّري بيومياتي",answerHeading:"أجوبة تهمچ"},
+};
 export function StoreInfoPage({market,topic}:{market:MarketCode;topic:InfoTopic}){
  const page=market==="sa"?(topic==="shipping-returns"?saudiShippingPage:saudiInfo[topic]):(topic==="shipping-returns"?marketPolicyPages[market]:chapters[topic]);
- const v=visuals[topic];
+ const v=visuals[topic],helpCopy=localHelpText[market];
  const heroPhoto=topic==="shipping-returns"&&market!=="sa"?img[marketExperience[market].heroImage]:v.hero;
  return <StoreFrame market={market}>
   <div className="mx-auto max-w-7xl px-4 pb-20 pt-6 sm:px-6 lg:px-8">
@@ -85,21 +92,21 @@ export function StoreInfoPage({market,topic}:{market:MarketCode;topic:InfoTopic}
      <div className="overflow-hidden rounded-[1.5rem] border bg-card">
       <img src={v.accent} srcSet={editorialSrcSet(v.accent)} sizes="(max-width: 1024px) 100vw, 30vw" alt="" loading="lazy" className="aspect-[16/9] w-full object-cover"/>
       <div className="space-y-3 p-5">
-       <h2 className="font-display text-xl font-extrabold">خلّينا نسهّل عليك الاختيار</h2>
-       <p className="text-sm leading-7 text-muted-foreground">ابدئي باستكشاف الأقسام، أو استخدمي البحث للوصول إلى المنتج اللي يناسبك.</p>
-       <button type="button" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" onClick={()=>document.dispatchEvent(new CustomEvent("yawmiyati:open-search"))}><Search className="h-4 w-4"/> البحث في يومياتي <ArrowLeft className="h-4 w-4"/></button>
+       <h2 className="font-display text-xl font-extrabold">{helpCopy.asideTitle}</h2>
+       <p className="text-sm leading-7 text-muted-foreground">{helpCopy.asideDescription}</p>
+       <button type="button" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" onClick={()=>document.dispatchEvent(new CustomEvent("yawmiyati:open-search"))}><Search className="h-4 w-4"/> {helpCopy.searchLabel} <ArrowLeft className="h-4 w-4"/></button>
       </div>
      </div>
      <div className="relative overflow-hidden rounded-[1.5rem] bg-primary-soft p-5">
       <img src={v.secondary} srcSet={editorialSrcSet(v.secondary)} sizes="(max-width: 1024px) 100vw, 30vw" alt="" loading="lazy" className="mb-4 aspect-[2.5/1] w-full rounded-xl object-cover"/>
-      <h2 className="font-display text-lg font-extrabold">مساعدة تناسب سؤالك</h2>
-      <p className="mt-2 text-sm leading-7 text-muted-foreground">اسألي مساعد يومياتي عن الأقسام والمنتجات المعروضة. الإجابات تعتمد على البيانات المتاحة.</p>
+      <h2 className="font-display text-lg font-extrabold">{helpCopy.assistantTitle}</h2>
+      <p className="mt-2 text-sm leading-7 text-muted-foreground">{helpCopy.assistantDescription}</p>
       <p className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-primary"><MessageCircle className="h-4 w-4"/> زر المساعد أسفل الشاشة</p>
      </div>
     </aside>
     <div>
      <div className="rounded-[1.75rem] border bg-card p-5 shadow-soft sm:p-8">
-      <div className="mb-7 flex items-center gap-3"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary-soft text-primary"><HelpCircle className="h-6 w-6"/></div><div><p className="text-xs font-bold text-primary">إجابات واضحة</p><h2 className="font-display text-xl font-extrabold">كل ما تحتاجين معرفته</h2></div></div>
+      <div className="mb-7 flex items-center gap-3"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary-soft text-primary"><HelpCircle className="h-6 w-6"/></div><div><p className="text-xs font-bold text-primary">إجابات واضحة</p><h2 className="font-display text-xl font-extrabold">{helpCopy.answerHeading}</h2></div></div>
       <div className="space-y-3">{page.groups.map(([title,description],i)=><details key={title} className="group rounded-[1.25rem] border border-border bg-background px-5 py-4" open={i===0}>
        <summary className="flex min-h-8 cursor-pointer list-none items-center justify-between gap-3 text-sm font-extrabold marker:hidden sm:text-base">{title}<ChevronDown className="h-5 w-5 shrink-0 text-primary transition-transform group-open:rotate-180"/></summary>
        <p className="pb-2 pt-3 text-sm leading-8 text-muted-foreground">{description}</p>
