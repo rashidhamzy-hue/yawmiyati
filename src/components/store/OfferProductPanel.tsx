@@ -7,7 +7,7 @@ import { addOfferLine, setOfferZone, useOfferCart } from "@/lib/store/offer-cart
 
 export function FixtureNotice() {
   return <p role="note" data-offer-fixture-notice className="rounded-xl border border-dashed border-primary/40 bg-primary-soft px-4 py-2 text-xs font-bold leading-6 text-primary">
-    بيئة اختبار محلية: المنتجات والأسعار ورسوم التوصيل هنا تجريبية، ولا يُرسل أي طلب.
+    بيئة اختبار: المنتجات والأسعار ورسوم التوصيل هنا تجريبية، ولا يُرسل أي طلب.
   </p>;
 }
 

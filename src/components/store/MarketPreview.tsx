@@ -17,7 +17,7 @@ import {ApprovedProductGallery} from "@/lib/store/ApprovedProductExperience";
 import {smartCatalogSearch,suggestEditorialCategories,SEARCH_GROUPS} from "@/lib/store/smart-search";
 import {type MarketCode} from "@/lib/store/markets";
 import {fetchPublicCatalog,fetchPublicDetail,fetchPublicSearch,formatListingPrice,type PublicListing,type PublicDetail} from "@/lib/store/public-catalog";
-import {useOfferVersions} from "@/lib/store/offer-source";
+import {previewCatalogHostAllowed,useOfferVersions} from "@/lib/store/offer-source";
 import {offerListing} from "@/lib/store/offer-version";
 import {OfferProductPanel,FixtureNotice} from "./OfferProductPanel";
 
@@ -56,7 +56,7 @@ function ShopCard({item,market,image}:{item:PublicListing;market:MarketCode;imag
  return <article className="group h-full overflow-hidden rounded-xl border border-border/70 bg-card shadow-soft transition-shadow hover:shadow-md">
   <a href={href} aria-label={item.title} className="flex h-full min-h-36 flex-col gap-3 p-4 focus-visible:outline focus-visible:outline-primary sm:p-5">
    {image?<img src={image.url} alt={image.alt} loading="lazy" decoding="async" width={360} height={360} className="-mx-4 -mt-4 aspect-square w-[calc(100%+2rem)] max-w-none bg-[#efe6d7] object-contain sm:-mx-5 sm:-mt-5 sm:w-[calc(100%+2.5rem)]"/>:<div className="-mx-4 -mt-4 flex aspect-square w-[calc(100%+2rem)] flex-col items-center justify-center gap-3 bg-muted/60 text-center text-xs font-bold text-muted-foreground sm:-mx-5 sm:-mt-5 sm:w-[calc(100%+2.5rem)]"><Package className="h-8 w-8 text-primary/60" aria-hidden="true"/><span>صورة المنتج غير متاحة</span></div>}
-   <h3 className="text-base font-bold leading-6 group-hover:text-primary sm:text-lg">{item.title}</h3>
+   <h3 className="line-clamp-2 text-sm font-bold leading-6 group-hover:text-primary sm:text-base">{item.title}</h3>
    <p className="mt-auto text-lg font-extrabold text-primary">{formatListingPrice(item,market)}</p>
    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">تفاصيل المنتج <ArrowLeft size={14} aria-hidden="true"/></span>
   </a>
@@ -64,6 +64,7 @@ function ShopCard({item,market,image}:{item:PublicListing;market:MarketCode;imag
 }
 export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{market:MarketCode;slug?:string;searchOnly?:boolean;initialSearch?:string}){
  const [rows,setRows]=useState<PublicListing[]|null>(null),[detail,setDetail]=useState<PublicDetail|null>(null);
+ const [visibleCount,setVisibleCount]=useState(16);
  const [term,setTerm]=useState(initialSearch),[error,setError]=useState(false),[attempt,setAttempt]=useState(0);
  const [remoteSearch,setRemoteSearch]=useState<{query:string;rows:PublicListing[]}|null>(null);
  
@@ -86,7 +87,7 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
    setDetail(version?{...offerListing(version),description:version.description}:null);
    return;
   }
-  if(!origin||!key)return;
+  if(previewCatalogHostAllowed(window.location.hostname)||!origin||!key)return;
   let active=true;setError(false);setRows(null);setDetail(null);
   const task=slug?Promise.all([fetchPublicDetail(origin,key,market,slug).then(d=>{if(active)setDetail(d);}),fetchPublicCatalog(origin,key,market).then(items=>{if(active)setRows(items);}).catch(()=>{if(active)setRows([]);})]).then(()=>{})
    :fetchPublicCatalog(origin,key,market).then(data=>{if(active)setRows(data);});
@@ -94,12 +95,13 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
   return()=>{active=false};
  },[market,slug,attempt,offers]);
  useEffect(()=>{
-  if(offers.state!=="off"||!origin||!key||!rows||slug||term.trim().length<2)return;
+  if(previewCatalogHostAllowed(window.location.hostname)||offers.state!=="off"||!origin||!key||!rows||slug||term.trim().length<2)return;
   let alive=true;
   const timer=setTimeout(()=>{void fetchPublicSearch(origin,key,market,term).then(result=>{if(alive)setRemoteSearch({query:term,rows:result});}).catch(()=>{if(alive)setRemoteSearch(null);});},280);
   return()=>{alive=false;clearTimeout(timer);};
  },[market,rows,slug,term,offers.state]);
- const localMatches=rows?smartCatalogSearch(term,rows):[];
+ const localMatches=rows?(term.trim()?smartCatalogSearch(term,rows,100):rows):[];
+ useEffect(()=>setVisibleCount(16),[market,term]);
  const remoteMatches=remoteSearch?.query===term?remoteSearch.rows:[];
  const matchedIds=new Set(localMatches.map(x=>x.listing_id));
  const matching=[...localMatches,...remoteMatches.filter(x=>!matchedIds.has(x.listing_id))];
@@ -149,12 +151,12 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
     :error?<div role="alert" className="mt-8 rounded-3xl border bg-card p-8 text-center"><h3 className="font-bold">تعذّر تحميل المنتجات في الوقت الحالي</h3><Button variant="outline" className="mt-4 min-h-11" onClick={()=>setAttempt(v=>v+1)}>إعادة المحاولة</Button></div>
     :rows===null?<div role="status" aria-live="polite" className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">{Array.from({length:4},(_,i)=><div key={i} className="animate-pulse rounded-2xl border bg-card p-3"><div className="aspect-square rounded-xl bg-muted"/><div className="mt-3 h-4 w-3/4 rounded bg-muted"/><div className="mt-3 h-4 w-1/2 rounded bg-muted"/></div>)}</div>
     :slug&&offerVersion&&offerVersions?<div className="mt-8"><OfferProductPanel key={offerVersion.version_id} market={market} version={offerVersion} versions={offerVersions}/>
-      <div className="mt-8"><h3 className="mb-4 font-display text-xl font-extrabold">اختيارات أخرى من يومياتي</h3><div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{offerVersions.filter(v=>v.slug!==slug).map(v=><ShopCard key={v.listing_id} item={offerListing(v)} market={market} image={v.image}/>)}</div></div></div>
+      <div className="mt-8"><h3 className="mb-4 font-display text-xl font-extrabold">اختيارات أخرى من يومياتي</h3><div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{offerVersions.filter(v=>v.slug!==slug).sort((a,b)=>Number(b.category_slug===offerVersion.category_slug)-Number(a.category_slug===offerVersion.category_slug)).slice(0,4).map(v=><ShopCard key={v.listing_id} item={offerListing(v)} market={market} image={v.image}/>)}</div></div></div>
     :slug&&offerVersions?<EmptyProducts title="هذا المنتج غير موجود في الكتالوج" message="قد تتغير حالة المنتجات بحسب اعتماد البيانات والتوافر."/>
     :slug?detail?<div className="mt-8"><ReleasedEditorial key={market+slug} origin={origin} apiKey={key} market={market} slug={slug} fallback={<ApprovedProductGallery key={detail.listing_id} market={market} detail={detail}/>}/>
       <div className="mt-8"><h3 className="mb-4 font-display text-xl font-extrabold">اختيارات أخرى من يومياتي</h3>{relatedVerifiedProducts(detail,rows).length?<div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{relatedVerifiedProducts(detail,rows).map(item=><ShopCard key={item.listing_id} item={item} market={market}/>)}</div>:<p className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">تصفحي المزيد من الأقسام والمنتجات المعتمدة في يومياتي.</p>}</div></div>
     :<EmptyProducts title="هذا المنتج غير موجود في الكتالوج" message="قد تتغير حالة المنتجات بحسب اعتماد البيانات والتوافر."/>
-    :matching.length?<>{offerVersions&&<div className="mt-5"><FixtureNotice/></div>}<div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">{matching.map(item=><ShopCard key={item.listing_id} item={item} market={market} image={imageFor(item)}/>)}</div></>
+    :matching.length?<>{offerVersions&&<div className="mt-5"><FixtureNotice/></div>}<div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">{matching.slice(0,visibleCount).map(item=><ShopCard key={item.listing_id} item={item} market={market} image={imageFor(item)}/>)}</div>{matching.length>visibleCount&&<div className="mt-6 text-center"><p className="mb-3 text-xs text-muted-foreground">{Math.min(visibleCount,matching.length)} / {matching.length}</p><button type="button" className="btn-outline" onClick={()=>setVisibleCount(n=>n+16)}>عرض المزيد من المنتجات</button></div>}</>
     :<EmptyProducts title={rows.length?"لم نجد منتجات مطابقة":"من هنا تبدأ اختياراتك"} message={rows.length?"جرّبي البحث بكلمة مختلفة.":"تصفّحي الأقسام واستكشفي الأفكار اللي تعجبك."}/>}
    </section>
    {!slug&&!searchOnly&&<>
