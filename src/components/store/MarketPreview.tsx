@@ -11,6 +11,7 @@ import {marketIdentity} from "@/lib/store/market-identity";
 import {marketExperience} from "@/lib/store/market-experience";
 import {brandStory} from "@/lib/store/brand-story";
 import {saudiHomeQuestions} from "@/lib/store/saudi-commerce-content";
+import {recommendOffers} from "@/lib/store/offer-recommendations";
 import {curateCatalog} from "@/lib/store/curated-merchandising";
 import {relatedVerifiedProducts} from "@/lib/store/verified-merchandising";
 import {ReleasedEditorial} from "./EditorialPage";
@@ -57,7 +58,7 @@ function ShopCard({item,market,image}:{item:PublicListing;market:MarketCode;imag
  return <article className="group h-full overflow-hidden rounded-xl border border-border/70 bg-card shadow-soft transition-shadow hover:shadow-md">
   <a href={href} aria-label={item.title} className="flex h-full min-h-36 flex-col gap-3 p-4 focus-visible:outline focus-visible:outline-primary sm:p-5">
    {image?<img src={image.url} alt={image.alt} loading="lazy" decoding="async" width={360} height={360} className="-mx-4 -mt-4 aspect-square w-[calc(100%+2rem)] max-w-none bg-[#efe6d7] object-contain sm:-mx-5 sm:-mt-5 sm:w-[calc(100%+2.5rem)]"/>:<div className="-mx-4 -mt-4 flex aspect-square w-[calc(100%+2rem)] flex-col items-center justify-center gap-3 bg-muted/60 text-center text-xs font-bold text-muted-foreground sm:-mx-5 sm:-mt-5 sm:w-[calc(100%+2.5rem)]"><Package className="h-8 w-8 text-primary/60" aria-hidden="true"/><span>صورة المنتج غير متاحة</span></div>}
-   <h3 className="line-clamp-2 text-sm font-bold leading-6 group-hover:text-primary sm:text-base">{item.title}</h3>
+   <h3 className="line-clamp-2 min-h-12 text-sm font-bold leading-6 group-hover:text-primary sm:text-base">{item.title}</h3>
    <p className="mt-auto text-lg font-extrabold text-primary">{formatListingPrice(item,market)}</p>
    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">تفاصيل المنتج <ArrowLeft size={14} aria-hidden="true"/></span>
   </a>
@@ -152,7 +153,7 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
     :error?<div role="alert" className="mt-8 rounded-3xl border bg-card p-8 text-center"><h3 className="font-bold">تعذّر تحميل المنتجات في الوقت الحالي</h3><Button variant="outline" className="mt-4 min-h-11" onClick={()=>setAttempt(v=>v+1)}>إعادة المحاولة</Button></div>
     :rows===null?<div role="status" aria-live="polite" className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">{Array.from({length:4},(_,i)=><div key={i} className="animate-pulse rounded-2xl border bg-card p-3"><div className="aspect-square rounded-xl bg-muted"/><div className="mt-3 h-4 w-3/4 rounded bg-muted"/><div className="mt-3 h-4 w-1/2 rounded bg-muted"/></div>)}</div>
     :slug&&offerVersion&&offerVersions?<div className="mt-8"><OfferProductPanel key={offerVersion.version_id} market={market} version={offerVersion} versions={offerVersions}/>
-      <div className="mt-8"><h3 className="mb-4 font-display text-xl font-extrabold">اختيارات أخرى من يومياتي</h3><div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{offerVersions.filter(v=>v.slug!==slug).sort((a,b)=>Number(b.category_slug===offerVersion.category_slug)-Number(a.category_slug===offerVersion.category_slug)).slice(0,4).map(v=><ShopCard key={v.listing_id} item={offerListing(v)} market={market} image={v.image}/>)}</div></div></div>
+      <div className="mt-8"><h3 className="mb-4 font-display text-xl font-extrabold">اختيارات أخرى من يومياتي</h3><div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{recommendOffers(offerVersion,offerVersions).map(v=><ShopCard key={v.listing_id} item={offerListing(v)} market={market} image={v.image}/>)}</div></div></div>
     :slug&&offerVersions?<EmptyProducts title="هذا المنتج غير موجود في الكتالوج" message="قد تتغير حالة المنتجات بحسب اعتماد البيانات والتوافر."/>
     :slug?detail?<div className="mt-8"><ReleasedEditorial key={market+slug} origin={origin} apiKey={key} market={market} slug={slug} fallback={<ApprovedProductGallery key={detail.listing_id} market={market} detail={detail}/>}/>
       <div className="mt-8"><h3 className="mb-4 font-display text-xl font-extrabold">اختيارات أخرى من يومياتي</h3>{relatedVerifiedProducts(detail,rows).length?<div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{relatedVerifiedProducts(detail,rows).map(item=><ShopCard key={item.listing_id} item={item} market={market}/>)}</div>:<p className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">تصفحي المزيد من الأقسام والمنتجات المعتمدة في يومياتي.</p>}</div></div>

@@ -43,6 +43,7 @@ export function OfferProductPanel({ market, version, versions }: { market: Marke
     <div className="space-y-5">
       <FixtureNotice />
       <h1 className="font-display text-2xl font-extrabold leading-relaxed sm:text-3xl">{version.title}</h1>
+      {pack&&<p className="text-2xl font-extrabold text-primary">{formatMinor(market,pack.price_minor)}</p>}
       {version.description.trim() && <p className="whitespace-pre-wrap text-sm leading-7 text-muted-foreground">{version.description}</p>}
 
       {zones.length > 1 && <fieldset className="space-y-2">
@@ -58,7 +59,7 @@ export function OfferProductPanel({ market, version, versions }: { market: Marke
       </fieldset>}
 
       <fieldset className="space-y-2">
-        <legend className="text-sm font-extrabold">اختاري العبوة</legend>
+        <legend className="text-sm font-extrabold">{selectable.length===1?"تفاصيل العبوة":"اختاري العبوة"}</legend>
         <div className="grid gap-2">{selectable.map(p => {
           const unit = exactUnitPrice(p), on = pack?.pack_id === p.pack_id, ok = available(p);
           return <label key={p.pack_id} className={"flex min-h-14 items-center justify-between gap-3 rounded-xl border px-4 py-3 " + (ok ? "cursor-pointer " : "opacity-50 ") + (on ? "border-primary bg-primary-soft" : "")}>
