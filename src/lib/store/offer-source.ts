@@ -21,12 +21,22 @@ export type OfferSourceState =
 
 export const offerFixturesRequested = import.meta.env.VITE_YAWMIYATI_OFFER_FIXTURES === "true";
 
+/** Temporary review host; never matches the public custom domain or published lovable.app slug. */
+export function previewCatalogHostAllowed(hostname:string):boolean {
+  return hostname === "id-preview--6bc552b8-1629-4a0b-8706-8bc21c5c1279.lovable.app" || hostname === "preview-catalog.test";
+}
 export function fixtureHostAllowed(hostname: string): boolean {
   return hostname === "127.0.0.1" || hostname === "localhost" || hostname === "[::1]" || hostname === "::1" ||
     hostname.endsWith(".localhost") || hostname.endsWith(".test");
 }
 
 const cache = new Map<MarketCode, Promise<ApprovedOfferVersion[]>>();
+const previewCache = new Map<MarketCode, Promise<ApprovedOfferVersion[]>>();
+function loadPreviewVersions(market:MarketCode){
+ let pending=previewCache.get(market);
+ if(!pending){pending=import("../../fixtures/preview-catalog").then(m=>m.previewOfferVersions(market));previewCache.set(market,pending);}
+ return pending;
+}
 function loadFixtureVersions(market: MarketCode): Promise<ApprovedOfferVersion[]> {
   if (import.meta.env.VITE_YAWMIYATI_OFFER_FIXTURES === "true") {
     let pending = cache.get(market);
@@ -47,11 +57,12 @@ function loadFixtureVersions(market: MarketCode): Promise<ApprovedOfferVersion[]
 export function useOfferVersions(market: MarketCode): OfferSourceState {
   const [source, setSource] = useState<OfferSourceState>(offerFixturesRequested ? { state: "loading" } : { state: "off" });
   useEffect(() => {
-    if (!offerFixturesRequested) return;
-    if (!fixtureHostAllowed(window.location.hostname)) { setSource({ state: "ready", mode: "fixtures", versions: [] }); return; }
+    const preview=previewCatalogHostAllowed(window.location.hostname);
+    if (!offerFixturesRequested && !preview) return;
+    if (!preview && !fixtureHostAllowed(window.location.hostname)) { setSource({ state: "ready", mode: "fixtures", versions: [] }); return; }
     let live = true;
     setSource({ state: "loading" });
-    loadFixtureVersions(market)
+    (preview?loadPreviewVersions(market):loadFixtureVersions(market))
       .then(versions => { if (live) setSource({ state: "ready", mode: "fixtures", versions }); })
       .catch(() => { if (live) setSource({ state: "ready", mode: "fixtures", versions: [] }); });
     return () => { live = false; };
