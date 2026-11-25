@@ -44,7 +44,9 @@ describe("M10C mobile storefront details",()=>{
  });
  it.each(["sa","ae","om","eg","iq"] as const)("%s category and checkout use customer language, not database architecture",market=>{
   const category=render(<StoreCategoryPage market={market} slug="kitchen"/>);
-  expect(category.container.textContent).toContain("أفكاراً تلهم");
+  const expectedHeading={sa:"اكتشفي ما يناسب يومك",ae:"اختيارات تكمل يومج",om:"اختيارات تناسب أسلوبك",eg:"شوفي اللي يناسب يومك",iq:"شوفي اللي يناسب يومچ"}[market];
+  expect(category.container.textContent).toContain(expectedHeading);
+  expect(category.container.querySelector("h1")?.textContent).toBe("المطبخ والقهوة");
   expect(category.container.textContent).not.toMatch(/لا يدّعي تصنيف|معلومات معتمدة/);
   category.unmount();
   const guard=render(<StoreCommerceGuard market={market} type="checkout"/>);

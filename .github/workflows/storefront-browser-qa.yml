@@ -38,7 +38,7 @@ jobs:
           done
           cat /tmp/yawmiyati-vite.log
           exit 1
-      - name: Exercise all 5 markets at 4 viewports
+      - name: Exercise all 5 markets at 5 viewports
         run: node scripts/browser-qa.cjs
       - name: Run local storefront with isolated offer fixtures
         run: |
@@ -67,7 +67,10 @@ jobs:
       - name: Exercise locked offline owner review across 5 markets at 4 viewports
         run: node scripts/m2d-browser-qa.cjs
       - name: Upload screenshots and failure evidence
+        # GitHub artifact quota can be exhausted even when all browser checks pass.
+        # Keep functional assertions blocking; screenshot archive is best-effort only.
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: yawmiyati-browser-qa

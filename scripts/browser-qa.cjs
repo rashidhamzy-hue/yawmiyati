@@ -6,7 +6,7 @@ const assert=require("node:assert/strict");
 const base=process.env.QA_BASE_URL||"http://127.0.0.1:4173";
 const markets=["sa","ae","om","eg","iq"];
 const searchLabels={sa:"دوّري على اللي يعجبك",ae:"شو ودّج تلاقين؟",om:"وش في بالك اليوم؟",eg:"بتدوّري على إيه؟",iq:"شنو ببالچ اليوم؟"};
-const viewports=[320,390,768,1440];
+const viewports=[320,390,768,1024,1440];
 const output=path.join(process.cwd(),"artifacts","browser-qa");
 fs.mkdirSync(output,{recursive:true});
 async function main(){
@@ -37,14 +37,17 @@ async function main(){
      assert.equal(await page.getByRole("heading",{level:1}).count(),1,label+": main heading count");
      const hero=page.locator("main > #store-hero:first-child");
      assert.equal(await hero.count(),1,label+": country hero must open the homepage");
-     assert.equal(await page.locator("#store-hero + #collection").count(),1,label+": shelf must follow the hero");
+     assert.equal(await page.locator("#store-hero + #discover").count(),1,label+": department discovery must follow hero");
+     assert.equal(await page.locator("#discover + #collection").count(),1,label+": product shelf must follow department discovery");
      if(width===390)await page.screenshot({path:path.join(output,label+"-first-screen.png"),animations:"disabled"});
-     const firstTile=page.locator("#collection nav a, #collection article a").first();
-     assert.ok(await firstTile.count(),label+": first shopping tile missing");
-     const tilePhoto=firstTile.locator("img");
-     if(await tilePhoto.count())assert.ok(await tilePhoto.evaluate(async img=>{await img.decode();return img.naturalWidth>0}),label+": missing product-type photograph");
-     const firstBox=await firstTile.boundingBox();
-     assert.ok(firstBox&&firstBox.y+60<900,label+": first shopping tile below viewport");
+     const firstDepartment=page.locator("#discover nav a").first();
+     assert.ok(await firstDepartment.count(),label+": first department link missing");
+     const departmentPhoto=firstDepartment.locator("img");
+     assert.ok(await departmentPhoto.count(),label+": department photo missing");
+     const firstBox=await firstDepartment.boundingBox();
+     assert.ok(firstBox&&firstBox.y+60<900,label+": department discovery below first viewport");
+     const firstShoppingTile=page.locator("#collection nav a, #collection article a").first();
+     assert.ok(await firstShoppingTile.count(),label+": approved product or editorial browsing tile missing");
      const lovProxyImages=await page.locator('main img[src^="/__l5e/"]').count();
      if(lovProxyImages){
        console.warn("ASSET WARNING "+label+": "+lovProxyImages+" editorial images depend on Lovable asset proxy; see issue #75");

@@ -29,6 +29,7 @@ export function OfferCartPage({ market, type, versions }: { market: MarketCode; 
         {priced.zones.map(z => <option key={z.zone_id} value={z.zone_id}>{z.label} · {money(market, BigInt(z.delivery_minor))}</option>)}
       </select></label>}
 
+    {priced.lines.length===0&&<div role="status" className="mt-6 rounded-2xl border border-border bg-card px-6 py-8 text-center"><h2 className="font-display text-xl font-extrabold">سلتك فارغة</h2><p className="mt-2 text-sm leading-7 text-muted-foreground">تصفّحي الأقسام لاختيار المنتجات، ولن يُرسل أي طلب من بيئة الاختبار.</p><a href={path+"#discover"} className="btn-outline mt-5 inline-flex min-h-11 items-center">استكشفي الأقسام <ArrowLeft className="h-4 w-4" aria-hidden="true"/></a></div>}
     <ul className="mt-6 space-y-3" aria-label="منتجات السلة">{priced.lines.map((row, i) => <li key={i} className="flex gap-4 rounded-2xl border bg-card p-4" data-cart-line={row.line.slug + ":" + row.line.pack_id}>
       {row.version?.image && <img src={row.version.image.url} alt="" className="h-20 w-20 shrink-0 rounded-xl bg-[#efe6d7] object-contain" />}
       <div className="min-w-0 flex-1 space-y-1 text-sm">
@@ -43,11 +44,11 @@ export function OfferCartPage({ market, type, versions }: { market: MarketCode; 
       {!review && <button type="button" onClick={() => removeOfferLine(market, i)} aria-label={"حذف " + (row.version?.title ?? "المنتج") + " من السلة"} className="tap grid h-11 w-11 shrink-0 place-items-center rounded-full border hover:text-destructive"><Trash2 className="h-4 w-4" /></button>}
     </li>)}</ul>
 
-    {priced.lines.filter(l => l.status === "ok").length > 1 && <p className="mt-3 text-xs text-muted-foreground">يصل كل منتج في شحنة مستقلة، لذلك تُحتسب رسوم التوصيل لكل منتج.</p>}
+    {priced.lines.filter(l => l.status === "ok").length > 1 && <p className="mt-3 text-xs text-muted-foreground">في بيانات الاختبار الحالية قد تُحسب رسوم توصيل مستقلة لكل شحنة. هذا لا يحدّد رسوم الطلبات الفعلية في المتجر.</p>}
 
     <section aria-label="الإجمالي عند الاستلام" className="mt-6 rounded-2xl border bg-card p-5">
       <div className="flex items-center justify-between text-lg"><span className="font-extrabold">الإجمالي عند الاستلام</span>
-        <span className="font-extrabold text-primary" data-cart-door-total>{priced.zone ? money(market, priced.total_door_minor) : "اختاري منطقة التوصيل"}</span></div>
+        <span className="font-extrabold text-primary" data-cart-door-total>{priced.lines.length===0?"لا توجد منتجات":priced.zone ? money(market, priced.total_door_minor) : "اختاري منطقة التوصيل"}</span></div>
       <p className="mt-1 text-xs text-muted-foreground">{paymentLabel}{priced.zone ? " · " + priced.zone.label : ""}</p>
       {!priced.checkoutReady && priced.lines.length > 0 && <p className="mt-3 text-xs font-bold text-destructive">راجعي العناصر المعلّمة قبل متابعة الطلب.</p>}
       {review ? <div className="mt-5 space-y-3">

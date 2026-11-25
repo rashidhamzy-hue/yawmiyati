@@ -17,6 +17,12 @@ export type MarketExperience={
   heroImage:ImgKey;
   heroAlt:string;
   discoverCta:string;
+  discoveryNote:string;
+  beautyLinkLabel:string;
+  homeLinkLabel:string;
+  faqEyebrow:string;
+  storyLinkLabel:string;
+  storyBrowseLabel:string;
   searchCta:string;
   discoverTitle:string;
   discoverDescription:string;
@@ -42,7 +48,7 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
   heroStart:"كل يوم يستحق",heroAccent:"لمسة أجمل",
   heroDescription:"من ركن القهوة ودفء البيت، إلى العناية والجمال… اكتشفي تفاصيل تضيف لمسة حلوة ليومك.",
   heroImage:"hero",heroAlt:"ركن منزلي بألوان هادئة وإضاءة دافئة",
-  discoverCta:"خذي لفة في يومياتي",searchCta:"دوّري على اللي يعجبك",
+  discoverCta:"خذي لفة في يومياتي",discoveryNote:"على ذوقك، من البيت للعناية",beautyLinkLabel:"اكتشفي عالم العناية",homeLinkLabel:"اكتشفي لمسات البيت",faqEyebrow:"كل ما تحتاجين معرفته",storyLinkLabel:"اقرئي قصتنا كاملة",storyBrowseLabel:"اختاري اللي يعجبك",searchCta:"دوّري على اللي يعجبك",
   discoverTitle:"تسوّقي على ذوقك… وبكل سهولة",
   discoverDescription:"من البيت والقهوة إلى الجمال والعناية، تصفّحي أقسام تجمع تفاصيل يومك.",
   collectionTitle:"اختيارات تناسب يومك",
@@ -65,7 +71,7 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
   heroStart:"تفاصيل تليق بذوقج",heroAccent:"وتحلّي يومج",
   heroDescription:"من لمسات البيت المرتّبة إلى الجمال والإكسسوارات… اكتشفي أفكار تخلّي كل زاوية وكل طلعة ألطف.",
   heroImage:"cat-home",heroAlt:"تفاصيل ديكور منزلي عصرية دافئة",
-  discoverCta:"تصفّحي الأقسام",searchCta:"شو ودّج تلاقين؟",
+  discoverCta:"تصفّحي الأقسام",discoveryNote:"تفاصيل على ذوقج",beautyLinkLabel:"شوفي عالم العناية",homeLinkLabel:"تصفّحي لمسات البيت",faqEyebrow:"إجابات تفيدج",storyLinkLabel:"اقري قصتنا كاملة",storyBrowseLabel:"اختاري اللي يعجبج",searchCta:"شو ودّج تلاقين؟",
   discoverTitle:"اختيارات تناسب ستايلج",
   discoverDescription:"بيت، عناية، أزياء وقهوة… لفة سريعة بين الأقسام اللي تهمّج.",
   collectionTitle:"تفاصيل على ذوقج",
@@ -90,7 +96,7 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
   heroStart:"للبيت تفاصيله",heroAccent:"ولليوم نكهته",
   heroDescription:"من فنجان القهوة وجمعة الأهل إلى تفاصيل البيت والعناية… اكتشفي أفكار هادئة تضيف جمالاً ليومك.",
   heroImage:"cat-kitchen",heroAlt:"ركن قهوة ومطبخ منزلي دافئ",
-  discoverCta:"استكشفي الأقسام",searchCta:"وش في بالك اليوم؟",
+  discoverCta:"استكشفي الأقسام",discoveryNote:"أفكار للبيت والعناية",beautyLinkLabel:"استكشفي عالم العناية",homeLinkLabel:"تصفّحي لمسات البيت",faqEyebrow:"إجابات تهمّك",storyLinkLabel:"تعرّفي على قصتنا",storyBrowseLabel:"اختاري اللي يناسبك",searchCta:"وش في بالك اليوم؟",
   discoverTitle:"من القهوة إلى تفاصيل البيت",
   discoverDescription:"أقسام مختارة للإلهام والاكتشاف، بمعلومات معتمدة لما تتوفر المنتجات.",
   collectionTitle:"أفكار لليوم الجميل",
@@ -115,7 +121,7 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
   heroStart:"كل يوم فيه حاجة",heroAccent:"تفرّح قلبك",
   heroDescription:"من ركن البيت اللي بتحبيه للعناية والجمال والحاجات العملية… دوري على أفكار تخلّي يومك أريح وأحلى.",
   heroImage:"cat-fashion",heroAlt:"أزياء وإكسسوارات في مشهد تحريري أنيق",
-  discoverCta:"اتفرّجي على الأقسام",searchCta:"بتدوّري على إيه؟",
+  discoverCta:"اتفرّجي على الأقسام",discoveryNote:"حاجات حلوة على ذوقك",beautyLinkLabel:"اتفرّجي على العناية",homeLinkLabel:"شوفي أفكار البيت",faqEyebrow:"كل اللي محتاجة تعرفيه",storyLinkLabel:"اقري حكايتنا",storyBrowseLabel:"اختاري اللي يعجبك",searchCta:"بتدوّري على إيه؟",
   discoverTitle:"حاجات حلوة على مزاجك",
   discoverDescription:"لفّة واحدة بين البيت والمطبخ والجمال والتنظيم… اختاري اللي يناسب يومك.",
   collectionTitle:"حاجات ممكن تعجبك",
@@ -140,7 +146,7 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
   heroStart:"كل يوم يصير أحلى",heroAccent:"بتفاصيل على ذوقچ",
   heroDescription:"للبيت، للمطبخ، ولحظات العناية… لفي على أقسام يومياتي واختاري الأفكار اللي تناسب حياتچ.",
   heroImage:"cat-organize",heroAlt:"تفاصيل تنظيم وديكور منزلي أنيق",
-  discoverCta:"تصفّحي الأقسام",searchCta:"شنو ببالچ اليوم؟",
+  discoverCta:"تصفّحي الأقسام",discoveryNote:"تفاصيل على ذوقچ",beautyLinkLabel:"شوفي عالم العناية",homeLinkLabel:"تصفّحي تفاصيل البيت",faqEyebrow:"أجوبة تهمچ",storyLinkLabel:"اقري قصتنا",storyBrowseLabel:"اختاري اللي يعجبچ",searchCta:"شنو ببالچ اليوم؟",
   discoverTitle:"أفكار وأشياء على ذوقچ",
   discoverDescription:"من البيت والقهوة للتنظيم والعناية، شوفي الأقسام واختاري اللي يعجبچ.",
   collectionTitle:"اختيارات تلائم يومچ",
