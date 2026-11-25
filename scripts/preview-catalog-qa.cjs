@@ -36,8 +36,20 @@ async function main(){
   assert.ok(await page.getByRole("button",{name:"تأكيد الطلب"}).isDisabled());
   assert.equal(await page.locator('form,input[type=tel]').count(),0);
   await page.goto(base+"/"+market+"/c/home",{waitUntil:"domcontentloaded"});
-  await page.getByRole("region",{name:"منتجات القسم"}).waitFor();
-  assert.ok(await page.locator('main a[href*="/p/preview-"]').count()>0);
+  const categoryGrid=page.getByRole("region",{name:"منتجات القسم"});
+  await categoryGrid.locator('article a[href*="/p/preview-"]').first().waitFor({timeout:20000});
+  const switches=page.getByRole("navigation",{name:"تبديل الأقسام"});
+  for(const slug of ["kitchen","beauty","fashion","wellness","organize","home"]){
+   await switches.locator('a[href$="/c/'+slug+'"]').click();
+   await page.waitForURL(new RegExp("/"+market+"/c/"+slug+"$"));
+   await page.getByRole("region",{name:"منتجات القسم"}).locator("article a").first().waitFor({timeout:20000});
+   assert.equal(await switches.locator('[aria-current="page"]').getAttribute("href"),"/"+market+"/c/"+slug);
+  }
+  await page.getByRole("combobox",{name:"ترتيب المنتجات"}).selectOption("low");
+  await page.getByRole("searchbox",{name:"البحث في هذا القسم"}).fill("zzzz-no-match");
+  await categoryGrid.getByText("لا توجد نتائج مطابقة.",{exact:false}).waitFor();
+  await page.getByRole("searchbox",{name:"البحث في هذا القسم"}).fill("");
+  await categoryGrid.locator("article a").first().waitFor();
   assert.equal(forbidden.length,0);
   console.log("PASS preview catalog "+market+" search, pagination, product, checkout and category");
   await page.close();
