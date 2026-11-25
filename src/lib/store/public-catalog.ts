@@ -44,7 +44,18 @@ export function formatListingPrice(row:PublicListing,market:MarketCode){
  if(lastInteger<0)throw Error("Currency formatting unavailable");
  return pieces.map((part,i)=>part.value+(i===lastInteger?decimal+fractional:"")).join("");
 }
+// Coalesce concurrent reads only. Never cache released inventory across requests.
+const pendingCatalogs=new Map<string,Promise<PublicListing[]>>();
 export async function fetchPublicCatalog(origin:string,key:string,market:MarketCode,request:typeof fetch=fetch):Promise<PublicListing[]>{
+ if(request!==fetch)return readPublicCatalog(origin,key,market,request);
+ const id=JSON.stringify([origin,key,market]);
+ const existing=pendingCatalogs.get(id);
+ if(existing)return existing;
+ const pending=readPublicCatalog(origin,key,market,request);
+ pendingCatalogs.set(id,pending);
+ try{return await pending;}finally{if(pendingCatalogs.get(id)===pending)pendingCatalogs.delete(id);}
+}
+async function readPublicCatalog(origin:string,key:string,market:MarketCode,request:typeof fetch):Promise<PublicListing[]>{
  const url=new URL(origin);
  if(url.protocol!=="https:"||url.username||url.password||url.pathname!=="/"||url.search||url.hash||!key)throw Error("Invalid catalog configuration");
  const all:PublicListing[]=[];

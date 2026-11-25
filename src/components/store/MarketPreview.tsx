@@ -1,16 +1,16 @@
 import {publicBrowserConfig} from "@/lib/store/staging-public-config";
 import {useEffect,useState} from "react";
-import {ArrowLeft,ArrowUpLeft,ChevronDown,Heart,Package,Search,Sparkles, type LucideIcon} from "lucide-react";
+import {ArrowLeft,ArrowUpLeft,ChevronDown,Heart,Package,Search,Sparkles,Truck,HandCoins,ShieldCheck} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {img} from "@/lib/store/images";
 import {editorialSrcSet} from "@/lib/store/editorial-srcset";
 import {ShoppingAssistant} from "@/components/store/ShoppingAssistant";
 import {StoreHeader,StoreFooter} from "@/components/store/StoreChrome";
-import {MarketPromiseStrip} from "@/components/store/MarketPromiseStrip";
+import {customerServiceCopy} from "@/lib/store/customer-service-copy";
 import {marketIdentity} from "@/lib/store/market-identity";
 import {marketExperience} from "@/lib/store/market-experience";
 import {brandStory} from "@/lib/store/brand-story";
-import {saudiDelivery,saudiHomeQuestions} from "@/lib/store/saudi-commerce-content";
+import {saudiHomeQuestions} from "@/lib/store/saudi-commerce-content";
 import {relatedVerifiedProducts} from "@/lib/store/verified-merchandising";
 import {ReleasedEditorial} from "./EditorialPage";
 import {ApprovedProductGallery} from "@/lib/store/ApprovedProductExperience";
@@ -30,12 +30,6 @@ const categories=[
  {slug:"wellness",name:"الراحة والرفاهية",caption:"مساحة لنفسك",picture:img["cat-wellness"]},
  {slug:"organize",name:"التنظيم الذكي",caption:"أقل فوضى، راحة أكثر",picture:img["cat-organize"]},
 ] as const;
-const values:{icon:LucideIcon;title:string;description:string}[]=[
- {icon:Heart,title:"اختيارات على ذوقك",description:"أفكار وتفاصيل تناسب أسلوبك وحياتك اليومية."},
- {icon:Search,title:"التفاصيل تفرق",description:"كل منتج معروض له معلومات واضحة تساعدك تختارين."},
- {icon:Sparkles,title:"كل شيء بمكان واحد",description:"تصفّح عربي بسيط، وأقسام تلهم كل يوم."},
-];
-
 function SectionIntro({eyebrow,title,description}:{eyebrow:string;title:string;description?:string|undefined}){
  return <div className="space-y-2"><p className="text-xs font-extrabold tracking-wider text-primary">{eyebrow}</p><h2 className="font-display text-2xl font-extrabold leading-tight sm:text-3xl md:text-4xl">{title}</h2>{description&&<p className="max-w-2xl text-sm leading-8 text-muted-foreground md:text-base">{description}</p>}</div>;
 }
@@ -94,7 +88,7 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
   }
   if(!origin||!key)return;
   let active=true;setError(false);setRows(null);setDetail(null);
-  const task=slug?Promise.all([fetchPublicDetail(origin,key,market,slug),fetchPublicCatalog(origin,key,market).catch(()=>[])]).then(([d,items])=>{if(active){setDetail(d);setRows(items);}})
+  const task=slug?Promise.all([fetchPublicDetail(origin,key,market,slug).then(d=>{if(active)setDetail(d);}),fetchPublicCatalog(origin,key,market).then(items=>{if(active)setRows(items);}).catch(()=>{if(active)setRows([]);})]).then(()=>{})
    :fetchPublicCatalog(origin,key,market).then(data=>{if(active)setRows(data);});
   task.catch(()=>{if(active)setError(true);});
   return()=>{active=false};
@@ -118,23 +112,23 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
   <StoreHeader market={market}/>
 
   <main id="main-content">
-   {homePage&&<section id="store-hero" aria-label="مقدمة يومياتي" className="relative isolate flex min-h-[300px] overflow-hidden sm:min-h-[390px] lg:min-h-[460px] bg-foreground">
+   {homePage&&<section id="store-hero" aria-label="مقدمة يومياتي" className="store-hero-editorial relative isolate flex min-h-[310px] overflow-hidden sm:min-h-[390px] lg:min-h-[460px] bg-foreground">
      <img src={img[experience.heroImage]} srcSet={editorialSrcSet(img[experience.heroImage])} sizes="100vw" alt={experience.heroAlt} fetchPriority="high" width={1600} height={900} className="absolute inset-0 h-full w-full object-cover object-center"/>
      <div className="absolute inset-0 bg-hero-fade"/>
      <div className="relative mx-auto flex w-full max-w-7xl flex-col justify-center px-5 py-7 text-photo-foreground sm:px-6 sm:py-10 lg:px-8">
       <p className="mb-3 flex items-center gap-2 text-xs font-bold"><Sparkles className="h-4 w-4" aria-hidden="true"/>{experience.eyebrow}</p>
       <h1 className="max-w-2xl text-[1.95rem] sm:text-4xl lg:text-[3.6rem] font-display font-extrabold leading-tight">{experience.heroStart}<br/><span className="text-photo-accent">{experience.heroAccent}</span></h1>
-      <p className="mt-3 max-w-md text-[13px] leading-6 text-photo-foreground/95 sm:text-base sm:leading-8">{experience.heroDescription}</p>
-      <div className="mt-4 flex flex-wrap gap-2">
+      <p className="mt-3 hidden max-w-md text-sm leading-7 text-photo-foreground/95 sm:block sm:text-base">{experience.heroDescription}</p>
+      <div className="mt-5 flex flex-wrap gap-2">
        <Button asChild className="h-auto min-h-11 rounded-full bg-photo-foreground px-5 py-3 font-extrabold text-foreground hover:bg-photo-accent"><a href={path+"#discover"}>{experience.discoverCta} <ArrowLeft aria-hidden="true"/></a></Button>
        <Button variant="outline" onClick={()=>document.dispatchEvent(new CustomEvent("yawmiyati:open-search"))} className="h-auto min-h-11 rounded-full border-photo-foreground/60 bg-transparent px-5 py-3 text-photo-foreground hover:bg-photo-foreground/15 hover:text-photo-foreground"><Search aria-hidden="true"/>{experience.searchCta}</Button>
       </div>
      </div>
     </section>}
    {!slug&&!searchOnly&&<>
-    <section id="discover" aria-labelledby="discover-title" className="mx-auto max-w-7xl scroll-mt-24 px-4 pt-7 sm:px-6 lg:px-8">
+    <section id="discover" aria-labelledby="discover-title" className="mx-auto max-w-7xl scroll-mt-24 px-4 pt-5 sm:px-6 lg:px-8">
      <div className="flex items-center justify-between gap-3"><h2 id="discover-title" className="font-display text-lg font-extrabold sm:text-xl">{experience.discoverTitle}</h2><span className="hidden text-xs text-muted-foreground sm:inline">{experience.discoveryNote}</span></div>
-     <nav aria-label="تسوقي حسب القسم" className="storefront-category-strip mt-4">{orderedCategories.map(c=><a key={c.slug} href={path+"/c/"+c.slug} className="group flex min-w-0 flex-col items-center gap-2 rounded-lg px-1 py-1 text-center"><div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border border-border bg-muted sm:h-20 sm:w-20"><img src={c.picture} srcSet={editorialSrcSet(c.picture)} sizes="(max-width: 640px) 64px, 80px" alt="" width={80} height={80} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"/></div><h3 className="text-xs font-bold leading-5 group-hover:text-primary sm:text-sm">{c.name}</h3></a>)}</nav>
+     <nav aria-label="تسوقي حسب القسم" className="storefront-category-strip mt-3">{orderedCategories.map(c=><a key={c.slug} href={path+"/c/"+c.slug} className="group flex min-w-0 flex-col items-center gap-2 rounded-lg px-1 py-1 text-center"><div className="aspect-square w-full overflow-hidden rounded-2xl bg-muted"><img src={c.picture} srcSet={editorialSrcSet(c.picture)} sizes="(max-width: 640px) 110px, 180px" alt="" width={80} height={80} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"/></div><h3 className="text-xs font-bold leading-5 group-hover:text-primary sm:text-sm">{c.name}</h3></a>)}</nav>
     </section>
    </>}
 
@@ -168,13 +162,17 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
      <div className="group relative min-h-[260px] sm:min-h-[320px] overflow-hidden rounded-[1.5rem]"><img src={img["cat-beauty"]} srcSet={editorialSrcSet(img["cat-beauty"])} sizes="(max-width: 640px) 100vw, 50vw" alt="مجموعة مستوحاة من الجمال والعناية" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"/><div className="absolute inset-0 bg-gradient-to-t from-photo-scrim/80 via-photo-scrim/10 to-transparent"/><div className="absolute bottom-0 p-7 text-photo-foreground"><p className="text-xs font-bold text-photo-foreground/80">العناية تبدأ من التفاصيل</p><h3 className="mt-2 font-display text-2xl font-extrabold">{experience.beautyTitle}</h3><a href={path+"/c/beauty"} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-photo-foreground px-5 py-2 text-sm font-extrabold text-foreground transition-colors hover:bg-photo-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-photo-foreground">{experience.beautyLinkLabel} <ArrowLeft className="h-4 w-4" aria-hidden="true"/></a></div></div>
      <div className="group relative min-h-[260px] sm:min-h-[320px] overflow-hidden rounded-[1.5rem]"><img src={img["cat-home"]} srcSet={editorialSrcSet(img["cat-home"])} sizes="(max-width: 640px) 100vw, 50vw" alt="تفاصيل منزلية دافئة" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"/><div className="absolute inset-0 bg-gradient-to-t from-photo-scrim/80 via-photo-scrim/10 to-transparent"/><div className="absolute bottom-0 p-7 text-photo-foreground"><p className="text-xs font-bold text-photo-foreground/80">بيت يعكس ذوقك</p><h3 className="mt-2 font-display text-2xl font-extrabold">{experience.homeTitle}</h3><a href={path+"/c/home"} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-photo-foreground px-5 py-2 text-sm font-extrabold text-foreground transition-colors hover:bg-photo-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-photo-foreground">{experience.homeLinkLabel} <ArrowLeft className="h-4 w-4" aria-hidden="true"/></a></div></div>
     </section>
-    <section id="story" aria-labelledby="story-title" className="mx-auto grid max-w-7xl items-center gap-6 px-4 py-12 sm:grid-cols-[1fr_2fr] sm:px-6 lg:gap-12 lg:px-8">
+    <section id="story" aria-labelledby="story-title" className="mx-auto grid max-w-7xl items-center gap-4 px-4 py-7 sm:grid-cols-[1fr_2fr] sm:px-6 lg:gap-10 lg:px-8">
      <img src={img[market==="sa"?"cat-kitchen":market==="ae"?"cat-fashion":market==="om"?"cat-home":market==="eg"?"cat-kitchen":"cat-wellness"]} srcSet={editorialSrcSet(img[market==="sa"?"cat-kitchen":market==="ae"?"cat-fashion":market==="om"?"cat-home":market==="eg"?"cat-kitchen":"cat-wellness"])} sizes="(max-width: 640px) 100vw, 33vw" alt="تفاصيل من عالم يومياتي" width={600} height={400} loading="lazy" className="aspect-[3/2] w-full rounded-lg object-cover"/>
-     <div><p className="text-xs font-bold text-primary">{brandStory[market].kicker}</p><h2 id="story-title" className="mt-2 font-display text-2xl font-extrabold leading-9">{brandStory[market].turningTitle}</h2><p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">{brandStory[market].turning}</p><Button asChild variant="link" className="mt-3 h-auto min-h-11 px-0 font-bold"><a href={path+"/story"}>{experience.storyLinkLabel} <ArrowUpLeft aria-hidden="true"/></a></Button><Button asChild variant="link" className="mr-4 mt-3 h-auto min-h-11 px-0 font-bold"><a href={path+"#discover"} onClick={e=>{const el=document.getElementById("discover");if(el){e.preventDefault();el.scrollIntoView({behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});}}}>{experience.storyBrowseLabel} <ArrowLeft aria-hidden="true"/></a></Button></div>
+     <div><p className="text-xs font-bold text-primary">{brandStory[market].kicker}</p><h2 id="story-title" className="mt-2 font-display text-2xl font-extrabold leading-9">{brandStory[market].turningTitle}</h2><p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">{experience.storyDescription}</p><Button asChild variant="link" className="mt-3 h-auto min-h-11 px-0 font-bold"><a href={path+"/story"}>{experience.storyLinkLabel} <ArrowUpLeft aria-hidden="true"/></a></Button><Button asChild variant="link" className="mr-4 mt-3 h-auto min-h-11 px-0 font-bold"><a href={path+"#discover"} onClick={e=>{const el=document.getElementById("discover");if(el){e.preventDefault();el.scrollIntoView({behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});}}}>{experience.storyBrowseLabel} <ArrowLeft aria-hidden="true"/></a></Button></div>
     </section>
-    <section aria-label="قيم يومياتي" className="border-y border-border bg-primary-soft"><div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:grid-cols-3 sm:px-6 lg:px-8">{values.map(({icon:Icon,title,description})=><div key={title} className="flex items-start gap-3"><Icon className="mt-1 h-5 w-5 shrink-0 text-primary" aria-hidden="true"/><div><h2 className="text-sm font-extrabold">{title}</h2><p className="mt-1 text-xs leading-6 text-muted-foreground">{description}</p></div></div>)}</div></section>
-    {market==="sa"?<section aria-label="الدفع والتوصيل في السعودية" className="mx-auto grid max-w-7xl gap-5 px-4 pt-10 sm:grid-cols-3 sm:px-6 lg:px-8"><div><h2 className="text-sm font-bold">الدفع عند الاستلام</h2><p className="mt-2 text-xs leading-6 text-muted-foreground">{saudiDelivery.payment}</p></div><div><h2 className="text-sm font-bold">رسوم التوصيل</h2><p className="mt-2 text-xs leading-6 text-muted-foreground">الدفع عند الاستلام · {saudiDelivery.shipping}</p></div><div><h2 className="text-sm font-bold">التوصيل والاسترجاع</h2><p className="mt-2 text-xs leading-6 text-muted-foreground">{saudiDelivery.near}</p><Button asChild variant="link" className="mt-2 h-auto min-h-11 px-0 text-xs"><a href={path+"/info/shipping-returns"}>اعرفي أكثر عن الشحن والاسترجاع <ArrowLeft aria-hidden="true"/></a></Button></div></section>:<MarketPromiseStrip market={market}/>}
-    <section id="questions" className="mx-auto max-w-5xl scroll-mt-4 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"><div className="max-w-2xl"><SectionIntro eyebrow={experience.faqEyebrow} title={experience.faqTitle} description={experience.faqDescription}/><a href={path+"/info/shipping-returns"} className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-primary underline underline-offset-4">تفاصيل الشحن والاسترجاع <ArrowLeft className="h-4 w-4" aria-hidden="true"/></a></div><div className="mt-7 grid items-start gap-3 sm:grid-cols-2">{(market==="sa"?saudiHomeQuestions:experience.questions).map((q,i)=><details key={q.question} className="group rounded-2xl border bg-card px-5 py-4" open={undefined}><summary className="flex min-h-8 cursor-pointer list-none items-center justify-between gap-3 font-extrabold marker:hidden">{q.question}<ChevronDown className="h-5 w-5 shrink-0 text-primary transition-transform group-open:rotate-180" aria-hidden="true"/></summary><p className="pb-2 pt-3 text-sm leading-8 text-muted-foreground">{q.answer}</p></details>)}</div></section>
+    <section aria-label="الدفع والتوصيل والاسترجاع" className="mx-auto max-w-7xl px-4 pt-5 sm:px-6 lg:px-8">
+     <div className="grid grid-cols-3 divide-x divide-x-reverse overflow-hidden rounded-2xl border bg-card py-4 text-center">
+      {([{Icon:HandCoins,label:customerServiceCopy[market].paymentHeading},{Icon:Truck,label:customerServiceCopy[market].shippingHeading},{Icon:ShieldCheck,label:customerServiceCopy[market].returnsHeading}]).map(({Icon,label})=><a key={label} href={path+"/info/shipping-returns"} className="flex min-h-14 flex-col items-center justify-center gap-2 px-2 text-xs font-bold leading-5 text-primary"><Icon className="h-6 w-6" aria-hidden="true"/>{label}</a>)}
+     </div>
+     <p className="mt-3 text-center text-xs leading-6 text-muted-foreground">{customerServiceCopy[market].shipping}</p>
+    </section>
+    <section id="questions" className="mx-auto max-w-5xl scroll-mt-4 px-4 py-9 sm:px-6 sm:py-12 lg:px-8"><div className="max-w-2xl"><SectionIntro eyebrow={experience.faqEyebrow} title={experience.faqTitle} description={experience.faqDescription}/><a href={path+"/info/shipping-returns"} className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-primary underline underline-offset-4">تفاصيل الشحن والاسترجاع <ArrowLeft className="h-4 w-4" aria-hidden="true"/></a></div><div className="mt-4 grid items-start gap-2 sm:grid-cols-2">{(market==="sa"?saudiHomeQuestions:experience.questions).map((q,i)=><details key={q.question} className="group rounded-2xl border bg-card px-5 py-4" open={undefined}><summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 font-bold marker:hidden">{q.question}<ChevronDown className="h-5 w-5 shrink-0 text-primary transition-transform group-open:rotate-180" aria-hidden="true"/></summary><p className="pb-2 pt-3 text-sm leading-8 text-muted-foreground">{q.answer}</p></details>)}</div></section>
    </>}
   </main>
   <ShoppingAssistant market={market} products={rows??[]} productPage={Boolean(slug)}/>

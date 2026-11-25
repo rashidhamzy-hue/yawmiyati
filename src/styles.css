@@ -125,7 +125,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 7rem; }
 summary::-webkit-details-marker { display: none; }
 .storefront-hero { display: flex; min-height: 340px; }
 .storefront-hero-title { font-size: 32px; letter-spacing: 0; }
-.storefront-category-strip { display: grid; grid-auto-flow: column; grid-auto-columns: 88px; gap: 12px; overflow-x: auto; padding: 4px 4px 8px; scroll-snap-type: x proximity; }
+.storefront-category-strip { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 30px) / 3.35); gap: 10px; overflow-x: auto; padding: 4px 2px 8px; scroll-snap-type: x proximity; scrollbar-width: thin; }
 .storefront-category-strip > a { scroll-snap-align: start; }
 @media (min-width: 640px) {
   .storefront-hero { min-height: 380px; }
@@ -186,4 +186,24 @@ summary::-webkit-details-marker { display: none; }
   body.yawmiyati-assistant-open nav[aria-label="التنقل السريع للجوال"] {
     display: none;
   }
+}
+
+/* Premium mobile commerce: keep the photograph immersive without masking the subject. */
+.store-hero-editorial { margin-inline: auto; }
+.store-hero-editorial .bg-hero-fade { background-image: linear-gradient(to left, rgba(23,24,21,.76), rgba(23,24,21,.30) 68%, rgba(23,24,21,.08)); }
+@media (max-width: 639px) {
+ .store-hero-editorial { margin: 10px 12px 0; border-radius: 24px; }
+ .store-hero-editorial > img { object-position: 47% center; }
+ .store-hero-editorial .bg-hero-fade { background-image: linear-gradient(to top, rgba(23,24,21,.87), rgba(23,24,21,.50) 48%, rgba(23,24,21,.12)); }
+ .store-hero-editorial > div:last-child { justify-content: flex-end; }
+}
+@media (min-width: 640px) {
+ .store-hero-editorial { margin: 16px auto 0; width: calc(100% - 48px); max-width: 1280px; border-radius: 28px; }
+}
+@media (min-width: 1024px) {
+ .store-hero-editorial { width: calc(100% - 64px); }
+}
+@media (max-width: 767px) {
+ [data-yawmiyati-market] { --mobile-nav-height: 64px; }
+ .store-mobile-nav { min-height: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom)); }
 }
