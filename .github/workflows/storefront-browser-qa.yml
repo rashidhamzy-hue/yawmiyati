@@ -38,7 +38,7 @@ jobs:
           done
           cat /tmp/yawmiyati-vite.log
           exit 1
-      - name: Exercise all 5 markets at 4 viewports
+      - name: Exercise all 5 markets at 5 viewports
         run: node scripts/browser-qa.cjs
       - name: Run local storefront with isolated offer fixtures
         run: |
