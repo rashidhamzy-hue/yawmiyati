@@ -17,7 +17,9 @@ describe("distinct five-market storefronts",()=>{
   const {container}=render(<MarketPreview market={market}/>);
   expect(screen.getByRole("heading",{level:1,name:new RegExp(heading)})).toBeTruthy();
   expect(screen.getByRole("button",{name:search})).toBeTruthy();
-  expect(screen.getByRole("region",{name:"تفاصيل التسوق في "+market})).toBeTruthy();
+  const service=screen.getByRole("region",{name:"الدفع والتوصيل والاسترجاع"});
+  expect(service.textContent).toContain(customerServiceCopy[market].shipping);
+  expect(service.querySelectorAll("a")).toHaveLength(3);
   const faq=container.querySelector("#questions");
   expect(faq).toBeTruthy();
   const faqs=Array.from(faq!.querySelectorAll("summary")).map(e=>e.textContent?.trim());
