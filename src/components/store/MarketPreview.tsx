@@ -17,7 +17,7 @@ import {ApprovedProductGallery} from "@/lib/store/ApprovedProductExperience";
 import {smartCatalogSearch,suggestEditorialCategories,SEARCH_GROUPS} from "@/lib/store/smart-search";
 import {type MarketCode} from "@/lib/store/markets";
 import {fetchPublicCatalog,fetchPublicDetail,fetchPublicSearch,formatListingPrice,type PublicListing,type PublicDetail} from "@/lib/store/public-catalog";
-import {previewCatalogHostAllowed,useOfferVersions} from "@/lib/store/offer-source";
+import {previewCatalogActive,useOfferVersions} from "@/lib/store/offer-source";
 import {offerListing} from "@/lib/store/offer-version";
 import {OfferProductPanel,FixtureNotice} from "./OfferProductPanel";
 
@@ -87,7 +87,7 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
    setDetail(version?{...offerListing(version),description:version.description}:null);
    return;
   }
-  if(previewCatalogHostAllowed(window.location.hostname)||!origin||!key)return;
+  if(previewCatalogActive()||!origin||!key)return;
   let active=true;setError(false);setRows(null);setDetail(null);
   const task=slug?Promise.all([fetchPublicDetail(origin,key,market,slug).then(d=>{if(active)setDetail(d);}),fetchPublicCatalog(origin,key,market).then(items=>{if(active)setRows(items);}).catch(()=>{if(active)setRows([]);})]).then(()=>{})
    :fetchPublicCatalog(origin,key,market).then(data=>{if(active)setRows(data);});
@@ -95,7 +95,7 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
   return()=>{active=false};
  },[market,slug,attempt,offers]);
  useEffect(()=>{
-  if(previewCatalogHostAllowed(window.location.hostname)||offers.state!=="off"||!origin||!key||!rows||slug||term.trim().length<2)return;
+  if(previewCatalogActive()||offers.state!=="off"||!origin||!key||!rows||slug||term.trim().length<2)return;
   let alive=true;
   const timer=setTimeout(()=>{void fetchPublicSearch(origin,key,market,term).then(result=>{if(alive)setRemoteSearch({query:term,rows:result});}).catch(()=>{if(alive)setRemoteSearch(null);});},280);
   return()=>{alive=false;clearTimeout(timer);};

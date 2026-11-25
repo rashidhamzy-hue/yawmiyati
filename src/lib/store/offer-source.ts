@@ -25,6 +25,23 @@ export const offerFixturesRequested = import.meta.env.VITE_YAWMIYATI_OFFER_FIXTU
 export function previewCatalogHostAllowed(hostname:string):boolean {
   return hostname === "id-preview--6bc552b8-1629-4a0b-8706-8bc21c5c1279.lovable.app" || hostname === "preview-catalog.test";
 }
+/** Explicit review session also works when Lovable uses a different iframe hostname.
+ * Never auto-enables on a published storefront. Session storage is per tab/origin.
+ * This is a display switch, not authentication; samples must contain no secrets.
+ */
+export function previewCatalogActive():boolean {
+ if(typeof window==="undefined")return false;
+ try {
+  const mode=new URLSearchParams(window.location.search).get("catalog");
+  if(mode==="preview"){try{window.sessionStorage.setItem("yawmiyati-catalog-preview","1");}catch{}return true;}
+  if(mode==="off"){try{window.sessionStorage.removeItem("yawmiyati-catalog-preview");}catch{}return false;}
+  if(window.sessionStorage.getItem("yawmiyati-catalog-preview")==="1")return true;
+ }catch{/* storage may be blocked in embedded previews */}
+ const host=window.location.hostname;
+ return previewCatalogHostAllowed(host)||host==="6bc552b8-1629-4a0b-8706-8bc21c5c1279.lovableproject.com" ||
+  host==="id-preview--6bc552b8-1629-4a0b-8706-8bc21c5c1279.lovableproject.com" ||
+  host==="preview--6bc552b8-1629-4a0b-8706-8bc21c5c1279.lovable.app";
+}
 export function fixtureHostAllowed(hostname: string): boolean {
   return hostname === "127.0.0.1" || hostname === "localhost" || hostname === "[::1]" || hostname === "::1" ||
     hostname.endsWith(".localhost") || hostname.endsWith(".test");
@@ -57,14 +74,14 @@ function loadFixtureVersions(market: MarketCode): Promise<ApprovedOfferVersion[]
 export function useOfferVersions(market: MarketCode): OfferSourceState {
   const [source, setSource] = useState<OfferSourceState>(offerFixturesRequested ? { state: "loading" } : { state: "off" });
   useEffect(() => {
-    const preview=previewCatalogHostAllowed(window.location.hostname);
+    const preview=previewCatalogActive();
     if (!offerFixturesRequested && !preview) return;
     if (!preview && !fixtureHostAllowed(window.location.hostname)) { setSource({ state: "ready", mode: "fixtures", versions: [] }); return; }
     let live = true;
     setSource({ state: "loading" });
     (preview?loadPreviewVersions(market):loadFixtureVersions(market))
       .then(versions => { if (live) setSource({ state: "ready", mode: "fixtures", versions }); })
-      .catch(() => { if (live) setSource({ state: "ready", mode: "fixtures", versions: [] }); });
+      .catch(error => { console.error("Preview catalog failed to load",error); if (live) setSource({ state: "ready", mode: "fixtures", versions: [] }); });
     return () => { live = false; };
   }, [market]);
   return source;

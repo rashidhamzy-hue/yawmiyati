@@ -5,7 +5,7 @@ import {marketIdentity} from "@/lib/store/market-identity";
 import {marketExperience} from "@/lib/store/market-experience";
 import {publicBrowserConfig} from "@/lib/store/staging-public-config";
 import {fetchPublicCatalog,fetchPublicSearch,formatListingPrice,type PublicListing} from "@/lib/store/public-catalog";
-import {offerFixturesRequested,previewCatalogHostAllowed,useOfferVersions} from "@/lib/store/offer-source";
+import {offerFixturesRequested,previewCatalogActive,useOfferVersions} from "@/lib/store/offer-source";
 import {offerListing} from "@/lib/store/offer-version";
 import {smartCatalogSearch,suggestEditorialCategories,SEARCH_GROUPS} from "@/lib/store/smart-search";
 import {img} from "@/lib/store/images";
@@ -28,7 +28,7 @@ export function StoreSearchOverlay({market,open,onClose}:{market:MarketCode;open
  const [serverResults,setServerResults]=useState<{market:MarketCode;query:string;rows:PublicListing[]}|null>(null);
  const [serverBusy,setServerBusy]=useState(false);
  const offers=useOfferVersions(market);
- const preview=typeof window!=="undefined"&&previewCatalogHostAllowed(window.location.hostname);
+ const preview=typeof window!=="undefined"&&previewCatalogActive();
  const isolated=offerFixturesRequested||preview;
  const visibleItems=isolated
   ? (offers.state==="ready"?offers.versions.filter(v=>v.market===market).map(offerListing):null)

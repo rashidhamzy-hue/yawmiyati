@@ -1,5 +1,5 @@
 import {useEffect,useState} from "react";
-import {previewCatalogHostAllowed,useOfferVersions} from "@/lib/store/offer-source";
+import {previewCatalogActive,useOfferVersions} from "@/lib/store/offer-source";
 import {offerListing} from "@/lib/store/offer-version";
 import {ImageOff} from "lucide-react";
 import {publicBrowserConfig} from "@/lib/store/staging-public-config";
@@ -17,14 +17,15 @@ export function ApprovedCategoryProductGrid({market,slug,categoryTitle}:{market:
  const offers=useOfferVersions(market);
  useEffect(()=>setVisibleCount(16),[market,slug]);
  useEffect(()=>{
-  if(previewCatalogHostAllowed(window.location.hostname)||offers.state!=="off"||!origin||!key){setCatalog([]);return;}
+  if(previewCatalogActive()||offers.state!=="off"||!origin||!key){setCatalog([]);return;}
   let active=true;setCatalog([]);
   fetchPublicCatalog(origin,key,market).then(rows=>{if(active)setCatalog(rows);}).catch(()=>{if(active)setCatalog([]);});
   return ()=>{active=false;};
  },[market,offers.state]);
  const approved=(offers.state==="ready"?offers.versions.map(offerListing):catalog).filter(row=>row.approved_category_slugs?.includes(slug));
- if(!approved.length)return null;
- return <section aria-label="منتجات القسم" className="mt-12 space-y-6">
+ if(offers.state==="loading")return <section aria-label="منتجات القسم" className="mt-5 grid grid-cols-2 gap-3" aria-busy="true">{Array.from({length:4},(_,i)=><div key={i} className="aspect-[4/5] animate-pulse rounded-xl bg-muted"/>)}</section>;
+ if(!approved.length)return <section aria-label="منتجات القسم" className="mt-5 rounded-xl border bg-card p-5 text-center"><h2 className="font-bold">لا توجد منتجات معروضة في هذا القسم</h2><p className="mt-2 text-sm text-muted-foreground">تصفّحي المنتجات الأخرى في يومياتي.</p><a href={"/"+market+"#collection"} className="btn-outline mt-4 inline-flex min-h-11 items-center">عرض جميع المنتجات</a></section>;
+ return <section aria-label="منتجات القسم" className="mt-5 space-y-4">
   <div className="flex flex-wrap items-end justify-between gap-3">
    <div><p className="text-xs font-extrabold text-primary">اختيارات يومياتي</p>
     <h2 className="mt-2 font-display text-2xl font-extrabold">منتجات {categoryTitle}</h2></div>
