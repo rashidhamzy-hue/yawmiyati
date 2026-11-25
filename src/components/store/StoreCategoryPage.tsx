@@ -35,6 +35,10 @@ export function StoreCategoryPage({market,slug}:{market:MarketCode;slug:string})
       <button type="button" className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-foreground transition-colors hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white" onClick={()=>document.dispatchEvent(new CustomEvent("yawmiyati:open-search"))}><Search className="h-4 w-4"/> {categoryUi[market].search}</button>
     </div>
    </section>
+   <nav aria-label="تبديل الأقسام" className="mt-4 flex gap-2 overflow-x-auto pb-2">
+    <a href={"/"+market+"/search"} className="inline-flex min-h-11 shrink-0 items-center rounded-full border bg-card px-4 text-xs font-bold">كل المنتجات</a>
+    {EDITORIAL_CATEGORIES.map(c=><a key={c.slug} href={"/"+market+"/c/"+c.slug} aria-current={c.slug===slug?"page":undefined} className={"inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-xs font-bold "+(c.slug===slug?"border-primary bg-primary text-primary-foreground":"bg-card text-foreground")}>{c.title}</a>)}
+   </nav>
    <ApprovedCategoryProductGrid market={market} slug={category.slug} categoryTitle={category.title}/>
    <section aria-label="أقسام أخرى" className="mt-12 grid gap-7 lg:grid-cols-[1fr_1.1fr]"><div><p className="text-xs font-extrabold text-primary">{categoryUi[market].sectionEyebrow}</p><h2 className="mt-2 font-display text-3xl font-bold">{categoryUi[market].sectionTitle}</h2><p className="mt-4 text-sm leading-8 text-muted-foreground">{categoryUi[market].sectionDescription}</p></div>
     <div className="grid grid-cols-2 gap-3">{EDITORIAL_CATEGORIES.filter(x=>x.slug!==slug).slice(0,4).map(x=><a key={x.slug} href={"/"+market+"/c/"+x.slug} className="group overflow-hidden rounded-2xl border bg-card"><img src={x.image} alt="" loading="lazy" className="aspect-[4/3] w-full object-cover transition-transform group-hover:scale-105"/><div className="flex items-center justify-between gap-2 p-3 text-xs font-bold">{x.title}<ArrowLeft className="h-4 w-4 text-primary"/></div></a>)}</div></section>
