@@ -1,3 +1,4 @@
+import {editorialSchema,serializeEditorialSchema} from "@/lib/store/editorial-schema";
 import {createFileRoute} from "@tanstack/react-router";
 import {MarketPreview} from "@/components/store/MarketPreview";
 import {img} from "@/lib/store/images";
@@ -5,7 +6,7 @@ import {marketExperience} from "@/lib/store/market-experience";
 const title="يومياتي عُمان | للبيت تفاصيله ولليوم نكهته";
 const description="أفكار للبيت والقهوة والعناية والتنظيم في سلطنة عُمان. اكتشفي أقسام يومياتي بتفاصيل قريبة من يومك.";
 export const Route=createFileRoute("/om/")({
- head:()=>({meta:[
+ head:()=>({scripts:[{type:"application/ld+json",children:serializeEditorialSchema(editorialSchema("om")!)}],meta:[
   {title},
   {name:"description",content:description},
   {property:"og:title",content:title},
