@@ -30,7 +30,9 @@ async function main(){
    await search.getByRole("button",{name:"إغلاق البحث"}).click();
    const card=page.locator("#collection article a").first();
    const box=await card.boundingBox();
-   assert.ok(box&&box.y+60<900,label+": first product below initial viewport");
+   const department=await page.locator("#discover nav a").first().boundingBox();
+   assert.ok(box&&box.height>80,label+": first approved product card is not rendered");
+   assert.ok(department&&box.y>department.y,label+": product shelf must follow visual department discovery");
    await page.locator('#collection a[aria-label="حامل عبوات التوابل"]').click();
    await page.waitForURL(new RegExp("/"+market+"/p/spice-rack"));
    await page.locator("[data-offer-version]").waitFor();
