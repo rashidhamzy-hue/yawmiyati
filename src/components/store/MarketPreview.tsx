@@ -88,7 +88,7 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
   }
   if(!origin||!key)return;
   let active=true;setError(false);setRows(null);setDetail(null);
-  const task=slug?Promise.all([fetchPublicDetail(origin,key,market,slug),fetchPublicCatalog(origin,key,market).catch(()=>[])]).then(([d,items])=>{if(active){setDetail(d);setRows(items);}})
+  const task=slug?Promise.all([fetchPublicDetail(origin,key,market,slug).then(d=>{if(active)setDetail(d);}),fetchPublicCatalog(origin,key,market).then(items=>{if(active)setRows(items);}).catch(()=>{if(active)setRows([]);})]).then(()=>{})
    :fetchPublicCatalog(origin,key,market).then(data=>{if(active)setRows(data);});
   task.catch(()=>{if(active)setError(true);});
   return()=>{active=false};
