@@ -31,16 +31,16 @@ export function previewCatalogHostAllowed(hostname:string):boolean {
  */
 export function previewCatalogActive():boolean {
  if(typeof window==="undefined")return false;
- if(previewCatalogHostAllowed(window.location.hostname))return true;
  try {
   const mode=new URLSearchParams(window.location.search).get("catalog");
-  if(mode==="preview"){window.sessionStorage.setItem("yawmiyati-catalog-preview","1");return true;}
-  if(mode==="off"){window.sessionStorage.removeItem("yawmiyati-catalog-preview");return false;}
+  if(mode==="preview"){try{window.sessionStorage.setItem("yawmiyati-catalog-preview","1");}catch{}return true;}
+  if(mode==="off"){try{window.sessionStorage.removeItem("yawmiyati-catalog-preview");}catch{}return false;}
   if(window.sessionStorage.getItem("yawmiyati-catalog-preview")==="1")return true;
  }catch{/* storage may be blocked in embedded previews */}
  const host=window.location.hostname;
- return host==="6bc552b8-1629-4a0b-8706-8bc21c5c1279.lovableproject.com" ||
-  host==="id-preview--6bc552b8-1629-4a0b-8706-8bc21c5c1279.lovableproject.com";
+ return previewCatalogHostAllowed(host)||host==="6bc552b8-1629-4a0b-8706-8bc21c5c1279.lovableproject.com" ||
+  host==="id-preview--6bc552b8-1629-4a0b-8706-8bc21c5c1279.lovableproject.com" ||
+  host==="preview--6bc552b8-1629-4a0b-8706-8bc21c5c1279.lovable.app";
 }
 export function fixtureHostAllowed(hostname: string): boolean {
   return hostname === "127.0.0.1" || hostname === "localhost" || hostname === "[::1]" || hostname === "::1" ||
