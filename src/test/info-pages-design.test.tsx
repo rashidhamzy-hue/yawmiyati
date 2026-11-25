@@ -26,3 +26,15 @@ it("shows all three Egyptian shipping prices",()=>{
  expect(container.textContent).toContain(customerServiceCopy.eg.shipping);
  for(const fee of ["٩٥ جنيه","١٠٠ جنيه","١٠٥ جنيه"])expect(container.textContent).toContain(fee);
 });
+
+it("removes the repeated Saudi payment question and adapts help microcopy per country",()=>{
+ const sa=render(<StoreInfoPage market="sa" topic="help"/>);
+ expect(screen.getAllByText("كيف أدفع؟")).toHaveLength(1);
+ sa.unmount();
+ const eg=render(<StoreInfoPage market="eg" topic="help"/>);
+ expect(screen.getByText("هتلاقي اللي على ذوقك")).toBeTruthy();
+ eg.unmount();
+ const iq=render(<StoreInfoPage market="iq" topic="help"/>);
+ expect(screen.getByText("اختيارچ صار أسهل")).toBeTruthy();
+ iq.unmount();
+});
