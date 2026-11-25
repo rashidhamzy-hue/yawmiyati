@@ -13,6 +13,7 @@ describe("country-specific editorial experience",()=>{
    expect(new Set(cfg.categoryOrder).size).toBe(6);
    expect(cfg.categoryOrder.every(slug=>Object.hasOwn(cfg.categoryCaptions,slug))).toBe(true);
    expect(cfg.questions.every(q=>Boolean(q.question.trim())&&Boolean(q.answer.trim()))).toBe(true);
+   for(const field of ["discoveryNote","beautyLinkLabel","homeLinkLabel","faqEyebrow","storyLinkLabel","storyBrowseLabel"] as const){expect(cfg[field].trim().length).toBeGreaterThan(3);}
   }
  });
  it("preserves established Saudi hero and localized other-market CTAs",()=>{
@@ -21,6 +22,9 @@ describe("country-specific editorial experience",()=>{
   expect(marketExperience.eg.searchCta).toContain("إيه");
   expect(marketExperience.iq.searchCta).toContain("شنو");
   expect(marketExperience.ae.discoverDescription).not.toBe(marketExperience.om.discoverDescription);
+  expect(marketExperience.eg.beautyLinkLabel).toContain("اتفرّجي");
+  expect(marketExperience.iq.storyBrowseLabel).toContain("چ");
+  expect(marketExperience.ae.faqEyebrow).toContain("ج");
  });
  it("contains no invented shipping guarantees or payment brand promises",()=>{
   const text=JSON.stringify(marketExperience);
