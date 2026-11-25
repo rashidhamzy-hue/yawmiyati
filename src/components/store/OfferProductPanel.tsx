@@ -23,12 +23,13 @@ export function OfferProductPanel({ market, version, versions }: { market: Marke
   const selectable = version.packs.filter(p => p.selectable);
   const available = (p: PublicPack) => !zone || zone.pack_ids.includes(p.pack_id);
   const [packChoice, setPackChoice] = useState(version.default_pack_id);
-  const pack = available(selectable.find(p => p.pack_id === packChoice)!) ? selectable.find(p => p.pack_id === packChoice)! : selectable.find(available) ?? null;
+  const selectedPack = selectable.find(p => p.pack_id === packChoice);
+  const pack = selectedPack && available(selectedPack) ? selectedPack : selectable.find(available) ?? null;
   const addOn = pack && zone ? version.add_ons.find(a => a.from_pack_id === pack.pack_id && a.zone_ids.includes(zone.zone_id)) ?? null : null;
   const [withAddOn, setWithAddOn] = useState(false);
   const effective = addOn && withAddOn ? version.packs.find(p => p.pack_id === addOn.to_pack_id)! : pack;
   const [status, setStatus] = useState<"" | "added" | "already">("");
-  const pickZone = (id: string) => { setChosenZone(id); setOfferZone(market, id); setStatus(""); };
+  const pickZone = (id: string) => { setChosenZone(id); setOfferZone(market, id); setWithAddOn(false); setStatus(""); };
   const add = () => {
     if (!effective || !zone) return;
     setStatus(addOfferLine(market, { listing_id: version.listing_id, slug: version.slug, version_id: version.version_id, revision: version.revision,
@@ -36,7 +37,7 @@ export function OfferProductPanel({ market, version, versions }: { market: Marke
   };
   return <article dir="rtl" className="grid gap-6 lg:grid-cols-2" aria-label="تفاصيل المنتج" data-offer-version={version.version_id}>
     <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border bg-[#efe6d7]">
-      {version.image ? <img src={version.image.url} alt={version.image.alt} className="h-full w-full object-contain" /> :
+      {version.image ? <img src={version.image.url} alt={version.image.alt} width={720} height={720} fetchPriority="high" decoding="async" className="h-full w-full object-contain" /> :
         <div className="flex flex-col items-center gap-3 text-muted-foreground"><ImageOff className="h-12 w-12" aria-hidden="true" /><span>لا تتوفر صورة معتمدة</span></div>}
     </div>
     <div className="space-y-5">
@@ -88,7 +89,8 @@ export function OfferProductPanel({ market, version, versions }: { market: Marke
       </section>
 
       <div className="flex flex-wrap items-center gap-3">
-        <button type="button" onClick={add} disabled={!effective || !zone} className="btn-primary inline-flex min-h-12 items-center gap-2 disabled:opacity-50"><ShoppingBag className="h-5 w-5" aria-hidden="true" />أضيفي إلى السلة</button>
+        <button type="button" onClick={add} disabled={!effective || !zone} className="btn-primary inline-flex min-h-12 w-full items-center gap-2 disabled:opacity-50 sm:w-auto"><ShoppingBag className="h-5 w-5" aria-hidden="true" />أضيفي إلى السلة</button>
+        {status && <a href={"/" + market + "/checkout"} className="btn-outline inline-flex min-h-12 w-full items-center gap-2 sm:w-auto">مراجعة الطلب مباشرة</a>}
         {status && <p role="status" className="inline-flex items-center gap-2 text-sm font-bold text-primary"><Check className="h-4 w-4" aria-hidden="true" />{status === "added" ? "أُضيف إلى السلة" : "موجود في السلة"} · <a href={"/" + market + "/cart"} className="underline underline-offset-4">عرض السلة</a></p>}
       </div>
     </div>
