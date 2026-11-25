@@ -35,6 +35,10 @@ async function main(){
      }));
      assert.ok(overflow.page<=overflow.viewport+2,label+": horizontal overflow "+JSON.stringify(overflow));
      assert.equal(await page.getByRole("heading",{level:1}).count(),1,label+": main heading count");
+     const schema=await page.locator('script[type="application/ld+json"]').allTextContents();
+     assert.ok(schema.some(raw=>JSON.parse(raw)["@graph"]?.some(node=>node["@type"]==="FAQPage")),label+": editorial JSON-LD missing");
+     assert.ok((await page.locator('meta[name="robots"]').getAttribute("content"))?.includes("noindex"),label+": noindex missing");
+     assert.ok(!schema.some(raw=>/"@type"\s*:\s*"(Product|Offer)"/.test(raw)),label+": commercial schema leaked");
      const hero=page.locator("main > #store-hero:first-child");
      assert.equal(await hero.count(),1,label+": country hero must open the homepage");
      assert.equal(await page.locator("#store-hero + #discover").count(),1,label+": department discovery must follow hero");
