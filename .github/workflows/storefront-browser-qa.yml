@@ -7,6 +7,7 @@ on:
       - "bun.lock"
       - "scripts/browser-qa.cjs"
       - "scripts/offer-journey-qa.cjs"
+      - "scripts/preview-catalog-qa.cjs"
       - "scripts/check-storefront-truth.mjs"
       - "scripts/test-storefront-truth-guard.mjs"
       - "scripts/check-m4g-release-boundary.mjs"
@@ -30,7 +31,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run local storefront
         run: |
-          bun run dev --host 127.0.0.1 --port 4173 > /tmp/yawmiyati-vite.log 2>&1 &
+          __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS=preview-catalog.test bun run dev --host 127.0.0.1 --port 4173 > /tmp/yawmiyati-vite.log 2>&1 &
           echo $! > /tmp/yawmiyati-vite.pid
           for n in $(seq 1 60); do
             if curl --fail --silent http://127.0.0.1:4173/sa/ >/dev/null; then exit 0; fi
@@ -40,6 +41,8 @@ jobs:
           exit 1
       - name: Exercise all 5 markets at 5 viewports
         run: node scripts/browser-qa.cjs
+      - name: Exercise the 600-listing temporary catalog on a local preview host
+        run: node scripts/preview-catalog-qa.cjs
       - name: Run local storefront with isolated offer fixtures
         run: |
           VITE_YAWMIYATI_OFFER_FIXTURES=true bun run dev --host 127.0.0.1 --port 4176 > /tmp/yawmiyati-offers.log 2>&1 &
