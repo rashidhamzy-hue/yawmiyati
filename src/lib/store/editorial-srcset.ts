@@ -8,6 +8,7 @@ export function editorialSrcSet(url:string):string|undefined{
  return widths.map(width=>{
   const variant=new URL(url);
   variant.searchParams.set("w",String(width));
+  variant.searchParams.set("q",width<=640?"68":"74");
   return variant.toString()+" "+width+"w";
  }).join(", ");
 }
