@@ -1,3 +1,4 @@
+import {editorialSchema,serializeEditorialSchema} from "@/lib/store/editorial-schema";
 import {createFileRoute} from "@tanstack/react-router";
 import {MarketPreview} from "@/components/store/MarketPreview";
 import {img} from "@/lib/store/images";
@@ -5,7 +6,7 @@ import {marketExperience} from "@/lib/store/market-experience";
 const title="يومياتي مصر | حاجات صغيرة تفرّح يومك";
 const description="حاجات حلوة للبيت والمطبخ والجمال والتنظيم في مصر. خدي لفة في أقسام يومياتي ودوري على اللي يناسب ذوقك.";
 export const Route=createFileRoute("/eg/")({
- head:()=>({meta:[
+ head:()=>({scripts:[{type:"application/ld+json",children:serializeEditorialSchema(editorialSchema("eg")!)}],meta:[
   {title},
   {name:"description",content:description},
   {property:"og:title",content:title},
