@@ -2,7 +2,8 @@ import { AlertTriangle, ArrowLeft, Lock, Trash2, Truck } from "lucide-react";
 import { paymentLabel } from "../../../supabase/functions/_shared/payment-policy";
 import type { MarketCode } from "@/lib/store/markets";
 import { formatMinor, priceOfferCart, type ApprovedOfferVersion, type PricedLine } from "@/lib/store/offer-version";
-import { removeOfferLine, setOfferZone, useOfferCart } from "@/lib/store/offer-cart";
+import { cartSuggestions } from "@/lib/store/offer-recommendations";
+import { addOfferLine, removeOfferLine, setOfferZone, useOfferCart } from "@/lib/store/offer-cart";
 import { FixtureNotice } from "./OfferProductPanel";
 
 const money = (market: MarketCode, minor: bigint) => minor > 0n ? formatMinor(market, minor) : "مشمول";
@@ -18,6 +19,7 @@ export function OfferCartPage({ market, type, versions }: { market: MarketCode; 
   const priced = priceOfferCart(cart, versions);
   const path = "/" + market;
   const review = type === "checkout";
+  const suggestions=!review&&priced.checkoutReady?cartSuggestions(cart,versions):[];
   return <section className="mx-auto max-w-4xl px-4 pb-20 pt-7 sm:px-6 sm:pt-10 lg:px-8" aria-labelledby="offer-cart-title">
     <nav aria-label="مسار الصفحة" className="mb-4 text-sm text-muted-foreground"><a href={path} className="hover:text-primary">يومياتي</a> / {review ? "مراجعة الطلب" : "السلة"}</nav>
     <h1 id="offer-cart-title" className="font-display text-3xl font-extrabold">{review ? "مراجعة الطلب" : "سلتك"}</h1>
@@ -61,5 +63,6 @@ export function OfferCartPage({ market, type, versions }: { market: MarketCode; 
         <a href={path + "#collection"} className="btn-outline inline-flex min-h-12 items-center">متابعة التسوق</a>
       </div>}
     </section>
+    {suggestions.length>0&&<section aria-label="اقتراحات إضافية" className="mt-6 space-y-3"><h2 className="font-display text-lg font-extrabold">اختيارات إضافية قد تعجبك</h2>{suggestions.map(({version,pack,zone,total})=><article key={version.listing_id} className="flex items-center gap-3 rounded-xl border bg-card p-3">{version.image&&<img src={version.image.url} alt="" loading="lazy" className="h-16 w-16 shrink-0 rounded-lg object-contain"/>}<div className="min-w-0 flex-1"><a href={path+"/p/"+encodeURIComponent(version.slug)} className="line-clamp-2 text-sm font-bold">{version.title}</a><p className="mt-1 text-xs text-muted-foreground">إضافة للإجمالي: {formatMinor(market,total)}</p></div><button type="button" className="btn-outline min-h-11 shrink-0 text-xs" onClick={()=>addOfferLine(market,{listing_id:version.listing_id,slug:version.slug,version_id:version.version_id,revision:version.revision,pack_id:pack.pack_id,add_on_id:null},zone.zone_id)}>أضيفي</button></article>)}</section>}
   </section>;
 }
