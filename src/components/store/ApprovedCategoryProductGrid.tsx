@@ -1,5 +1,5 @@
 import {useEffect,useState} from "react";
-import {previewCatalogHostAllowed,useOfferVersions} from "@/lib/store/offer-source";
+import {previewCatalogActive,useOfferVersions} from "@/lib/store/offer-source";
 import {offerListing} from "@/lib/store/offer-version";
 import {ImageOff} from "lucide-react";
 import {publicBrowserConfig} from "@/lib/store/staging-public-config";
@@ -17,7 +17,7 @@ export function ApprovedCategoryProductGrid({market,slug,categoryTitle}:{market:
  const offers=useOfferVersions(market);
  useEffect(()=>setVisibleCount(16),[market,slug]);
  useEffect(()=>{
-  if(previewCatalogHostAllowed(window.location.hostname)||offers.state!=="off"||!origin||!key){setCatalog([]);return;}
+  if(previewCatalogActive()||offers.state!=="off"||!origin||!key){setCatalog([]);return;}
   let active=true;setCatalog([]);
   fetchPublicCatalog(origin,key,market).then(rows=>{if(active)setCatalog(rows);}).catch(()=>{if(active)setCatalog([]);});
   return ()=>{active=false;};
