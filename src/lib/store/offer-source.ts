@@ -23,7 +23,7 @@ export const offerFixturesRequested = import.meta.env.VITE_YAWMIYATI_OFFER_FIXTU
 
 /** Temporary review host; never matches the public custom domain or published lovable.app slug. */
 export function previewCatalogHostAllowed(hostname:string):boolean {
-  return hostname === "id-preview--6bc552b8-1629-4a0b-8706-8bc21c5c1279.lovable.app" || hostname === "preview-catalog.test";
+  return hostname === "id-preview--6bc552b8-1629-4a0b-8706-8bc21c5c1279.lovable.app" || hostname === "preview--souq-of-saudi.lovable.app" || hostname === "preview-catalog.test";
 }
 /** Explicit review session also works when Lovable uses a different iframe hostname.
  * Never auto-enables on a published storefront. Session storage is per tab/origin.

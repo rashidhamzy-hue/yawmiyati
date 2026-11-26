@@ -28,12 +28,16 @@ async function main(){
   await first.click();
   await page.locator("[data-offer-version]").waitFor();
   if(market==="eg")await page.getByRole("radio",{name:/القاهرة والجيزة والإسكندرية/}).check();
+  const before=await page.locator("[data-door-total]").innerText();
+  await page.getByRole("button",{name:"زيادة الكمية"}).click();
   const door=await page.locator("[data-door-total]").innerText();
-  await page.getByRole("button",{name:"أضيفي إلى السلة"}).click();
-  await page.getByRole("link",{name:"مراجعة الطلب مباشرة"}).click();
+  assert.notEqual(door,before);
+  await page.getByRole("button",{name:"اشتري الآن"}).click();
   await page.locator("[data-cart-door-total]").waitFor();
   assert.equal(await page.locator("[data-cart-door-total]").innerText(),door);
   assert.ok(await page.getByRole("button",{name:"تأكيد الطلب"}).isDisabled());
+  await page.getByRole("button",{name:"إتمام طلب تجريبي"}).click();
+  await page.getByText("تمت محاكاة الطلب بنجاح. لم يُرسل طلب حقيقي.").waitFor();
   assert.equal(await page.locator('form,input[type=tel]').count(),0);
   await page.goto(base+"/"+market+"/c/home",{waitUntil:"domcontentloaded"});
   const categoryGrid=page.getByRole("region",{name:"منتجات القسم"});

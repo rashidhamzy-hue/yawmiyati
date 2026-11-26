@@ -3,7 +3,7 @@ import { Check, ImageOff, ShoppingBag, Truck } from "lucide-react";
 import { paymentLabel } from "../../../supabase/functions/_shared/payment-policy";
 import type { MarketCode } from "@/lib/store/markets";
 import { doorMinor, exactUnitPrice, formatMinor, marketZones, type ApprovedOfferVersion, type PublicPack } from "@/lib/store/offer-version";
-import { addOfferLine, setOfferZone, useOfferCart } from "@/lib/store/offer-cart";
+import { addOfferLine, selectPreviewQuantity, setOfferZone, useOfferCart } from "@/lib/store/offer-cart";
 
 export function FixtureNotice() {
   return <p role="note" data-offer-fixture-notice className="rounded-xl border border-dashed border-primary/40 bg-primary-soft px-4 py-2 text-xs font-bold leading-6 text-primary">
@@ -30,10 +30,11 @@ export function OfferProductPanel({ market, version, versions }: { market: Marke
   const effective = addOn && withAddOn ? version.packs.find(p => p.pack_id === addOn.to_pack_id)! : pack;
   const [status, setStatus] = useState<"" | "added" | "already">("");
   const pickZone = (id: string) => { setChosenZone(id); setOfferZone(market, id); setWithAddOn(false); setStatus(""); };
-  const add = () => {
+  const add = (buyNow=false) => {
     if (!effective || !zone) return;
-    setStatus(addOfferLine(market, { listing_id: version.listing_id, slug: version.slug, version_id: version.version_id, revision: version.revision,
+    setStatus((version.slug.startsWith("preview-")?selectPreviewQuantity:addOfferLine)(market, { listing_id: version.listing_id, slug: version.slug, version_id: version.version_id, revision: version.revision,
       pack_id: effective.pack_id, add_on_id: addOn && withAddOn ? addOn.add_on_id : null }, zone.zone_id));
+    if(buyNow)window.location.assign("/"+market+"/checkout");
   };
   return <article dir="rtl" className="grid gap-6 lg:grid-cols-2" aria-label="تفاصيل المنتج" data-offer-version={version.version_id}>
     <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border bg-[#efe6d7]">
@@ -58,8 +59,8 @@ export function OfferProductPanel({ market, version, versions }: { market: Marke
         {!zone && <p className="text-xs text-muted-foreground">اختاري منطقة التوصيل لعرض الإجمالي عند الاستلام.</p>}
       </fieldset>}
 
-      <fieldset className="space-y-2">
-        <legend className="text-sm font-extrabold">{selectable.length===1?"تفاصيل العبوة":"اختاري العبوة"}</legend>
+      {version.slug.startsWith("preview-")?<div className="flex items-center justify-between gap-3"><span className="font-bold">الكمية</span><div className="flex items-center rounded-xl border bg-card"><button type="button" aria-label="تقليل الكمية" disabled={(pack?.units??1)<=1} className="min-h-11 min-w-11 text-xl disabled:opacity-30" onClick={()=>{setPackChoice((pack?.units??1)===2?"single":"quantity-"+((pack?.units??1)-1));setStatus("");}}>−</button><output aria-label="الكمية" className="min-w-10 text-center font-bold">{pack?.units??1}</output><button type="button" aria-label="زيادة الكمية" disabled={(pack?.units??1)>=5} className="min-h-11 min-w-11 text-xl disabled:opacity-30" onClick={()=>{setPackChoice("quantity-"+((pack?.units??1)+1));setStatus("");}}>+</button></div></div>:selectable.length>1&&<fieldset className="space-y-2">
+        <legend className="text-sm font-extrabold">اختاري العبوة</legend>
         <div className="grid gap-2">{selectable.map(p => {
           const unit = exactUnitPrice(p), on = pack?.pack_id === p.pack_id, ok = available(p);
           return <label key={p.pack_id} className={"flex min-h-14 items-center justify-between gap-3 rounded-xl border px-4 py-3 " + (ok ? "cursor-pointer " : "opacity-50 ") + (on ? "border-primary bg-primary-soft" : "")}>
@@ -72,7 +73,7 @@ export function OfferProductPanel({ market, version, versions }: { market: Marke
             <span className="font-extrabold text-primary">{formatMinor(market, p.price_minor)}</span>
           </label>;
         })}</div>
-      </fieldset>
+      </fieldset>}
 
       {addOn && <label className={"flex min-h-14 cursor-pointer items-center justify-between gap-3 rounded-xl border border-dashed px-4 py-3 " + (withAddOn ? "border-primary bg-primary-soft" : "")} data-offer-add-on={addOn.add_on_id}>
         <span className="flex items-center gap-3"><input type="checkbox" checked={withAddOn} onChange={e => { setWithAddOn(e.target.checked); setStatus(""); }} className="h-5 w-5 accent-[var(--primary)]" />
@@ -89,8 +90,9 @@ export function OfferProductPanel({ market, version, versions }: { market: Marke
         </dl> : <p className="text-sm text-muted-foreground">{pack ? "اختاري منطقة التوصيل لعرض الإجمالي." : "لا تتوفر عبوة لهذه المنطقة."}</p>}
       </section>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button type="button" onClick={add} disabled={!effective || !zone} className="btn-primary inline-flex min-h-12 w-full items-center gap-2 disabled:opacity-50 sm:w-auto"><ShoppingBag className="h-5 w-5" aria-hidden="true" />أضيفي إلى السلة</button>
+      <div className="grid grid-cols-2 gap-3">
+        <button type="button" onClick={()=>add(true)} disabled={!effective||!zone} className="btn-primary min-h-12 disabled:opacity-50">اشتري الآن</button>
+        <button type="button" onClick={()=>add()} disabled={!effective || !zone} className="btn-outline inline-flex min-h-12 w-full items-center justify-center gap-2 disabled:opacity-50"><ShoppingBag className="h-5 w-5" aria-hidden="true" />أضيفي إلى السلة</button>
         {status && <a href={"/" + market + "/checkout"} className="btn-outline inline-flex min-h-12 w-full items-center gap-2 sm:w-auto">مراجعة الطلب مباشرة</a>}
         {status && <p role="status" className="inline-flex items-center gap-2 text-sm font-bold text-primary"><Check className="h-4 w-4" aria-hidden="true" />{status === "added" ? "أُضيف إلى السلة" : "موجود في السلة"} · <a href={"/" + market + "/cart"} className="underline underline-offset-4">عرض السلة</a></p>}
       </div>

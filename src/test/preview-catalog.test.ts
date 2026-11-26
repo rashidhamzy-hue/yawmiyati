@@ -20,6 +20,7 @@ describe("temporary 600-listing preview",()=>{
   }
  });
  it("never activates on production or unrelated preview hosts",()=>{
+  expect(previewCatalogHostAllowed("preview--souq-of-saudi.lovable.app")).toBe(true);
   expect(previewCatalogHostAllowed("id-preview--6bc552b8-1629-4a0b-8706-8bc21c5c1279.lovable.app")).toBe(true);
   for(const host of ["yawmiyati.shop","yawmiyati.com","souq-of-saudi.lovable.app","other.lovable.app","localhost","id-preview--6bc552b8-1629-4a0b-8706-8bc21c5c1279.lovable.app.example.com"])expect(previewCatalogHostAllowed(host)).toBe(false);
  });
