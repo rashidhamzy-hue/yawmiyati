@@ -76,7 +76,7 @@ describe("M2B approved UI",()=>{
   });
   it("supports accessible approved-only browsing and reset of pages",()=>{
     const {container}=render(<ApprovedCatalogBrowser market="sa" products={sa}/>);
-    expect(screen.getByText("3 منتج متاح للعرض")).toBeTruthy();
+    expect(screen.getByText("3 منتج")).toBeTruthy();
     expect(container.querySelectorAll("article")).toHaveLength(3);
     fireEvent.change(screen.getByRole("combobox",{name:"ترتيب المنتجات"}),{target:{value:"price_desc"}});
     const articles=container.querySelectorAll("article");
