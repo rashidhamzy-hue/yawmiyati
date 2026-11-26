@@ -1,5 +1,8 @@
 @import "tailwindcss" source(none);
 @source "../src";
+/* Unused shadcn primitives (only button is imported by the store): keep their classes out of the CSS. */
+@source not "./components/ui";
+@source "./components/ui/button.tsx";
 @import "tw-animate-css";
 /* Self-hosted Tajawal (arabic + latin subsets via unicode-range); no render-blocking third-party font CSS. */
 @import "@fontsource/tajawal/400.css";

@@ -6,6 +6,7 @@ import { SENTRY_DSN, IGNORE_ERRORS, scrubEvent, sentryEnvironment } from "./lib/
 import { renderErrorPage } from "./lib/error-page";
 import { posthogProxyTarget, proxyPosthog } from "./lib/analytics/posthog-proxy";
 import { handleSeoRequest, robotsHeaderFor } from "./lib/seo/endpoints";
+import { handleEditorialMedia } from "./lib/store/editorial-media";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -66,6 +67,10 @@ const handler = {
     const proxyTarget = posthogProxyTarget(new URL(request.url));
     if (proxyTarget) {
       try { return await proxyPosthog(request, proxyTarget); }
+      catch { return new Response(null, { status: 502 }); }
+    }
+    if (new URL(request.url).pathname.startsWith("/media/")) {
+      try { return (await handleEditorialMedia(request))!; }
       catch { return new Response(null, { status: 502 }); }
     }
     const robotsHeader = robotsHeaderFor(new URL(request.url).hostname);

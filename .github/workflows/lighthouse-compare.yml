@@ -1,0 +1,48 @@
+# Before/after Lighthouse (mobile) for a perf branch WITHOUT deploying it:
+# builds `main` and this branch, serves both locally with wrangler, audits the
+# same pages 3x each and prints medians side by side. Read-only; no secrets.
+# Local serving has no edge latency, so compare the two columns, not absolute TTFB.
+name: Lighthouse compare (main vs branch)
+on:
+  workflow_dispatch:
+  push:
+    branches: ['perf/**']
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: branch }
+      - uses: actions/checkout@v4
+        with: { ref: main, path: base }
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: "1.3.14" }
+      - name: Build both
+        run: |
+          for d in base branch; do (cd $d && bun install --frozen-lockfile && bun run build); done
+      - name: Serve both
+        run: |
+          (cd base/.output && npx -y wrangler@4 dev --ip 127.0.0.1 --port 8701 > ../../base.log 2>&1 &)
+          (cd branch/.output && npx -y wrangler@4 dev --ip 127.0.0.1 --port 8702 > ../../branch.log 2>&1 &)
+          for p in 8701 8702; do for i in $(seq 1 60); do curl -sf -o /dev/null http://127.0.0.1:$p/sa && break; sleep 2; done; done
+          curl -sf -o /dev/null http://127.0.0.1:8701/sa && curl -sf -o /dev/null http://127.0.0.1:8702/sa
+      - name: Lighthouse
+        run: |
+          mkdir -p lh
+          pages="sa ae eg iq sa/c/kitchen sa/story"
+          for run in 1 2 3; do
+            for p in $pages; do
+              for v in base:8701 branch:8702; do
+                name=${v%%:*}; port=${v##*:}; slug=$(echo "$p" | tr '/' '_')
+                npx -y lighthouse@12 "http://127.0.0.1:$port/$p" --quiet --chrome-flags="--headless=new --no-sandbox" \
+                  --only-categories=performance --output=json --output-path="lh/${name}__${slug}__$run.json" || echo "FAILED $name $p"
+              done
+            done
+          done
+      - name: Compare
+        run: node branch/scripts/lighthouse-compare.mjs lh
+      - uses: actions/upload-artifact@v4
+        with: { name: lighthouse-compare, path: lh/ }

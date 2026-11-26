@@ -6,6 +6,7 @@ import {editorialSrcSet} from "@/lib/store/editorial-srcset";
 import {marketExperience} from "@/lib/store/market-experience";
 import type {MarketCode} from "@/lib/store/markets";
 import {ArrowLeft,Search,Sparkles} from "lucide-react";
+import {preload} from "react-dom";
 export const EDITORIAL_CATEGORIES=[
  {slug:"home",title:"المنزل والديكور",subtitle:"تفاصيل تجعل مساحاتك أكثر دفئاً",image:img["cat-home"]},
  {slug:"kitchen",title:"المطبخ والقهوة",subtitle:"أفكار لأوقات القهوة والمطبخ",image:img["cat-kitchen"]},
@@ -24,11 +25,15 @@ const categoryUi:Record<MarketCode,{eyebrow:string;search:string;sectionEyebrow:
 export function StoreCategoryPage({market,slug}:{market:MarketCode;slug:string}){
  const category=EDITORIAL_CATEGORIES.find(x=>x.slug===slug);
  if(!category)return <StoreFrame market={market}><section className="mx-auto max-w-5xl px-4 py-16"><h1 className="font-display text-3xl font-bold">القسم غير موجود</h1><a className="btn-outline mt-6" href={"/"+market}>العودة إلى يومياتي</a></section></StoreFrame>;
+ // React 19 hoists this into <head> during SSR, so the LCP photo starts downloading
+ // while the HTML is still being parsed (the category hero had no preload before).
+ const heroSrcSet=editorialSrcSet(category.image);
+ preload(category.image,{as:"image",fetchPriority:"high",...(heroSrcSet?{imageSrcSet:heroSrcSet,imageSizes:"(min-width: 1280px) 1216px, calc(100vw - 2rem)"}:{})});
  return <StoreFrame market={market}>
   <div className="mx-auto max-w-7xl px-4 pb-20 pt-6 sm:px-6 lg:px-8">
    <nav aria-label="مسار الصفحة" className="mb-3 text-sm text-muted-foreground"><a href={"/"+market} className="hover:text-primary">يومياتي</a> / {category.title}</nav>
    <section className="relative isolate flex min-h-[170px] items-center overflow-hidden rounded-2xl bg-foreground sm:min-h-[230px]">
-    <img src={category.image} srcSet={editorialSrcSet(category.image)} sizes="100vw" alt={category.title} className="absolute inset-0 h-full w-full object-cover" fetchPriority="high"/>
+    <img src={category.image} srcSet={heroSrcSet} sizes="(min-width: 1280px) 1216px, calc(100vw - 2rem)" alt={category.title} className="absolute inset-0 h-full w-full object-cover" fetchPriority="high"/>
     <div className="absolute inset-0 bg-gradient-to-l from-black/80 via-black/45 to-black/10"/>
     <div className="relative max-w-xl px-5 py-5 text-white sm:px-8 sm:py-8"><p className="mb-1 inline-flex items-center gap-2 text-xs font-bold"><Sparkles className="h-4 w-4"/> {categoryUi[market].eyebrow}</p>
       <h1 className="font-display text-2xl font-extrabold leading-tight sm:text-4xl">{category.title}</h1><p className="mt-1 text-sm leading-6 text-white/90">{marketExperience[market].categoryCaptions[slug]??category.subtitle}</p>
@@ -41,7 +46,7 @@ export function StoreCategoryPage({market,slug}:{market:MarketCode;slug:string})
    </nav>
    <ApprovedCategoryProductGrid market={market} slug={category.slug} categoryTitle={category.title}/>
    <section aria-label="أقسام أخرى" className="mt-12 grid gap-7 lg:grid-cols-[1fr_1.1fr]"><div><p className="text-xs font-extrabold text-primary">{categoryUi[market].sectionEyebrow}</p><h2 className="mt-2 font-display text-3xl font-bold">{categoryUi[market].sectionTitle}</h2><p className="mt-4 text-sm leading-8 text-muted-foreground">{categoryUi[market].sectionDescription}</p></div>
-    <div className="grid grid-cols-2 gap-3">{EDITORIAL_CATEGORIES.filter(x=>x.slug!==slug).slice(0,4).map(x=><a key={x.slug} href={"/"+market+"/c/"+x.slug} className="group overflow-hidden rounded-2xl border bg-card"><img src={x.image} alt="" loading="lazy" className="aspect-[4/3] w-full object-cover transition-transform group-hover:scale-105"/><div className="flex items-center justify-between gap-2 p-3 text-xs font-bold">{x.title}<ArrowLeft className="h-4 w-4 text-primary"/></div></a>)}</div></section>
+    <div className="grid grid-cols-2 gap-3">{EDITORIAL_CATEGORIES.filter(x=>x.slug!==slug).slice(0,4).map(x=><a key={x.slug} href={"/"+market+"/c/"+x.slug} className="group overflow-hidden rounded-2xl border bg-card"><img src={x.image} srcSet={editorialSrcSet(x.image)} sizes="(min-width: 1024px) 220px, 45vw" alt="" loading="lazy" decoding="async" width={360} height={270} className="aspect-[4/3] w-full object-cover transition-transform group-hover:scale-105"/><div className="flex items-center justify-between gap-2 p-3 text-xs font-bold">{x.title}<ArrowLeft className="h-4 w-4 text-primary"/></div></a>)}</div></section>
   </div>
   <ShoppingAssistant market={market} products={[]}/>
  </StoreFrame>;

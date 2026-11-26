@@ -6,7 +6,8 @@ const editorial=["hero","cat-home","cat-kitchen","cat-beauty","cat-fashion","cat
 describe("portable licensed editorial media",()=>{
  it("serves every editorial image from the licensed image CDN",()=>{
   for(const key of editorial){
-   expect(img[key]).toBe(editorialRemote[key]);
+   // Pages load the same rendition through our own domain (/media/, see editorial-media.ts).
+   expect(img[key]).toBe("/media/"+new URL(editorialRemote[key]).pathname.slice(1)+"?w="+new URL(editorialRemote[key]).searchParams.get("w")+"&q="+new URL(editorialRemote[key]).searchParams.get("q"));
    const remote=new URL(editorialRemote[key]);
    expect(remote.hostname).toBe("images.unsplash.com");
   }

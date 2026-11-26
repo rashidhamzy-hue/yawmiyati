@@ -48,6 +48,7 @@ export function initAnalytics():Promise<PostHog|null>{
    session_recording:{maskAllInputs:true,maskTextSelector:"[data-private]"},
    person_profiles:"identified_only",
    mask_personal_data_properties:true,
+   disable_surveys:true,            // no surveys in use: skips a 51 KB script
   });
   posthog.register(baseProps());
   client=posthog;
