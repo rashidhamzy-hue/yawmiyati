@@ -8,7 +8,7 @@
 import { markets, type MarketCode } from "./markets";
 import { formatListingPrice, type PublicDetail, type PublicListing } from "./public-catalog";
 
-export type ApprovedSort = "default" | "price_asc" | "price_desc" | "title";
+export type ApprovedSort = "popular" | "default" | "price_asc" | "price_desc" | "title";
 export type ApprovedFilter = {
   query?: string;
   sort?: ApprovedSort;
@@ -29,7 +29,7 @@ export function filterApprovedListings(rows: readonly PublicListing[], market: M
   const { query = "", sort = "default", minPriceMinor, maxPriceMinor, page = 1, pageSize = 12 } = filter;
   if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 48)
     throw Error("invalid_pagination");
-  if (!["default", "price_asc", "price_desc", "title"].includes(sort)) throw Error("invalid_sort");
+  if (!["popular", "default", "price_asc", "price_desc", "title"].includes(sort)) throw Error("invalid_sort");
   if (query.length > 120) throw Error("invalid_query");
   if ([minPriceMinor,maxPriceMinor].some(v => v !== undefined && (!Number.isSafeInteger(v) || v < 0)) ||
       (minPriceMinor !== undefined && maxPriceMinor !== undefined && minPriceMinor > maxPriceMinor))
@@ -49,6 +49,7 @@ export function filterApprovedListings(rows: readonly PublicListing[], market: M
       (minPriceMinor === undefined || price >= minPriceMinor) &&
       (maxPriceMinor === undefined || price <= maxPriceMinor);
   });
+  if (sort === "popular") products.sort((a,b) => (a.popularity_rank??Number.MAX_SAFE_INTEGER)-(b.popularity_rank??Number.MAX_SAFE_INTEGER));
   if (sort === "price_asc") products.sort((a,b) => Number(a.price_minor)-Number(b.price_minor) || a.slug.localeCompare(b.slug));
   if (sort === "price_desc") products.sort((a,b) => Number(b.price_minor)-Number(a.price_minor) || a.slug.localeCompare(b.slug));
   if (sort === "title") products.sort((a,b) => a.title.localeCompare(b.title, "ar") || a.slug.localeCompare(b.slug));
