@@ -28,11 +28,12 @@ async function main(){
   await first.click();
   await page.locator("[data-offer-version]").waitFor();
   if(market==="eg")await page.getByRole("radio",{name:/القاهرة والجيزة والإسكندرية/}).check();
+  await page.locator("[data-mobile-buybar]").waitFor({state:"visible"});
   const before=await page.locator("[data-door-total]").innerText();
   await page.getByRole("button",{name:"زيادة الكمية"}).click();
   const door=await page.locator("[data-door-total]").innerText();
   assert.notEqual(door,before);
-  await page.getByRole("button",{name:"اشتري الآن"}).click();
+  await page.locator("[data-mobile-buybar]").getByRole("button",{name:"اشتري الآن"}).click();
   await page.locator("[data-cart-door-total]").waitFor();
   assert.equal(await page.locator("[data-cart-door-total]").innerText(),door);
   assert.ok(await page.getByRole("button",{name:"تأكيد الطلب"}).isDisabled());

@@ -5,6 +5,7 @@ import {ImageOff} from "lucide-react";
 import {publicBrowserConfig} from "@/lib/store/staging-public-config";
 import type {MarketCode} from "@/lib/store/markets";
 import {fetchPublicCatalog,formatListingPrice,type PublicCategorySlug,type PublicListing} from "@/lib/store/public-catalog";
+import {normalizeSearch} from "@/lib/store/smart-search";
 const {origin,key}=publicBrowserConfig(import.meta.env.VITE_YAWMIYATI_SUPABASE_URL,import.meta.env.VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY);
 /**
  * Shows real category products only when the public RPC returns explicitly
@@ -25,8 +26,10 @@ export function ApprovedCategoryProductGrid({market,slug,categoryTitle}:{market:
   fetchPublicCatalog(origin,key,market).then(rows=>{if(active)setCatalog(rows);}).catch(()=>{if(active)setCatalog([]);});
   return ()=>{active=false;};
  },[market,offers.state]);
- const approved=(offers.state==="ready"?offers.versions.map(offerListing):catalog).filter(row=>row.approved_category_slugs?.includes(slug));
- const shown=useMemo(()=>{const normalized=query.trim().toLocaleLowerCase();const result=approved.filter(x=>!normalized||x.title.toLocaleLowerCase().includes(normalized));if(sort==="low"||sort==="high")result.sort((a,b)=>{const x=BigInt(a.price_minor),y=BigInt(b.price_minor);return (x===y?0:x<y?-1:1)*(sort==="low"?1:-1);});return result;},[approved,query,sort]);
+ const versions=offers.state==="ready"?offers.versions:[];
+ const imageByListing=useMemo(()=>new Map(versions.map(v=>[v.listing_id,v.image])),[versions]);
+ const approved=(offers.state==="ready"?versions.map(offerListing):catalog).filter(row=>row.approved_category_slugs?.includes(slug));
+ const shown=useMemo(()=>{const normalized=normalizeSearch(query);const result=approved.filter(x=>!normalized||normalizeSearch(x.title).includes(normalized));if(sort==="low"||sort==="high")result.sort((a,b)=>{const x=BigInt(a.price_minor),y=BigInt(b.price_minor);return (x===y?0:x<y?-1:1)*(sort==="low"?1:-1);});return result;},[approved,query,sort]);
  if(offers.state==="loading")return <section aria-label="منتجات القسم" className="mt-5 grid grid-cols-2 gap-3" aria-busy="true">{Array.from({length:4},(_,i)=><div key={i} className="aspect-[4/5] animate-pulse rounded-xl bg-muted"/>)}</section>;
  if(!approved.length)return <section aria-label="منتجات القسم" className="mt-5 rounded-xl border bg-card p-5 text-center"><h2 className="font-bold">لا توجد منتجات معروضة في هذا القسم</h2><p className="mt-2 text-sm text-muted-foreground">تصفّحي المنتجات الأخرى في يومياتي.</p><a href={"/"+market+"#collection"} className="btn-outline mt-4 inline-flex min-h-11 items-center">عرض جميع المنتجات</a></section>;
  return <section aria-label="منتجات القسم" className="mt-5 space-y-4">
@@ -41,7 +44,7 @@ export function ApprovedCategoryProductGrid({market,slug,categoryTitle}:{market:
   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
    {shown.slice(0,visibleCount).map(item=><article key={item.listing_id} className="overflow-hidden rounded-2xl border bg-card">
     <a href={"/"+market+"/p/"+encodeURIComponent(item.slug)} aria-label={item.title} className="flex aspect-square items-center justify-center bg-muted">
-      {offers.state==="ready"&&offers.versions.find(v=>v.listing_id===item.listing_id)?.image?<img src={offers.versions.find(v=>v.listing_id===item.listing_id)!.image!.url} alt={item.title} width={360} height={360} loading="lazy" decoding="async" className="h-full w-full object-contain"/>:<ImageOff className="h-9 w-9 text-muted-foreground/60" aria-hidden="true"/>}
+      {imageByListing.get(item.listing_id)?<img src={imageByListing.get(item.listing_id)!.url} alt={imageByListing.get(item.listing_id)!.alt||item.title} width={360} height={360} loading="lazy" decoding="async" className="h-full w-full object-contain"/>:<ImageOff className="h-9 w-9 text-muted-foreground/60" aria-hidden="true"/>}
     </a>
     <div className="space-y-2 p-4">
      <h3 className="line-clamp-2 text-sm font-bold leading-6"><a href={"/"+market+"/p/"+encodeURIComponent(item.slug)}>{item.title}</a></h3>
