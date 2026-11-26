@@ -1,6 +1,8 @@
 import "./lib/error-capture";
 
+import * as Sentry from "@sentry/cloudflare";
 import { consumeLastCapturedError } from "./lib/error-capture";
+import { SENTRY_DSN, IGNORE_ERRORS, scrubEvent, sentryEnvironment } from "./lib/monitoring/sentry-config";
 import { renderErrorPage } from "./lib/error-page";
 import { posthogProxyTarget, proxyPosthog } from "./lib/analytics/posthog-proxy";
 
@@ -29,7 +31,9 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   const body = await response.clone().text();
   if (!isH3SwallowedErrorBody(body)) return response;
 
-  console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
+  const swallowed = consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`);
+  console.error(swallowed);
+  Sentry.captureException(swallowed, { tags: { boundary: "ssr_h3" } });
   return new Response(renderErrorPage(), {
     status: 500,
     headers: { "content-type": "text/html; charset=utf-8" },
@@ -48,7 +52,7 @@ function isH3SwallowedErrorBody(body: string): boolean {
 // Hosting compresses every response at the edge. Never compress a body (gzip, brotli,
 // CompressionStream) or set content-encoding here or in a server route: the body gets encoded
 // twice and renders garbled.
-export default {
+const handler = {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     const proxyTarget = posthogProxyTarget(new URL(request.url));
     if (proxyTarget) {
@@ -61,6 +65,7 @@ export default {
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
       console.error(error);
+      Sentry.captureException(error, { tags: { boundary: "worker_fetch" } });
       return new Response(renderErrorPage(), {
         status: 500,
         headers: { "content-type": "text/html; charset=utf-8" },
@@ -68,3 +73,22 @@ export default {
     }
   },
 };
+
+// Server-side error tracking (errors only, no tracing, no PII). Local runs never report.
+export default Sentry.withSentry(
+  () => ({
+    dsn: SENTRY_DSN,
+    dataCollection:{ userInfo:false,cookies:false,httpHeaders:{allow:["user-agent","accept-language","cf-ipcountry"]},httpBodies:[],urlQueryParams:false},
+    tracesSampleRate: 0,
+    ignoreErrors: IGNORE_ERRORS,
+    beforeSend(event) {
+      let host = "";
+      try { host = new URL(event.request?.url ?? "").hostname; } catch { /* no request */ }
+      const environment = host ? sentryEnvironment(host) : "staging";
+      if (environment === "local") return null;
+      event.environment = environment;
+      return scrubEvent(event);
+    },
+  }),
+  handler as unknown as Parameters<typeof Sentry.withSentry>[1],
+);
