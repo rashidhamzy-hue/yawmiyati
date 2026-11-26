@@ -32,6 +32,22 @@ describe("M10C mobile storefront details",()=>{
   fireEvent.keyDown(document,{key:"Escape"});
   expect(details?.open).toBe(false);
  });
+ it.each(["sa","ae","om","eg","iq"] as const)("keeps the %s market switcher inside a narrow mobile viewport",market=>{
+  const {container}=render(<StoreHeader market={market}/>);
+  const details=container.querySelector<HTMLDetailsElement>("details");
+  const trigger=details?.querySelector("summary");
+  fireEvent.click(trigger!);
+  const options=container.querySelector<HTMLDivElement>("#yawmiyati-market-options");
+  expect(options).toBeTruthy();
+  expect(options?.className).toContain("fixed");
+  expect(options?.className).toContain("inset-x-3");
+  expect(options?.className).toContain("max-h-[min(70dvh,560px)]");
+  expect(options?.className).toContain("overflow-y-auto");
+  const links=Array.from(options!.querySelectorAll<HTMLAnchorElement>("a"));
+  expect(links.map(link=>link.getAttribute("href"))).toEqual(["/sa","/ae","/om","/eg","/iq"]);
+  expect(links.every(link=>link.textContent?.trim())).toBe(true);
+  expect(links.find(link=>link.getAttribute("href")==="/"+market)?.getAttribute("aria-current")).toBe("page");
+ });
  it.each(["sa","ae","om","eg","iq"] as const)("%s search overlay uses local COD wording",market=>{
   const {container}=render(<StoreSearchOverlay market={market} open onClose={()=>{}}/>);
   expect(container.textContent).toContain(customerServiceCopy[market].payment);
