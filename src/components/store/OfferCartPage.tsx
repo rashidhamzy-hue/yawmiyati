@@ -1,3 +1,4 @@
+import {useState} from "react";
 import { AlertTriangle, ArrowLeft, Lock, Trash2, Truck } from "lucide-react";
 import { paymentLabel } from "../../../supabase/functions/_shared/payment-policy";
 import type { MarketCode } from "@/lib/store/markets";
@@ -19,6 +20,8 @@ export function OfferCartPage({ market, type, versions }: { market: MarketCode; 
   const priced = priceOfferCart(cart, versions);
   const path = "/" + market;
   const review = type === "checkout";
+  const [completed,setCompleted]=useState(false);
+  const sample=versions.length>0&&versions.every(v=>v.slug.startsWith("preview-"+market+"-"));
   const suggestions=!review&&priced.checkoutReady?cartSuggestions(cart,versions):[];
   return <section className="mx-auto max-w-4xl px-4 pb-20 pt-7 sm:px-6 sm:pt-10 lg:px-8" aria-labelledby="offer-cart-title">
     <nav aria-label="مسار الصفحة" className="mb-4 text-sm text-muted-foreground"><a href={path} className="hover:text-primary">يومياتي</a> / {review ? "مراجعة الطلب" : "السلة"}</nav>
@@ -56,6 +59,7 @@ export function OfferCartPage({ market, type, versions }: { market: MarketCode; 
       {review ? <div className="mt-5 space-y-3">
         <button type="button" disabled className="btn-primary inline-flex min-h-12 w-full items-center justify-center gap-2 opacity-60 sm:w-auto" aria-describedby="orders-off-note"><Lock className="h-4 w-4" aria-hidden="true" />تأكيد الطلب</button>
         <p id="orders-off-note" className="text-xs leading-6 text-muted-foreground">استقبال الطلبات غير مفعّل في هذه البيئة. لا تُجمع بيانات شخصية ولا يُنشأ أي طلب.</p>
+        {sample&&priced.checkoutReady&&<div className="rounded-xl border bg-background p-4"><h2 className="font-bold">تجربة إتمام الطلب</h2><p className="mt-2 text-xs leading-6 text-muted-foreground">بيانات وهمية فقط، لا يُرسل أي طلب.</p><dl className="mt-3 space-y-2 text-sm"><div><dt className="font-bold">الاسم</dt><dd>عميلة تجريبية</dd></div><div><dt className="font-bold">العنوان</dt><dd>عنوان اختبار · {priced.zone?.label}</dd></div><div><dt className="font-bold">طريقة الدفع</dt><dd>الدفع عند الاستلام</dd></div></dl><button type="button" onClick={()=>setCompleted(true)} disabled={completed} className="btn-primary mt-4 min-h-12 w-full">{completed?"اكتملت المحاكاة":"إتمام طلب تجريبي"}</button>{completed&&<p role="status" className="mt-3 text-sm font-bold text-primary">تمت محاكاة الطلب بنجاح. لم يُرسل طلب حقيقي.</p>}</div>}
         <a href={path + "/cart"} className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-primary">تعديل السلة <ArrowLeft className="h-4 w-4" aria-hidden="true" /></a>
       </div> : <div className="mt-5 flex flex-wrap gap-3">
         {priced.checkoutReady ? <a href={path + "/checkout"} className="btn-primary inline-flex min-h-12 items-center gap-2">مراجعة الطلب <ArrowLeft className="h-4 w-4" aria-hidden="true" /></a>
