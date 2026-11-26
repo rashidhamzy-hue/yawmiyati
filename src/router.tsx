@@ -1,18 +1,11 @@
-import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
-export const getRouter = () => {
-  // One client per request: a module-level QueryClient leaks cached data between SSR requests.
-  const queryClient = new QueryClient();
-
-  const router = createRouter({
+// No data-fetching cache library in the storefront bundle: pages load their own
+// release-gated data, so react-query only added ~24 KB of unused JavaScript.
+export const getRouter = () =>
+  createRouter({
     routeTree,
-    context: { queryClient },
     scrollRestoration: true,
-    // Lets Query own freshness; set caching defaults on the QueryClient, not the router.
     defaultPreloadStaleTime: 0,
   });
-
-  return router;
-};

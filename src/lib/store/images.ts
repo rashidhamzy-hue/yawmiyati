@@ -9,6 +9,7 @@
  * p1–p8 (legacy illustrative photos, never real merchandise) are bundled
  * from src/assets since the Lovable retirement on 26 Nov 2026.
  */
+import {editorialMediaPath} from "./editorial-media";
 import p1 from "@/assets/p1.jpg";
 import p2 from "@/assets/p2.jpg";
 import p3 from "@/assets/p3.jpg";
@@ -29,10 +30,12 @@ export const editorialRemote={
  "cat-wellness":photo("photo-1675149476008-83dbfa2ee917",1000),
  "cat-organize":photo("photo-1652349566831-1b41ce15ba6c",1000),
 } as const;
-/** Editorial photos stay on the Unsplash image CDN: it serves AVIF/WebP per browser,
- * which measured lighter and faster than our own WebP copies (Lighthouse, 26 Nov 2026). */
+/** Same-origin paths for the page itself (see editorial-media.ts): the Worker serves the
+ * Unsplash CDN's AVIF/WebP rendition, so no second connection is opened on mobile. */
+const local=(remote:string)=>{const u=new URL(remote);return editorialMediaPath(u.pathname.slice(1),Number(u.searchParams.get("w")),Number(u.searchParams.get("q")));};
+export const editorialLocal=Object.fromEntries(Object.entries(editorialRemote).map(([k,v])=>[k,local(v)])) as {readonly [K in keyof typeof editorialRemote]:string};
 export const img={
- ...editorialRemote,
+ ...editorialLocal,
  "p1":p1,"p2":p2,"p3":p3,"p4":p4,
  "p5":p5,"p6":p6,"p7":p7,"p8":p8,
 } as const;
