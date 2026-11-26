@@ -1,7 +1,7 @@
 import {editorialSchema,serializeEditorialSchema} from "@/lib/store/editorial-schema";
 import {createFileRoute} from "@tanstack/react-router";
 import {MarketPreview} from "@/components/store/MarketPreview";
-import {img} from "@/lib/store/images";
+import {img,editorialRemote} from "@/lib/store/images";
 import {editorialPreload} from "@/lib/store/editorial-srcset";
 import {marketExperience} from "@/lib/store/market-experience";
 export const Route=createFileRoute("/sa/")({
@@ -12,6 +12,6 @@ export const Route=createFileRoute("/sa/")({
   {property:"og:title",content:"يومياتي السعودية | تفاصيل صغيرة، حياة أجمل"},
   {property:"og:description",content:"اختيارات وأفكار يومية للمنزل والجمال والعناية."},
   {property:"og:type",content:"website"},{name:"twitter:card",content:"summary_large_image"},
-  {property:"og:image",content:img.hero},{name:"twitter:image",content:img.hero}
+  {property:"og:image",content:editorialRemote.hero},{name:"twitter:image",content:editorialRemote.hero}
  ]}),component:()=> <MarketPreview market="sa"/>
 });

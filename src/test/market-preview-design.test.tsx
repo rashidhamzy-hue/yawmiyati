@@ -7,7 +7,7 @@ describe("Yawmiyati premium storefront",()=>{
   render(<MarketPreview market="sa"/>);
   expect(screen.getByRole("heading",{level:1,name:/كل يوم يستحق/})).toBeTruthy();
   expect(screen.getByRole("navigation",{name:"التنقل الرئيسي"})).toBeTruthy();
-  expect(screen.getByLabelText(/^البلد والعملة: المملكة العربية السعودية، ريال سعودي/)).toBeTruthy();
+  expect(screen.getByText("البلد والعملة: المملكة العربية السعودية، ريال سعودي").closest("summary")!).toBeTruthy();
   expect(screen.getByRole("link",{name:/تخطي إلى المحتوى/})).toBeTruthy();
   expect(screen.getByRole("heading",{name:"اختيارات تناسب يومك"})).toBeTruthy();
   expect(screen.getByRole("link",{name:/اكتشفي عالم العناية/}).getAttribute("href")).toBe("/sa/c/beauty");

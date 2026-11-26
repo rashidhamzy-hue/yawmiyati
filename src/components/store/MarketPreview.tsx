@@ -47,7 +47,7 @@ function BrowseProducts({market}:{market:MarketCode}){
   {browseTiles.map(tile=>{
    const category=categories.find(c=>c.slug===tile.department)!;
    return <a key={tile.image} href={`/${market}/c/${category.slug}`} className="group flex min-w-0 flex-col overflow-hidden rounded-[1.35rem] border border-border/70 bg-card shadow-soft transition-all hover:border-primary/35 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-    <div className="aspect-[5/4] w-full overflow-hidden bg-muted"><img src={tile.image} alt="" width={360} height={288} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"/></div>
+    <div className="aspect-[5/4] w-full overflow-hidden bg-muted"><img src={tile.image} srcSet={tile.image.replace(".webp","-180.webp")+" 180w, "+tile.image+" 360w"} sizes="(max-width: 640px) 45vw, 180px" alt="" width={360} height={288} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"/></div>
     <div className="flex min-h-[84px] flex-1 flex-col justify-between gap-2 p-3 sm:p-4"><span className="block text-sm font-extrabold leading-6 sm:text-base">{tile.title}</span><span className="inline-flex items-center gap-1 text-xs font-bold text-primary">{category.name}<ArrowLeft size={14} aria-hidden="true"/></span></div>
    </a>;
   })}
