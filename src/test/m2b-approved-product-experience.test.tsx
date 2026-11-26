@@ -22,6 +22,8 @@ describe("M2B approved-only catalogue",()=>{
     expect(filterApprovedListings(sa,"sa",{query:"انـيق".replace("ـ","")}).total).toBe(1);
     expect(filterApprovedListings(sa,"sa",{sort:"price_asc"}).products[0].slug).toBe("item-c");
     expect(filterApprovedListings(sa,"sa",{sort:"price_desc"}).products[0].slug).toBe("item-a");
+    const ranked=[{...sa[0],popularity_rank:3},{...sa[1],popularity_rank:1},{...sa[2],popularity_rank:2}];
+    expect(filterApprovedListings(ranked,"sa",{sort:"popular"}).products.map(row=>row.slug)).toEqual(["item-b","item-c","item-a"]);
     expect(filterApprovedListings(sa,"sa",{minPriceMinor:6000,maxPriceMinor:10000}).total).toBe(1);
     expect(filterApprovedListings(sa,"sa",{page:2,pageSize:2}).products).toHaveLength(1);
   });
