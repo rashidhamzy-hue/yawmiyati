@@ -79,7 +79,7 @@ export function ApprovedCatalogBrowser({market,products,onOpen,images={}}:{marke
       </div>
     </div>
     {invalidRange?<p role="alert" className="rounded-xl border border-destructive/30 p-4 text-sm">أدخلي سعراً صحيحاً، وتأكدي أن الحد الأدنى لا يتجاوز الحد الأعلى.</p>:result!.total===0?
-      <div className="rounded-2xl border bg-card px-5 py-12 text-center"><PackageSearchFallback/><h3 className="mt-3 font-bold">ما لقينا منتجات تطابق اختياراتك</h3><p className="mt-2 text-sm text-muted-foreground">جرّبي تخفيف التصفية أو تغيير كلمة البحث.</p><button type="button" onClick={reset} className="btn-outline mt-4 min-h-11">عرض كل المنتجات</button></div>:
+      <div className="rounded-2xl border bg-card px-5 py-12 text-center"><PackageSearchFallback/><h2 className="mt-3 text-base font-bold">ما لقينا منتجات تطابق اختياراتك</h2><p className="mt-2 text-sm text-muted-foreground">جرّبي تخفيف التصفية أو تغيير كلمة البحث.</p><button type="button" onClick={reset} className="btn-outline mt-4 min-h-11">عرض كل المنتجات</button></div>:
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {result!.products.map(row=>{const image=images[row.listing_id];return <article key={row.listing_id} className="group overflow-hidden rounded-2xl border border-border/70 bg-card shadow-soft transition-shadow hover:shadow-md">
           <a href={`/${market}/p/${encodeURIComponent(row.slug)}`} onClick={onOpen?e=>{e.preventDefault();onOpen(row.slug);}:undefined} aria-label={`تفاصيل ${row.title}`} className="block aspect-square overflow-hidden bg-muted">

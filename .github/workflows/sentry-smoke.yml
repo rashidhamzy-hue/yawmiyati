@@ -1,0 +1,20 @@
+# Proves the deployed storefront reports browser errors to Sentry (org yawmiyati,
+# project yawmiyati-storefront). Manual only: each run sends ONE clearly labelled
+# test error from staging, then checks Sentry's ingest endpoint accepted it.
+name: Sentry smoke (staging)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install browser
+        run: npm install --no-save --no-package-lock playwright@1.58.2 && npx playwright install --with-deps chromium
+      - name: Send one test error from staging
+        env:
+          BASE: https://yawmiyati-storefront-staging.rashid-hamzy.workers.dev
+        run: node scripts/sentry-smoke.cjs
