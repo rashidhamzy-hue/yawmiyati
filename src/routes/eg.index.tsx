@@ -1,3 +1,4 @@
+import {sharedPageLinks} from "@/lib/seo/site";
 import {editorialSchema,serializeEditorialSchema} from "@/lib/store/editorial-schema";
 import {createFileRoute} from "@tanstack/react-router";
 import {MarketPreview} from "@/components/store/MarketPreview";
@@ -7,7 +8,7 @@ import {marketExperience} from "@/lib/store/market-experience";
 const title="يومياتي مصر | حاجات صغيرة تفرّح يومك";
 const description="حاجات حلوة للبيت والمطبخ والجمال والتنظيم في مصر. خدي لفة في أقسام يومياتي ودوري على اللي يناسب ذوقك.";
 export const Route=createFileRoute("/eg/")({
- head:()=>({links:[editorialPreload(img[marketExperience.eg.heroImage])],scripts:[{type:"application/ld+json",children:serializeEditorialSchema(editorialSchema("eg")!)}],meta:[
+ head:()=>({links:[editorialPreload(img[marketExperience.eg.heroImage]),...sharedPageLinks("eg")],scripts:[{type:"application/ld+json",children:serializeEditorialSchema(editorialSchema("eg")!)}],meta:[
   {title},
   {name:"description",content:description},
   {property:"og:title",content:title},

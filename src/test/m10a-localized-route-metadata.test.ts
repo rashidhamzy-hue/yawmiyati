@@ -29,11 +29,16 @@ describe("M10A localized prelaunch route metadata",()=>{
  });
  it("every five-market route is wired to metadata helpers and remains noindex",()=>{
   for(const market of all){
-   for(const [suffix,fn] of [["info.$topic","infoPageMetadata"],["c.$slug","categoryPageMetadata"],["story","storyPageMetadata"],["p.$slug","productPageMetadata"]] as const){
+   for(const [suffix,fn] of [["info.$topic","infoPageMetadata"],["c.$slug","categoryPageMetadata"],["story","storyPageMetadata"]] as const){
     const file=readFileSync("src/routes/"+market+"."+suffix+".tsx","utf8");
     expect(file).toContain(fn);
     expect(file).toContain("m.robots");
    }
+   // Product routes share one server-rendered head helper (S5).
+   expect(readFileSync("src/routes/"+market+".p.$slug.tsx","utf8")).toContain("productHead(\""+market+"\"");
   }
+  const shared=readFileSync("src/lib/seo/route-head.ts","utf8");
+  expect(shared).toContain("productPageMetadata");
+  expect(shared).toContain("m.robots");
  });
 });

@@ -1,5 +1,8 @@
 /**
  * Milestone 4A — offline SEO planning for five market storefronts.
+ * S5 (26 Nov 2026): canonical/hreflang, sitemaps, Product JSON-LD and llms.txt now
+ * live in src/lib/seo/ against https://yawmiyati.shop, with indexing still OFF
+ * (INDEXING_LIVE=false, noindex meta, robots.txt Disallow). These drafts stay as-is.
  *
  * All output is DRAFT ONLY: it MUST NOT generate public indexable pages,
  * absolute canonical/hreflang URLs, sitemaps, or Product/Offer JSON-LD.
