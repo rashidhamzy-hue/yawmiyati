@@ -24,6 +24,7 @@ describe("portable licensed editorial media",()=>{
  it("keeps editorial sources distinct and does not replace product identity with stock photos",()=>{
   expect(new Set(editorial.map(k=>img[k])).size).toBe(editorial.length);
   expect(img.p1).not.toContain("images.unsplash.com");
-  expect(img.p1).toContain("/__l5e/");
+  expect(img.p1).not.toContain("/__l5e/");
+  expect(img.p1).toMatch(/p1[^/]*\.jpg/);
  });
 });
