@@ -3,7 +3,9 @@ export const PUBLIC_CATEGORY_SLUGS=["home","kitchen","beauty","fashion","wellnes
 export type PublicCategorySlug=typeof PUBLIC_CATEGORY_SLUGS[number];
 export type PublicListing={listing_id:string;slug:string;title:string;price_minor:string;currency:string;
  /** Present only after category membership is owner-approved in a release-gated RPC. */
- approved_category_slugs?:readonly PublicCategorySlug[]};
+ approved_category_slugs?:readonly PublicCategorySlug[];
+ /** Optional owner-approved ranking derived from verified market activity; never inferred from views. */
+ popularity_rank?:number};
 export function parsePublicListings(data:unknown,market:MarketCode):PublicListing[]{
  if(!Array.isArray(data)||data.length>100)throw Error("Invalid catalog response");
  const seen=new Set<string>();
@@ -19,8 +21,10 @@ export function parsePublicListings(data:unknown,market:MarketCode):PublicListin
    categories.some(value=>typeof value!=="string"||!PUBLIC_CATEGORY_SLUGS.some(allowed=>allowed===value))||
    new Set(categories).size!==categories.length
   ))throw Error("Unapproved or invalid category assignments");
+  if(r.popularity_rank!==undefined&&(!Number.isSafeInteger(r.popularity_rank)||Number(r.popularity_rank)<1))throw Error("Invalid popularity rank");
   return {listing_id:r.listing_id,slug:r.slug,title:r.title,price_minor:r.price_minor,currency:r.currency,
-    ...(declared?{approved_category_slugs:[...(categories as PublicCategorySlug[])]}:{})};
+    ...(declared?{approved_category_slugs:[...(categories as PublicCategorySlug[])]}:{}),
+    ...(r.popularity_rank!==undefined?{popularity_rank:r.popularity_rank as number}:{})};
  });
 }
 export const storefrontMode=(origin:unknown,key:unknown,demo:unknown)=>typeof origin==="string"&&origin&&typeof key==="string"&&key?"catalog":!origin&&!key&&demo==="true"?"demo":"unconfigured";
