@@ -45,19 +45,24 @@ export function ApprovedCatalogBrowser({market,products,onOpen,images={}}:{marke
   const [min,setMin]=useState("");
   const [max,setMax]=useState("");
   const [page,setPage]=useState(1);
+  const [category,setCategory]=useState("all");
+  const categoryNames:Record<string,string>={home:"المنزل والديكور",kitchen:"المطبخ والقهوة",beauty:"الجمال والعناية",fashion:"الأزياء والإكسسوارات",wellness:"الراحة والرفاهية",organize:"التنظيم الذكي"};
+  const availableCategories=Object.keys(categoryNames).filter(slug=>products.some(row=>row.approved_category_slugs?.includes(slug as NonNullable<PublicListing["approved_category_slugs"]>[number])));
+  const categoryProducts=category==="all"?products:products.filter(row=>row.approved_category_slugs?.includes(category as NonNullable<PublicListing["approved_category_slugs"]>[number]));
   const parseBound=(value:string)=>value.trim()?parseMinorUnits(market,value.trim()):undefined;
   let minPriceMinor:number|undefined,maxPriceMinor:number|undefined,invalidRange=false;
   try { minPriceMinor=parseBound(min);maxPriceMinor=parseBound(max); }
   catch { invalidRange=true; }
   if(minPriceMinor!==undefined&&maxPriceMinor!==undefined&&minPriceMinor>maxPriceMinor)invalidRange=true;
-  const result=invalidRange?null:filterApprovedListings(products,market,{query,sort,minPriceMinor,maxPriceMinor,page,pageSize:12});
-  const reset=()=>{setQuery("");setSort("default");setMin("");setMax("");setPage(1);};
-  const hasFilters=Boolean(query||min||max||sort!=="default");
+  const result=invalidRange?null:filterApprovedListings(categoryProducts,market,{query,sort,minPriceMinor,maxPriceMinor,page,pageSize:12});
+  const reset=()=>{setQuery("");setSort("default");setMin("");setMax("");setCategory("all");setPage(1);};
+  const hasFilters=Boolean(query||min||max||sort!=="default"||category!=="all");
   return <section dir="rtl" aria-label="تصفحي جميع المنتجات" className="space-y-5">
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div><p className="text-xs font-extrabold text-primary">كتالوج يومياتي</p><h2 className="font-display text-2xl font-extrabold sm:text-3xl">اكتشفي كل المنتجات</h2><p className="mt-1 text-sm text-muted-foreground">رتّبي المنتجات وحددي ميزانيتك للوصول إلى ما يناسبك.</p></div>
-      <span className="rounded-full bg-primary-soft px-3 py-2 text-xs font-bold text-primary">{products.length} منتج متاح للعرض</span>
+      <span className="rounded-full bg-primary-soft px-3 py-2 text-xs font-bold text-primary">{categoryProducts.length} منتج متاح للعرض</span>
     </div>
+    {availableCategories.length>0&&<nav aria-label="تصفية حسب القسم" className="flex gap-2 overflow-x-auto pb-1">{["all",...availableCategories].map(slug=><button key={slug} type="button" aria-pressed={category===slug} onClick={()=>{setCategory(slug);setPage(1);}} className={"min-h-10 shrink-0 rounded-full border px-4 text-xs font-bold "+(category===slug?"border-primary bg-primary text-primary-foreground":"bg-card text-foreground")}>{slug==="all"?"كل الأقسام":categoryNames[slug]}</button>)}</nav>}
     <div className="grid gap-3 rounded-2xl border border-border/70 bg-card p-4 shadow-soft sm:grid-cols-2 lg:grid-cols-4">
       <label className="text-sm font-bold lg:col-span-2">ابحثي في المنتجات
         <span className="relative mt-2 block"><input type="search" aria-label="بحث المنتجات" maxLength={120} value={query} onChange={e=>{setQuery(e.target.value);setPage(1);}} placeholder="مثلاً: عناية، مطبخ، تنظيم..." className="field min-h-12 w-full pr-4"/></span>
