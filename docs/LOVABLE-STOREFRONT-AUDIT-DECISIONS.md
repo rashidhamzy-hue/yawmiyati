@@ -36,3 +36,12 @@
 - Claim free COD, fast Riyadh/Jeddah delivery or 14-day returns without a real policy and operational evidence.
 - Make product availability, urgency, ratings or sales volume claims from demo/test data.
 - Expose service-role, supplier or Anthropic secrets in client bundle.
+
+
+## Product discovery implementation review — 26 Nov 2026
+
+- The five market search routes now use one approved-catalog browser with localized price bounds (market minor-unit precision), Arabic title search, sort by relevance/price/name, pagination, responsive product cards, and optional approved category chips.
+- Category chips are rendered only when the public listing RPC supplies validated owner-approved category assignments. The current `public_catalog` SQL function returns only listing ID, slug, title, price and currency; it does not return category membership or product media. The category pages therefore correctly cannot invent category assignments or images and may show an empty state.
+- The existing public product detail RPC returns title, description and price only. Product detail pages can resolve a slug only if a released listing exists; approved gallery, variant and specification UI remains unavailable until a separate trusted release-gated media/variant RPC is implemented.
+- **This is not a complete commercial catalog release.** The old nine test candidates were deleted and the current public RPC only exposes currently published, stock-verified and released rows. If there are zero rows, the UI cannot display real products. Do not substitute fictional catalog records or claim the five stores have a live product assortment.
+- Required next data milestone: owner-approved category taxonomy and assignments, approved image media records and CDN origin, verified variant/pack/stock/price contracts, then extend public RPCs with RLS/security review and all-market integration tests. Only then can category filters, image-led merchandising, faceted attributes and complete product pages be considered launch-ready.

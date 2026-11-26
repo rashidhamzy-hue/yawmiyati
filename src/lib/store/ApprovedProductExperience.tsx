@@ -1,7 +1,7 @@
 import {paymentLabel} from "../../../supabase/functions/_shared/payment-policy";
 import { useState } from "react";
 import { ImageOff } from "lucide-react";
-import type { MarketCode } from "./markets";
+import { parseMinorUnits, type MarketCode } from "./markets";
 import { formatListingPrice, type PublicDetail, type PublicListing } from "./public-catalog";
 import { filterApprovedListings, presentApprovedDetail, type ApprovedExtra, type ApprovedSort } from "./approved-product-experience";
 
@@ -39,33 +39,60 @@ export function ApprovedProductGallery({detail,market,extras}:{detail:PublicDeta
   </article>;
 }
 
-export function ApprovedCatalogBrowser({market,products,onOpen}:{market:MarketCode;products:readonly PublicListing[];onOpen?:(slug:string)=>void}) {
+export function ApprovedCatalogBrowser({market,products,onOpen,images={}}:{market:MarketCode;products:readonly PublicListing[];onOpen?:(slug:string)=>void;images?:Record<string,{url:string;alt:string}|null|undefined>}) {
   const [query,setQuery]=useState("");
   const [sort,setSort]=useState<ApprovedSort>("default");
   const [min,setMin]=useState("");
   const [max,setMax]=useState("");
   const [page,setPage]=useState(1);
-  // Filter inputs represent minor units to avoid floating-point currency rounding.
-  const minPriceMinor=min?Number(min):undefined;
-  const maxPriceMinor=max?Number(max):undefined;
-  const invalidRange=(min!==""&&(!/^\d+$/.test(min)||!Number.isSafeInteger(minPriceMinor)))||
-    (max!==""&&(!/^\d+$/.test(max)||!Number.isSafeInteger(maxPriceMinor)))||
-    (minPriceMinor!==undefined&&maxPriceMinor!==undefined&&minPriceMinor>maxPriceMinor);
-  const result=invalidRange?null:filterApprovedListings(products,market,{query,sort,minPriceMinor,maxPriceMinor,page,pageSize:12});
-  const change=()=>setPage(1);
-  return <section dir="rtl" aria-label="المنتجات المعتمدة" className="space-y-5">
-    <div className="grid gap-3 rounded-2xl border p-4 sm:grid-cols-2 lg:grid-cols-4">
-      <label className="text-sm font-semibold">البحث<input type="search" aria-label="بحث المنتجات" maxLength={120} value={query} onChange={e=>{setQuery(e.target.value);change()}} className="mt-2 min-h-11 w-full rounded-xl border bg-background px-3"/></label>
-      <label className="text-sm font-semibold">الترتيب<select aria-label="ترتيب المنتجات" value={sort} onChange={e=>{setSort(e.target.value as ApprovedSort);change()}} className="mt-2 min-h-11 w-full rounded-xl border bg-background px-3"><option value="default">الترتيب الأصلي</option><option value="price_asc">السعر: الأقل أولاً</option><option value="price_desc">السعر: الأعلى أولاً</option><option value="title">حسب الاسم</option></select></label>
-      <label className="text-sm font-semibold">الحد الأدنى (وحدات صغرى)<input inputMode="numeric" aria-label="أقل سعر بالوحدات الصغرى" value={min} onChange={e=>{setMin(e.target.value);change()}} className="mt-2 min-h-11 w-full rounded-xl border bg-background px-3"/></label>
-      <label className="text-sm font-semibold">الحد الأعلى (وحدات صغرى)<input inputMode="numeric" aria-label="أعلى سعر بالوحدات الصغرى" value={max} onChange={e=>{setMax(e.target.value);change()}} className="mt-2 min-h-11 w-full rounded-xl border bg-background px-3"/></label>
+  const [category,setCategory]=useState("all");
+  const categoryNames:Record<string,string>={home:"المنزل والديكور",kitchen:"المطبخ والقهوة",beauty:"الجمال والعناية",fashion:"الأزياء والإكسسوارات",wellness:"الراحة والرفاهية",organize:"التنظيم الذكي"};
+  const availableCategories=Object.keys(categoryNames).filter(slug=>products.some(row=>row.approved_category_slugs?.includes(slug as NonNullable<PublicListing["approved_category_slugs"]>[number])));
+  const categoryProducts=category==="all"?products:products.filter(row=>row.approved_category_slugs?.includes(category as NonNullable<PublicListing["approved_category_slugs"]>[number]));
+  const parseBound=(value:string)=>value.trim()?parseMinorUnits(market,value.trim()):undefined;
+  let minPriceMinor:number|undefined,maxPriceMinor:number|undefined,invalidRange=false;
+  try { minPriceMinor=parseBound(min);maxPriceMinor=parseBound(max); }
+  catch { invalidRange=true; }
+  if(minPriceMinor!==undefined&&maxPriceMinor!==undefined&&minPriceMinor>maxPriceMinor)invalidRange=true;
+  const result=invalidRange?null:filterApprovedListings(categoryProducts,market,{query,sort,minPriceMinor,maxPriceMinor,page,pageSize:12});
+  const reset=()=>{setQuery("");setSort("default");setMin("");setMax("");setCategory("all");setPage(1);};
+  const hasFilters=Boolean(query||min||max||sort!=="default"||category!=="all");
+  return <section dir="rtl" aria-label="تصفحي جميع المنتجات" className="space-y-5">
+    <div className="flex flex-wrap items-end justify-between gap-3">
+      <div><p className="text-xs font-extrabold text-primary">كتالوج يومياتي</p><h2 className="font-display text-2xl font-extrabold sm:text-3xl">اكتشفي كل المنتجات</h2><p className="mt-1 text-sm text-muted-foreground">رتّبي المنتجات وحددي ميزانيتك للوصول إلى ما يناسبك.</p></div>
+      <span className="rounded-full bg-primary-soft px-3 py-2 text-xs font-bold text-primary">{categoryProducts.length} منتج متاح للعرض</span>
     </div>
-    {invalidRange?<p role="alert" className="text-sm">نطاق السعر غير صالح.</p>:<>
-      <p role="status" className="text-sm text-muted-foreground">{result!.total} منتج معتمد</p>
-      {result!.total===0?<p className="rounded-xl border p-8 text-center">لا توجد منتجات معتمدة مطابقة.</p>:
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">{result!.products.map(row=><article key={row.listing_id} className="overflow-hidden rounded-xl border bg-card"><div className="flex aspect-[4/3] flex-col items-center justify-center gap-2 bg-muted text-center text-xs text-muted-foreground"><ImageOff aria-hidden="true"/><span>الصورة غير متوفرة</span></div><div className="space-y-2 p-3"><h2 className="line-clamp-2 text-sm font-semibold">{row.title}</h2><p className="font-bold">{formatListingPrice(row,market)}</p>{onOpen&&<button type="button" onClick={()=>onOpen(row.slug)} className="min-h-11 text-sm font-semibold underline">عرض التفاصيل</button>}</div></article>)}</div>}
-      {result!.pages>1&&<nav className="flex items-center justify-center gap-3" aria-label="صفحات المنتجات"><button type="button" className="min-h-11 rounded-lg border px-4 disabled:opacity-40" disabled={page===1} onClick={()=>setPage(x=>x-1)}>السابق</button><span>صفحة {page} من {result!.pages}</span><button type="button" className="min-h-11 rounded-lg border px-4 disabled:opacity-40" disabled={page>=result!.pages} onClick={()=>setPage(x=>x+1)}>التالي</button></nav>}
-    </>}
-    <p className="text-xs text-muted-foreground">تُعرض المنتجات المنشورة والمعتمدة فقط. لا تتوفر تصفية الفئات أو المخزون حتى يتيح المصدر العام بيانات موثقة.</p>
+    {availableCategories.length>0&&<nav aria-label="تصفية حسب القسم" className="flex gap-2 overflow-x-auto pb-1">{["all",...availableCategories].map(slug=><button key={slug} type="button" aria-pressed={category===slug} onClick={()=>{setCategory(slug);setPage(1);}} className={"min-h-10 shrink-0 rounded-full border px-4 text-xs font-bold "+(category===slug?"border-primary bg-primary text-primary-foreground":"bg-card text-foreground")}>{slug==="all"?"كل الأقسام":categoryNames[slug]}</button>)}</nav>}
+    <div className="grid gap-3 rounded-2xl border border-border/70 bg-card p-4 shadow-soft sm:grid-cols-2 lg:grid-cols-4">
+      <label className="text-sm font-bold lg:col-span-2">ابحثي في المنتجات
+        <span className="relative mt-2 block"><input type="search" aria-label="بحث المنتجات" maxLength={120} value={query} onChange={e=>{setQuery(e.target.value);setPage(1);}} placeholder="مثلاً: عناية، مطبخ، تنظيم..." className="field min-h-12 w-full pr-4"/></span>
+      </label>
+      <label className="text-sm font-bold">ترتيب حسب
+        <select aria-label="ترتيب المنتجات" value={sort} onChange={e=>{setSort(e.target.value as ApprovedSort);setPage(1);}} className="field mt-2 min-h-12 w-full">
+          <option value="default">الأكثر صلة</option><option value="price_asc">السعر: الأقل أولاً</option><option value="price_desc">السعر: الأعلى أولاً</option><option value="title">الاسم</option>
+        </select>
+      </label>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="text-sm font-bold">من السعر<input inputMode="decimal" aria-label="أقل سعر" placeholder="0" value={min} onChange={e=>{setMin(e.target.value);setPage(1);}} className="field mt-2 min-h-12 w-full"/></label>
+        <label className="text-sm font-bold">إلى السعر<input inputMode="decimal" aria-label="أعلى سعر" placeholder="بدون حد" value={max} onChange={e=>{setMax(e.target.value);setPage(1);}} className="field mt-2 min-h-12 w-full"/></label>
+      </div>
+      <div className="flex items-center justify-between gap-3 sm:col-span-2 lg:col-span-4">
+        <p role="status" className="text-xs text-muted-foreground">{invalidRange?"تحققي من نطاق السعر وإدخاله بشكل صحيح.":`${result!.total} نتيجة`}</p>
+        {hasFilters&&<button type="button" onClick={reset} className="min-h-10 px-3 text-xs font-bold text-primary underline underline-offset-4">مسح التصفية</button>}
+      </div>
+    </div>
+    {invalidRange?<p role="alert" className="rounded-xl border border-destructive/30 p-4 text-sm">أدخلي سعراً صحيحاً، وتأكدي أن الحد الأدنى لا يتجاوز الحد الأعلى.</p>:result!.total===0?
+      <div className="rounded-2xl border bg-card px-5 py-12 text-center"><PackageSearchFallback/><h3 className="mt-3 font-bold">ما لقينا منتجات تطابق اختياراتك</h3><p className="mt-2 text-sm text-muted-foreground">جرّبي تخفيف التصفية أو تغيير كلمة البحث.</p><button type="button" onClick={reset} className="btn-outline mt-4 min-h-11">عرض كل المنتجات</button></div>:
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        {result!.products.map(row=>{const image=images[row.listing_id];return <article key={row.listing_id} className="group overflow-hidden rounded-2xl border border-border/70 bg-card shadow-soft transition-shadow hover:shadow-md">
+          <a href={`/${market}/p/${encodeURIComponent(row.slug)}`} onClick={onOpen?e=>{e.preventDefault();onOpen(row.slug);}:undefined} aria-label={`تفاصيل ${row.title}`} className="block aspect-square overflow-hidden bg-muted">
+            {image?<img src={image.url} alt={image.alt||row.title} loading="lazy" decoding="async" width={360} height={360} className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.03]"/>:<div className="flex h-full flex-col items-center justify-center gap-2 text-center text-xs text-muted-foreground"><ImageOff aria-hidden="true" className="h-8 w-8"/><span>الصورة غير متاحة</span></div>}
+          </a>
+          <div className="space-y-2 p-3 sm:p-4"><h3 className="line-clamp-2 min-h-12 text-sm font-bold leading-6"><a href={`/${market}/p/${encodeURIComponent(row.slug)}`} onClick={onOpen?e=>{e.preventDefault();onOpen(row.slug);}:undefined} className="hover:text-primary">{row.title}</a></h3><p className="font-extrabold text-primary">{formatListingPrice(row,market)}</p><a href={`/${market}/p/${encodeURIComponent(row.slug)}`} className="inline-flex min-h-10 items-center text-xs font-bold text-primary underline underline-offset-4">اكتشفي التفاصيل</a></div>
+        </article>;})}
+      </div>}
+    {!invalidRange&&result!.pages>1&&<nav className="flex items-center justify-center gap-3" aria-label="صفحات المنتجات"><button type="button" className="min-h-11 rounded-xl border px-4 disabled:opacity-40" disabled={page===1} onClick={()=>setPage(x=>x-1)}>السابق</button><span className="text-sm">صفحة {page} من {result!.pages}</span><button type="button" className="min-h-11 rounded-xl border px-4 disabled:opacity-40" disabled={page>=result!.pages} onClick={()=>setPage(x=>x+1)}>التالي</button></nav>}
+    <p className="text-xs leading-6 text-muted-foreground">نُظهر المنتجات المنشورة والمعتمدة لهذا السوق فقط. خيارات التصنيف والمخزون تظهر عند توفر بياناتها المعتمدة.</p>
   </section>;
 }
+function PackageSearchFallback(){return <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary-soft text-primary"><ImageOff className="h-7 w-7" aria-hidden="true"/></span>}

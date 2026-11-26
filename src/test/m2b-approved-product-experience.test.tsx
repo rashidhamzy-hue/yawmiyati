@@ -68,15 +68,15 @@ describe("M2B approved UI",()=>{
   });
   it("supports accessible approved-only browsing and reset of pages",()=>{
     const {container}=render(<ApprovedCatalogBrowser market="sa" products={sa}/>);
-    expect(screen.getByText("3 منتج معتمد")).toBeTruthy();
+    expect(screen.getByText("3 منتج متاح للعرض")).toBeTruthy();
     expect(container.querySelectorAll("article")).toHaveLength(3);
     fireEvent.change(screen.getByRole("combobox",{name:"ترتيب المنتجات"}),{target:{value:"price_desc"}});
     const articles=container.querySelectorAll("article");
     expect(within(articles[0] as HTMLElement).getByText(sa[0].title)).toBeTruthy();
     fireEvent.change(screen.getByRole("searchbox",{name:"بحث المنتجات"}),{target:{value:"لا يوجد"}});
-    expect(screen.getByText("لا توجد منتجات معتمدة مطابقة.")).toBeTruthy();
+    expect(screen.getByText("ما لقينا منتجات تطابق اختياراتك")).toBeTruthy();
     fireEvent.change(screen.getByRole("searchbox",{name:"بحث المنتجات"}),{target:{value:""}});
-    fireEvent.change(screen.getByRole("textbox",{name:"أقل سعر بالوحدات الصغرى"}),{target:{value:"abc"}});
+    fireEvent.change(screen.getByRole("textbox",{name:"أقل سعر"}),{target:{value:"abc"}});
     expect(screen.getByRole("alert")).toBeTruthy();
   });
 });
