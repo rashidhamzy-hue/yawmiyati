@@ -73,7 +73,7 @@ async function main(){
        await dialog.waitFor({state:"hidden"});
      }
      if(width===390||width===1440){
-       const editorial=page.locator('main img[src^="https://images.unsplash.com/"]');
+       const editorial=page.locator('main img[src^="/editorial/"]');
        assert.ok(await editorial.count()>=6,label+": incomplete licensed editorial photo set");
        for(const index of [0,1,2]){
          const item=editorial.nth(index);
