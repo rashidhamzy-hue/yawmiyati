@@ -1,0 +1,45 @@
+# Lighthouse audit of the deployed staging storefront (mobile, all five markets).
+# Read-only: it only loads public staging pages. Results are uploaded as an artifact
+# and summarised in the job log.
+name: Lighthouse staging audit
+on:
+  workflow_dispatch:
+  push:
+    branches: [qa/lighthouse-staging]
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      BASE: https://yawmiyati-storefront-staging.rashid-hamzy.workers.dev
+    steps:
+      - name: Run Lighthouse (mobile)
+        run: |
+          set -u
+          mkdir -p lh
+          pages="sa ae om eg iq sa/c/kitchen sa/search sa/info/shipping-returns sa/cart sa/story"
+          for p in $pages; do
+            name=$(echo "$p" | tr '/' '_')
+            npx -y lighthouse@12 "$BASE/$p" --quiet --chrome-flags="--headless=new --no-sandbox" \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --output=json --output=html --output-path="lh/$name" || echo "FAILED $p"
+          done
+      - name: Summary
+        run: |
+          for f in lh/*.report.json; do
+            node -e '
+              const r=require("./"+process.argv[1]);const c=r.categories;const a=r.audits;
+              const s=k=>Math.round((c[k]?.score??0)*100);
+              console.log([r.finalDisplayedUrl.replace(process.env.BASE,""),"perf",s("performance"),"a11y",s("accessibility"),"bp",s("best-practices"),"seo",s("seo"),
+                "LCP",a["largest-contentful-paint"]?.displayValue,"CLS",a["cumulative-layout-shift"]?.displayValue,"TBT",a["total-blocking-time"]?.displayValue,
+                "JS",Math.round((a["total-byte-weight"]?.numericValue??0)/1024)+"KB"].join(" | "));
+              const bad=Object.values(a).filter(x=>x.score!==null&&x.score<0.9&&x.scoreDisplayMode!=="informative"&&x.scoreDisplayMode!=="notApplicable").map(x=>x.id);
+              console.log("   below 90:",bad.join(", "));
+            ' "$f"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-staging
+          path: lh/
