@@ -69,7 +69,7 @@ export function ApprovedCatalogBrowser({market,products,onOpen,images={}}:{marke
       </label>
       <label className="text-sm font-bold">ترتيب حسب
         <select aria-label="ترتيب المنتجات" value={sort} onChange={e=>{setSort(e.target.value as ApprovedSort);setPage(1);}} className="field mt-2 min-h-12 w-full">
-          <option value="default">الأكثر صلة</option><option value="price_asc">السعر: الأقل أولاً</option><option value="price_desc">السعر: الأعلى أولاً</option><option value="title">الاسم</option>
+          <option value="popular" disabled={!products.some(row=>row.popularity_rank!==undefined)}>الأكثر رواجاً</option><option value="default">الأكثر صلة</option><option value="price_asc">السعر: الأقل أولاً</option><option value="price_desc">السعر: الأعلى أولاً</option><option value="title">الاسم</option>
         </select>
       </label>
       <div className="grid grid-cols-2 gap-2">
