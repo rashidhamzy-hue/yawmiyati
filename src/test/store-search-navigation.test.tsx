@@ -35,3 +35,5 @@ it("shows product breadcrumbs with reliable home and catalogue destinations",()=
  expect(within(nav).getByRole("link",{name:"الرئيسية"}).getAttribute("href")).toBe("/sa");
  expect(within(nav).getByRole("link",{name:"كل المنتجات"}).getAttribute("href")).toBe("/sa/search");
 });
+
+it("keeps the all-products page to one catalogue heading and one search/filter system",()=>{render(<MarketPreview market="sa" searchOnly/>);expect(screen.getByRole("heading",{level:1,name:"كل المنتجات"})).toBeTruthy();expect(screen.queryByRole("heading",{name:"ابحثي في منتجات يومياتي"})).toBeNull();expect(screen.getByRole("searchbox",{name:"بحث المنتجات"})).toBeTruthy();const sort=screen.getByRole("combobox",{name:"ترتيب المنتجات"});expect(within(sort).getByRole("option",{name:"الأكثر رواجاً"}).hasAttribute("disabled")).toBe(false);});
