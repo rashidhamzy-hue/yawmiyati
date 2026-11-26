@@ -34,6 +34,14 @@ export function addOfferLine(market: MarketCode, line: OfferCartLine, zoneId: st
   write({ ...cart, zone_id: zoneId ?? cart.zone_id, lines: exists ? cart.lines : [...cart.lines, line] });
   return exists ? "already" : "added";
 }
+/** Replace an existing sample quantity for the same product without duplicating its line. */
+export function selectPreviewQuantity(market:MarketCode,line:OfferCartLine,zoneId:string):"added"|"already"{
+ const cart=readOfferCart(market);
+ const existing=cart.lines.find(l=>l.listing_id===line.listing_id);
+ const lines=cart.lines.filter(l=>l.listing_id!==line.listing_id);
+ write({...cart,zone_id:zoneId,lines:[...lines,line]});
+ return existing?.pack_id===line.pack_id?"already":"added";
+}
 export function removeOfferLine(market: MarketCode, index: number) {
   const cart = readOfferCart(market);
   write({ ...cart, lines: cart.lines.filter((_, i) => i !== index) });
