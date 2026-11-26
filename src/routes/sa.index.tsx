@@ -2,8 +2,10 @@ import {editorialSchema,serializeEditorialSchema} from "@/lib/store/editorial-sc
 import {createFileRoute} from "@tanstack/react-router";
 import {MarketPreview} from "@/components/store/MarketPreview";
 import {img} from "@/lib/store/images";
+import {editorialPreload} from "@/lib/store/editorial-srcset";
+import {marketExperience} from "@/lib/store/market-experience";
 export const Route=createFileRoute("/sa/")({
- head:()=>({scripts:[{type:"application/ld+json",children:serializeEditorialSchema(editorialSchema("sa")!)}],meta:[
+ head:()=>({links:[editorialPreload(img[marketExperience.sa.heroImage])],scripts:[{type:"application/ld+json",children:serializeEditorialSchema(editorialSchema("sa")!)}],meta:[
   {title:"يومياتي السعودية | تفاصيل صغيرة، حياة أجمل"},
   {name:"description",content:"اكتشفي اختيارات يومياتي السعودية للمنزل والقهوة والجمال والعناية والأزياء، وتصفّحي الأقسام والتفاصيل على ذوقك."},
   {name:"robots",content:"noindex,nofollow"},
