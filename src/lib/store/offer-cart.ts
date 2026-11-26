@@ -42,6 +42,13 @@ export function selectPreviewQuantity(market:MarketCode,line:OfferCartLine,zoneI
  write({...cart,zone_id:zoneId,lines:[...lines,line]});
  return existing?.pack_id===line.pack_id?"already":"added";
 }
+export function updateOfferLine(market: MarketCode, index: number, line: OfferCartLine) {
+  const cart = readOfferCart(market);
+  const lines = [...cart.lines];
+  if (index < 0 || index >= lines.length) return;
+  lines[index] = line;
+  write({ ...cart, lines });
+}
 export function removeOfferLine(market: MarketCode, index: number) {
   const cart = readOfferCart(market);
   write({ ...cart, lines: cart.lines.filter((_, i) => i !== index) });
