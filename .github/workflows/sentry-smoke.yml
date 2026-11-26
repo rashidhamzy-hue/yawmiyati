@@ -12,9 +12,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Install browser
-        run: npm install --no-save --no-package-lock playwright@1.58.2 && npx playwright install --with-deps chromium
+      - name: Install browser (outside the repo, which is a bun project)
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw" && npm init -y >/dev/null
+          npm install playwright@1.58.2 && npx playwright install --with-deps chromium
       - name: Send one test error from staging
         env:
           BASE: https://yawmiyati-storefront-staging.rashid-hamzy.workers.dev
-        run: node scripts/sentry-smoke.cjs
+        run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node scripts/sentry-smoke.cjs
