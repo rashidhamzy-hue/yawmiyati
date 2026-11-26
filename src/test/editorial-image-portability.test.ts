@@ -4,9 +4,9 @@ import {editorialSrcSet} from "../lib/store/editorial-srcset";
 
 const editorial=["hero","cat-home","cat-kitchen","cat-beauty","cat-fashion","cat-wellness","cat-organize"] as const;
 describe("portable licensed editorial media",()=>{
- it("serves every editorial image from our own origin, with absolute originals for social previews",()=>{
+ it("serves every editorial image from the licensed image CDN",()=>{
   for(const key of editorial){
-   expect(img[key]).toMatch(/^\/editorial\/[a-z-]+-\d+\.webp$/);
+   expect(img[key]).toBe(editorialRemote[key]);
    const remote=new URL(editorialRemote[key]);
    expect(remote.hostname).toBe("images.unsplash.com");
   }
@@ -14,8 +14,8 @@ describe("portable licensed editorial media",()=>{
  it("provides responsive srcsets with mobile and desktop renditions",()=>{
   const variants=editorialSrcSet(img.hero)!;
   expect(variants).toContain("360w");
-  expect(variants).toContain("1600w");
-  expect(variants).toContain("/editorial/hero-480.webp 480w");
+  expect(variants).toContain("1920w");
+  expect(variants).toContain("480w");
   expect(variants).not.toContain("/__l5e/");
   expect(editorialSrcSet(img.p1)).toBeUndefined();
  });
