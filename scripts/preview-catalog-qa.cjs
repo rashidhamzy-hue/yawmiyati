@@ -57,6 +57,7 @@ async function main(){
    assert.equal(await switches.locator('[aria-current="page"]').getAttribute("href"),"/"+market+"/c/"+slug);
   }
   await page.getByRole("combobox",{name:"ترتيب المنتجات"}).selectOption("low");
+  await page.getByRole("button",{name:/تصفية/}).click();
   await page.getByRole("searchbox",{name:"البحث في هذا القسم"}).fill("zzzz-no-match");
   await categoryGrid.getByText("لا توجد نتائج مطابقة.",{exact:false}).waitFor();
   await page.getByRole("searchbox",{name:"البحث في هذا القسم"}).fill("");
