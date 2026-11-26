@@ -81,6 +81,7 @@ export function ApprovedCatalogBrowser({market,products,onOpen,images={}}:{marke
         {hasFilters&&<button type="button" onClick={reset} className="min-h-10 px-3 text-xs font-bold text-primary underline underline-offset-4">مسح التصفية</button>}
       </div>
     </div>
+    {!products.some(row=>row.popularity_rank!==undefined)&&<p className="text-xs text-muted-foreground">سيُتاح ترتيب الأكثر رواجاً عند توفر بيانات طلبات موثّقة لهذا المتجر.</p>}
     {invalidRange?<p role="alert" className="rounded-xl border border-destructive/30 p-4 text-sm">أدخلي سعراً صحيحاً، وتأكدي أن الحد الأدنى لا يتجاوز الحد الأعلى.</p>:result!.total===0?
       <div className="rounded-2xl border bg-card px-5 py-12 text-center"><PackageSearchFallback/><h3 className="mt-3 font-bold">ما لقينا منتجات تطابق اختياراتك</h3><p className="mt-2 text-sm text-muted-foreground">جرّبي تخفيف التصفية أو تغيير كلمة البحث.</p><button type="button" onClick={reset} className="btn-outline mt-4 min-h-11">عرض كل المنتجات</button></div>:
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
