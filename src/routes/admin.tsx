@@ -3,18 +3,18 @@ import { AccountOfferReview } from "../components/store/AccountOfferReview";
 import { OfferSelectionDemo } from "../components/store/OfferSelectionDemo";
 import {publicBrowserConfig} from "@/lib/store/staging-public-config";
 import { createFileRoute } from "@tanstack/react-router";
-import {BarChart3,Boxes,ClipboardCheck,ShieldCheck,Settings2,ChartNoAxesCombined,Store,LockKeyhole,ExternalLink,Sparkles,PackageSearch,Wallet,MapPin} from "lucide-react";
-import { useState, useRef, useMemo, type FormEvent } from "react";
+import {AlertTriangle,BarChart3,Boxes,ChartNoAxesCombined,ClipboardCheck,ExternalLink,LockKeyhole,LogOut,PackageSearch,PauseCircle,RefreshCw,Settings2,ShieldCheck,ShoppingBag,Users,Wallet,type LucideIcon} from "lucide-react";
+import { useState, useRef, useMemo, type FormEvent, type ReactNode } from "react";
 import { dashboardClient, type DashboardSummary, type MarketPerformance, type CatalogRow, type Recommendation, type AiPolicy } from "../lib/store/dashboard-client";
 import { CommercialReview } from "@/components/store/CommercialReview";
 import { OwnerActionQueue } from "@/components/store/OwnerActionQueue";
 import { markets, type MarketCode } from "../lib/store/markets";
 import {summarizeOwnerMarket,formatRecordedMinor} from "@/lib/store/owner-dashboard-presentation";
+import {marketIdentity} from "@/lib/store/market-identity";
 export const Route = createFileRoute("/admin")({
  head:()=>({meta:[{title:"Yawmiyati OS | Owner"},{name:"robots",content:"noindex,nofollow"}]}),
  component:OwnerDashboard,
 });
-const names:Record<MarketCode,string>={sa:"Saudi Arabia",ae:"UAE",om:"Oman",eg:"Egypt",iq:"Iraq"};
 function OwnerDashboard(){
  const [email,setEmail]=useState("");
  const [password,setPassword]=useState("");
@@ -33,7 +33,7 @@ function OwnerDashboard(){
  const [error,setError]=useState("");
  const [busy,setBusy]=useState(false);
  const generation=useRef(0);
- const {origin,key}=publicBrowserConfig(import.meta.env.VITE_YAWMIYATI_SUPABASE_URL,import.meta.env.VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY);
+ const {origin,key}=publicBrowserConfig(import.meta.env["VITE_YAWMIYATI_SUPABASE_URL"],import.meta.env["VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY"]);
  const reviewClient=useMemo(()=>{try{return dashboardClient(origin,key)}catch{return null}},[origin,key]);
  const overview=useMemo(()=>summarizeOwnerMarket(market,data,performance,data?catalog:null,data?recommendations:null,policy),[market,data,performance,catalog,recommendations,policy]);
  async function load(next:MarketCode,access:string){
@@ -78,38 +78,136 @@ function OwnerDashboard(){
   finally{if(currentGeneration===generation.current){catalogPageInFlight.current=false;setCatalogLoading(false);}}
  }
  function signOut(){generation.current++;setToken("");setData(null);setPerformance(null);setCatalog([]);setCatalogHasMore(false);setCatalogNextOffset(0);setCatalogLoading(false);setCatalogPageError("");catalogPageInFlight.current=false;setRecommendations([]);setPolicy(null);setError("");setBusy(false);}
- return <main dir="ltr" className="min-h-screen bg-background text-foreground pb-16">
- <div className="border-b border-border bg-card"><div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-5 md:px-8"><a href="/sa" className="text-2xl font-extrabold tracking-tight text-primary">yawmiyati<span className="text-gold">.</span><span className="ml-3 rounded-full bg-primary-soft px-3 py-1 align-middle text-[11px] font-bold uppercase tracking-wider text-primary">OS</span></a><span className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold text-muted-foreground"><LockKeyhole className="h-4 w-4 text-primary"/> Private owner workspace</span></div></div><div className="mx-auto max-w-7xl space-y-7 px-4 pt-7 md:px-8">
- <header className="rounded-[2rem] bg-gradient-to-r from-primary via-primary to-[#073c3f] px-6 py-9 text-primary-foreground sm:px-9"><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="mb-2 inline-flex items-center gap-2 text-xs font-bold text-white/80"><Sparkles className="h-4 w-4"/> CONTROL CENTER</p><h1 className="font-display text-3xl font-extrabold sm:text-4xl">Yawmiyati OS</h1><p className="mt-3 max-w-xl text-sm leading-7 text-white/80">Five market-specific review workspaces. Figures are recorded observations, not verified settlement or permission to publish products.</p></div>{token&&<button className="rounded-full border border-white/40 px-5 py-3 text-sm font-semibold hover:bg-white/10" onClick={signOut}>Sign out</button>}</div></header>
- {!origin||!key?<section role="status" className="space-y-7 rounded-[2rem] border bg-card p-6 shadow-soft sm:p-9">
- <div className="flex items-start gap-4"><span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-primary-soft text-primary"><Settings2 className="h-7 w-7"/></span><div><h2 className="text-2xl font-extrabold">Connect the owner dashboard</h2><p className="mt-2 max-w-2xl text-sm leading-7 text-muted-foreground">The project database exists, but this Lovable preview does not have its public Supabase URL and publishable key configured. No private records or invented performance numbers are displayed.</p></div></div>
- <div className="grid gap-3 sm:grid-cols-3">{[["1","Public project URL","VITE_YAWMIYATI_SUPABASE_URL"],["2","Publishable key only","VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY"],["3","Owner sign-in","Verified member access required"]].map(([n,t,d])=><div key={n} className="rounded-2xl border bg-background p-5"><span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">{n}</span><h3 className="mt-4 text-sm font-bold">{t}</h3><p className="mt-2 break-words text-xs leading-6 text-muted-foreground">{d}</p></div>)}</div>
- <a href="https://supabase.com/dashboard/project/skhtunkknshvolturqlm/settings/api-keys" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-primary px-5 py-3 text-sm font-semibold text-primary hover:bg-primary-soft">Open this project's public API settings <ExternalLink className="h-4 w-4"/></a>
- <p className="text-xs leading-6 text-muted-foreground">Do not enter a service-role key into a browser variable. The connection remains private and market-authorized after sign-in.</p>
- </section>:!token?
- <form onSubmit={signIn} className="mx-auto max-w-md space-y-5 rounded-[2rem] border bg-card p-7 shadow-soft sm:p-9">
- <div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary-soft text-primary"><LockKeyhole className="h-6 w-6"/></div><h2 className="text-2xl font-extrabold">Owner sign in</h2><p className="text-sm text-muted-foreground">Use your authorized Supabase account to access real market data.</p>
- <label className="block">Email<input className="block w-full rounded border p-3" type="email" autoComplete="username" required value={email} onChange={e=>setEmail(e.target.value)}/></label>
- <label className="block">Password<input className="block w-full rounded border p-3" type="password" autoComplete="current-password" required value={password} onChange={e=>setPassword(e.target.value)}/></label>
- <button disabled={busy} className="w-full rounded-lg bg-primary p-3 text-primary-foreground">{busy?"Signing in…":"Sign in"}</button>
- </form>:<>
- <nav aria-label="Dashboard sections" className="flex gap-2 overflow-x-auto rounded-2xl border bg-card p-2 text-xs font-bold" role="navigation">{[["Overview","#overview"],["Performance","#performance"],["Catalog","#catalog"],["AI approvals","#approvals"],["Safety","#safety"]].map(([name,href])=><a href={href} key={href} className="shrink-0 rounded-full px-4 py-2.5 text-primary hover:bg-primary-soft">{name}</a>)}</nav><label className="block text-sm font-semibold">Market<select aria-label="Owner market selector" disabled={busy} className="ml-3 min-h-11 max-w-full rounded border bg-card p-3 text-sm" value={market} onChange={e=>{const next=e.target.value as MarketCode;setMarket(next);void load(next,token);}}>{Object.keys(markets).map(m=><option key={m} value={m}>{names[m as MarketCode]}</option>)}</select></label>
- <section aria-label="Selected market scope" className="rounded-2xl border border-primary/20 bg-primary-soft p-4 text-sm leading-7"><p className="font-bold">Reviewing {names[market]} · {markets[market].currency}</p><p className="text-muted-foreground">Figures and decisions below apply only to the selected market. Switching markets clears previously loaded observations. No source-only review authorizes live products or checkout.</p></section>
- {busy&&<p role="status" aria-live="polite">Loading selected-market records…</p>}
- {data&&<><section aria-label="Market evidence and release status" className="space-y-3 rounded-[1.5rem] border bg-card p-5 shadow-soft"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-extrabold">Evidence and launch readiness</h2><span className="rounded-full border px-3 py-1 text-xs font-bold">Not verified for launch</span></div><p className="text-sm leading-7 text-muted-foreground">Observed records do not confirm fresh supplier stock, valid media rights, approved delivery terms, settlement, or commercial release.</p><dl className="grid gap-3 text-sm sm:grid-cols-3"><div className="rounded-xl bg-background p-3"><dt className="text-muted-foreground">Catalog records returned</dt><dd className="mt-1 font-bold">{overview.catalogCount??"Unknown"}</dd></div><div className="rounded-xl bg-background p-3"><dt className="text-muted-foreground">Pending proposal reviews</dt><dd className="mt-1 font-bold">{overview.pendingRecommendations??"Unknown"}</dd></div><div className="rounded-xl bg-background p-3"><dt className="text-muted-foreground">Automation policy</dt><dd className="mt-1 font-bold">{overview.activeAutomation===null?"Unknown":overview.activeAutomation?"Review enabled settings":"No enabled settings reported"}</dd></div></dl><div className="grid gap-2">{overview.alerts.map((alert,i)=><div role="status" key={alert.code+":"+i} className="rounded-xl border border-border bg-background px-4 py-3 text-sm"><p className="font-bold">{alert.title}</p><p className="mt-1 text-muted-foreground">{alert.detail}</p></div>)}</div></section><div id="overview" className="grid grid-cols-1 gap-4 sm:grid-cols-3">{[["Recorded orders",String(data.orders)],["Customers",String(data.customers)],["Recorded net (ledger observation)",overview.recordedNet??"Unknown"]].map(([label,value])=><section key={label} className="rounded-[1.5rem] border bg-card p-5 shadow-soft"><h2 className="text-sm text-muted-foreground">{label}</h2><p className="mt-2 break-all text-2xl font-bold">{value}</p></section>)}</div><section className="rounded-xl border p-5"><h2 className="font-bold">Order status</h2>{Object.entries(data.order_statuses).map(([status,count])=><p key={status}>{status}: {count}</p>)}{!Object.keys(data.order_statuses).length&&<p>No orders yet.</p>}</section></>}
- {performance&&<section id="performance" className="space-y-4 rounded-[1.75rem] border bg-card p-6 shadow-soft"><h2 className="text-xl font-bold">Recorded performance · last {performance.window_days} days</h2>
- <div className="grid gap-3 sm:grid-cols-3">{[["Recorded orders",performance.orders.recorded],["Delivered statuses",performance.orders.delivered],["Failed statuses",performance.orders.failed],["Returned statuses",performance.orders.returned],["Cancelled statuses",performance.orders.cancelled],["Ledger entries",performance.ledger.entries],["Recorded net · ledger observation",formatRecordedMinor(market,performance.ledger.recorded_net_minor)],["Observed ad spend · ledger observation",formatRecordedMinor(market,performance.marketing_observations.spend_minor)],["Marketing observations",performance.marketing_observations.records]].map(([label,value])=><div key={String(label)} className="rounded border p-3"><p className="text-xs text-muted-foreground">{label}</p><p className="break-all text-xl font-bold">{value}</p></div>)}</div>
- <ul className="list-inside list-disc text-xs text-muted-foreground">{performance.warnings.map(w=><li key={w}>{w}</li>)}</ul></section>}
- {data&&reviewClient&&<EditorialImport catalog={catalog} key={market} market={market} client={reviewClient} token={token}/>}
- {data&&reviewClient&&<AccountOfferReview key={market} market={market} client={reviewClient} token={token}/>}
- {data&&<OfferSelectionDemo key={market} market={market}/>}
- {data&&<OwnerActionQueue market={market} catalog={catalog} recommendations={recommendations} policy={policy}/>}
- {data&&reviewClient&&<CommercialReview key={market} client={reviewClient} token={token} market={market}/>}
- {data&&<section id="catalog" className="rounded-[1.75rem] border bg-card p-6 shadow-soft"><h2 className="text-xl font-bold">Product catalog</h2><p className="text-sm text-muted-foreground">Loaded {catalog.length} listing record(s) from this market · Read only. Inventory counts are not independent supplier stock proof.</p>{catalog.length===0?<p className="mt-4">No supplier listings imported yet.</p>:<div className="overflow-x-auto"><table className="mt-4 w-full text-left text-sm"><thead><tr><th>Product</th><th>Status</th><th>Variants</th><th>Recently available</th></tr></thead><tbody>{catalog.map(row=><tr key={row.listing_id} className="border-t"><td className="py-3">{row.title}</td><td>{row.listing_status}</td><td>{row.variant_count}</td><td>{row.available_count}</td></tr>)}</tbody></table></div>}{catalogPageError&&<p role="alert" className="mt-3 text-sm">{catalogPageError}</p>}{catalogHasMore&&<button type="button" onClick={()=>void loadMoreCatalog()} disabled={busy||catalogLoading} className="mt-4 min-h-11 rounded-lg border px-4 py-2 text-sm font-bold text-primary hover:bg-primary-soft disabled:opacity-50">{catalogLoading?"Loading catalog…":"Load 50 more listings"}</button>}{!catalogHasMore&&catalog.length>0&&<p className="mt-3 text-xs text-muted-foreground">End of returned catalog records for this market.</p>}</section>}
- {data&&<section id="approvals" className="rounded-[1.75rem] border bg-card p-6 shadow-soft space-y-3"><h2 className="text-xl font-bold">Owner approvals</h2><p className="text-sm text-muted-foreground">Decisions are recorded only; nothing is published automatically.</p>{recommendations.length===0&&<p>No recommendations returned for this market. This does not confirm that every catalog item is approved.</p>}{recommendations.map(r=><article key={r.id} className="rounded border p-4 space-y-2"><h3 className="font-bold">{r.kind} · {r.state}</h3><p>{r.rationale}</p><pre className="whitespace-pre-wrap break-all text-xs">{JSON.stringify(r.proposal,null,2)}</pre>{r.state==="pending"&&<div className="flex gap-2"><button disabled={busy} className="rounded border p-3" onClick={()=>void review(r.id,"approved")}>Approve proposal</button><button disabled={busy} className="rounded border p-3" onClick={()=>void review(r.id,"rejected")}>Reject</button></div>}</article>)}</section>}
- {policy&&<section id="safety" className="rounded-[1.75rem] border bg-card p-6 shadow-soft space-y-2"><h2 className="font-bold">Automation safety</h2><p>AI: {policy.enabled?"Enabled":"Disabled"} · Daily limit: ${(policy.daily_budget_microusd/1000000).toFixed(2)} USD</p><p>Automatic pricing: {policy.auto_pricing_enabled?"On":"Off"} · Publishing: {policy.auto_publish_enabled?"On":"Off"}</p><button disabled={busy} onClick={()=>void pauseAi()} className="rounded border p-3">Pause market automation</button></section>}
- <p className="text-sm text-muted-foreground">Recorded net is not settlement profit. No verified public checkout, supplier dispatch, real fulfillment or five-market launch approval is established by this dashboard.</p>
- </>}
- {error&&<p role="alert" className="rounded border p-3">{error}</p>}
- </div></main>;
+ const signedIn=Boolean(token);
+ const loading=busy&&!data;
+ return <main dir="ltr" className="min-h-screen bg-background pb-20 text-foreground">
+  <header className="border-b border-border bg-card/95">
+   <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 md:px-8">
+    <a href="/sa" className="text-xl font-extrabold tracking-tight text-primary">yawmiyati<span className="text-gold">.</span><span className="ml-2 rounded-full bg-primary-soft px-2.5 py-1 align-middle text-[10px] font-bold uppercase tracking-wider text-primary">Owner</span></a>
+    {signedIn?<button type="button" onClick={signOut} className="inline-flex min-h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold hover:bg-muted"><LogOut className="h-4 w-4" aria-hidden="true"/>Sign out</button>
+     :<span className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground"><LockKeyhole className="h-4 w-4 text-primary" aria-hidden="true"/>Private</span>}
+   </div>
+  </header>
+  <div className="mx-auto max-w-6xl space-y-6 px-4 pt-6 md:px-8">
+  {!origin||!key?<ConnectionMissing/>:!signedIn?
+   <form onSubmit={signIn} className="mx-auto mt-6 max-w-sm space-y-5 rounded-3xl border bg-card p-7 shadow-soft">
+    <div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary-soft text-primary"><LockKeyhole className="h-6 w-6" aria-hidden="true"/></div>
+    <div><h1 className="text-2xl font-extrabold">Owner sign in</h1><p className="mt-1 text-sm text-muted-foreground">Yawmiyati control center · all five stores</p></div>
+    <Field label="Email"><input className={inputClass} type="email" inputMode="email" autoComplete="username" required value={email} onChange={e=>setEmail(e.target.value)}/></Field>
+    <Field label="Password"><input className={inputClass} type="password" autoComplete="current-password" required value={password} onChange={e=>setPassword(e.target.value)}/></Field>
+    {error&&<p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p>}
+    <button disabled={busy} className="min-h-12 w-full rounded-xl bg-primary font-bold text-primary-foreground transition-opacity disabled:opacity-60">{busy?"Signing in…":"Sign in"}</button>
+   </form>:<>
+   <div className="sticky top-0 z-20 -mx-4 space-y-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur md:-mx-8 md:px-8">
+    <div role="radiogroup" aria-label="Owner market selector" className="flex gap-2 overflow-x-auto pb-1">
+     {(Object.keys(markets) as MarketCode[]).map(m=>{const active=m===market;return <button key={m} type="button" role="radio" aria-checked={active} disabled={busy&&!active}
+      onClick={()=>{if(active)return;setMarket(m);void load(m,token);}}
+      className={"inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-bold transition-colors "+(active?"border-primary bg-primary text-primary-foreground":"bg-card hover:border-primary/40")}>
+      <span aria-hidden="true">{marketIdentity[m].flag}</span>{names[m]}<span className={"text-[11px] font-semibold "+(active?"text-primary-foreground/75":"text-muted-foreground")}>{markets[m].currency}</span></button>;})}
+    </div>
+    <nav aria-label="Dashboard sections" className="flex gap-1 overflow-x-auto text-xs font-bold">{sections.map(([name,href])=><a href={href} key={href} className="shrink-0 rounded-full px-3 py-2 text-muted-foreground hover:bg-primary-soft hover:text-primary">{name}</a>)}</nav>
+   </div>
+   {error&&<div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><span>{error}</span><button type="button" onClick={()=>void load(market,token)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-destructive/40 px-4 font-semibold"><RefreshCw className="h-4 w-4" aria-hidden="true"/>Retry</button></div>}
+   <section id="overview" aria-label="Market overview" aria-busy={loading} className="scroll-mt-32 space-y-4">
+    <div className="flex flex-wrap items-end justify-between gap-2"><h1 className="text-2xl font-extrabold">{marketIdentity[market].flag} {names[market]}</h1><span className="rounded-full border px-3 py-1 text-xs font-bold text-muted-foreground">Not launched · checkout off</span></div>
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+     <Stat icon={ShoppingBag} label="Recorded orders" value={data?String(data.orders):null} loading={loading}/>
+     <Stat icon={Users} label="Customers" value={data?String(data.customers):null} loading={loading}/>
+     <Stat icon={Wallet} label="Recorded net (ledger)" value={data?overview.recordedNet:null} loading={loading}/>
+     <Stat icon={Boxes} label="Catalog records" value={overview.catalogCount===null?null:String(overview.catalogCount)+(catalogHasMore?"+":"")} loading={loading}/>
+     <Stat icon={ClipboardCheck} label="Pending approvals" value={overview.pendingRecommendations===null?null:String(overview.pendingRecommendations)} loading={loading} highlight={(overview.pendingRecommendations??0)>0}/>
+     <Stat icon={ShieldCheck} label="AI automation" value={policy?(policy.enabled?"On":"Off"):null} loading={loading}/>
+    </div>
+    {overview.alerts.length>0&&<details className="group rounded-2xl border border-amber-300/70 bg-amber-50 px-4 py-3 text-sm text-amber-950" aria-label="Needs attention">
+     <summary className="flex cursor-pointer list-none items-center gap-2 font-bold"><AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" aria-hidden="true"/>{overview.alerts.length} note{overview.alerts.length===1?"":"s"} on this data<span className="ml-auto text-xs font-semibold text-amber-800 group-open:hidden">Show</span></summary>
+     <ul className="mt-3 space-y-2">{overview.alerts.map((alert,i)=><li role="status" key={alert.code+":"+i}><p className="font-bold">{alert.title}</p><p className="opacity-80">{alert.detail}</p></li>)}</ul>
+    </details>}
+   </section>
+   {data&&<OwnerActionQueue market={market} catalog={catalog} recommendations={recommendations} policy={policy}/>}
+   {performance&&<Card id="performance" title={"Performance · last "+performance.window_days+" days"} icon={ChartNoAxesCombined}>
+    <OrderOutcomes p={performance}/>
+    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">{([["Ledger entries",String(performance.ledger.entries)],["Recorded net",formatRecordedMinor(market,performance.ledger.recorded_net_minor)],["Ad spend observed",formatRecordedMinor(market,performance.marketing_observations.spend_minor)],["Impressions",performance.marketing_observations.impressions],["Clicks",performance.marketing_observations.clicks],["Marketing records",String(performance.marketing_observations.records)]] as const).map(([label,value])=><div key={label} className="rounded-xl bg-background p-3"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 break-all font-bold">{value}</p></div>)}</div>
+    {performance.warnings.length>0&&<ul className="mt-3 space-y-1 text-xs text-muted-foreground">{performance.warnings.map(w=><li key={w}>• {w}</li>)}</ul>}
+   </Card>}
+   {data&&Object.keys(data.order_statuses).length>0&&<Card title="Order status (all time)" icon={BarChart3}><StatusBars statuses={data.order_statuses}/></Card>}
+   {data&&<Card id="catalog" title="Product catalog" icon={PackageSearch} aside={<span className="text-xs text-muted-foreground">{catalog.length} loaded · read only</span>}>
+    {catalog.length===0?<Empty text="No supplier listings imported yet for this market."/>:<>
+     <ul className="divide-y md:hidden">{catalog.map(row=><li key={row.listing_id} className="py-3"><p dir="auto" className="font-semibold leading-6">{row.title}</p><p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><StatusBadge status={row.listing_status}/>{row.variant_count} variant(s) · {row.available_count} recently available</p></li>)}</ul>
+     <div className="hidden overflow-x-auto md:block"><table className="w-full text-left text-sm"><thead className="text-xs uppercase tracking-wide text-muted-foreground"><tr><th className="py-2 font-semibold">Product</th><th className="font-semibold">Status</th><th className="font-semibold">Variants</th><th className="font-semibold">Recently available</th></tr></thead><tbody>{catalog.map(row=><tr key={row.listing_id} className="border-t"><td dir="auto" className="py-3 pr-4 text-start">{row.title}</td><td><StatusBadge status={row.listing_status}/></td><td>{row.variant_count}</td><td>{row.available_count}</td></tr>)}</tbody></table></div>
+    </>}
+    {catalogPageError&&<p role="alert" className="mt-3 text-sm text-destructive">{catalogPageError}</p>}
+    {catalogHasMore&&<button type="button" onClick={()=>void loadMoreCatalog()} disabled={busy||catalogLoading} className="mt-4 min-h-11 w-full rounded-xl border px-4 text-sm font-bold text-primary hover:bg-primary-soft disabled:opacity-50 sm:w-auto">{catalogLoading?"Loading catalog…":"Load 50 more listings"}</button>}
+    {!catalogHasMore&&catalog.length>0&&<p className="mt-3 text-xs text-muted-foreground">End of catalog records for this market.</p>}
+   </Card>}
+   {data&&<Card id="approvals" title="Owner approvals" icon={ClipboardCheck} aside={<span className="text-xs text-muted-foreground">Decisions are recorded; nothing publishes automatically</span>}>
+    {recommendations.length===0?<Empty text="No recommendations waiting for this market."/>:<div className="space-y-3">{recommendations.map(r=><article key={r.id} className="rounded-2xl border bg-background p-4">
+     <div className="flex flex-wrap items-center gap-2"><h3 className="font-bold capitalize">{r.kind.replace(/_/g," ")}</h3><StatusBadge status={r.state}/></div>
+     <p className="mt-2 text-sm leading-6">{r.rationale}</p>
+     <details className="mt-2 text-xs"><summary className="cursor-pointer font-semibold text-primary">Proposal details</summary><pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-muted p-3">{JSON.stringify(r.proposal,null,2)}</pre></details>
+     {r.state==="pending"&&<div className="mt-3 grid grid-cols-2 gap-2 sm:flex"><button disabled={busy} className="min-h-11 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50" onClick={()=>void review(r.id,"approved")}>Approve proposal</button><button disabled={busy} className="min-h-11 rounded-xl border px-4 text-sm font-bold disabled:opacity-50" onClick={()=>void review(r.id,"rejected")}>Reject</button></div>}
+    </article>)}</div>}
+   </Card>}
+   {data&&reviewClient&&<section id="reviews" aria-label="Review workspaces" className="scroll-mt-32 space-y-6">
+    <CommercialReview key={"commercial-"+market} client={reviewClient} token={token} market={market}/>
+    <EditorialImport catalog={catalog} key={"editorial-"+market} market={market} client={reviewClient} token={token}/>
+    <AccountOfferReview key={"offers-"+market} market={market} client={reviewClient} token={token}/>
+   </section>}
+   {policy&&<Card id="safety" title="Automation safety" icon={ShieldCheck}>
+    <div className="flex flex-wrap gap-2 text-sm"><Pill on={policy.enabled} label="AI"/><Pill on={policy.auto_pricing_enabled} label="Auto pricing"/><Pill on={policy.auto_publish_enabled} label="Auto publishing"/><span className="rounded-full border px-3 py-1.5">Daily AI limit ${(policy.daily_budget_microusd/1000000).toFixed(2)}</span></div>
+    <button disabled={busy} onClick={()=>void pauseAi()} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl border border-destructive/40 px-4 text-sm font-bold text-destructive hover:bg-destructive/5 disabled:opacity-50"><PauseCircle className="h-4 w-4" aria-hidden="true"/>Pause {names[market]} automation</button>
+   </Card>}
+   {data&&<details className="rounded-3xl border bg-card p-5 shadow-soft"><summary className="cursor-pointer text-sm font-bold">Offer storefront preview (test fixtures)</summary><div className="mt-4"><OfferSelectionDemo key={market} market={market}/></div></details>}
+   <p className="text-xs leading-6 text-muted-foreground">Figures are recorded observations for the selected store, not settled profit. Nothing here publishes products, turns on checkout or sends orders to the supplier.</p>
+  </>}
+  </div>
+ </main>;
+}
+
+const names:Record<MarketCode,string>={sa:"Saudi Arabia",ae:"UAE",om:"Oman",eg:"Egypt",iq:"Iraq"};
+const sections=[["Overview","#overview"],["Performance","#performance"],["Catalog","#catalog"],["Approvals","#approvals"],["Reviews","#reviews"],["Safety","#safety"]] as const;
+const inputClass="block h-12 w-full rounded-xl border bg-background px-4 text-base outline-none transition-shadow focus:border-primary focus:ring-2 focus:ring-primary/20";
+function Field({label,children}:{label:string;children:ReactNode}){
+ return <label className="block space-y-1.5 text-sm font-semibold"><span>{label}</span>{children}</label>;
+}
+function Card({id,title,icon:Icon,aside,children}:{id?:string;title:string;icon:LucideIcon;aside?:ReactNode;children:ReactNode}){
+ return <section id={id} aria-label={title} className="scroll-mt-32 rounded-3xl border bg-card p-5 shadow-soft sm:p-6">
+  <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h2 className="inline-flex items-center gap-2 text-lg font-extrabold"><Icon className="h-5 w-5 text-primary" aria-hidden="true"/>{title}</h2>{aside}</div>
+  {children}
+ </section>;
+}
+function Stat({icon:Icon,label,value,loading,highlight=false}:{icon:LucideIcon;label:string;value:string|null;loading:boolean;highlight?:boolean}){
+ return <div className={"rounded-2xl border p-4 "+(highlight?"border-primary/40 bg-primary-soft":"bg-card")}>
+  <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground"><Icon className="h-3.5 w-3.5" aria-hidden="true"/>{label}</p>
+  {loading?<div className="mt-2 h-7 w-16 animate-pulse rounded-md bg-muted" aria-hidden="true"/>:<p className="mt-1.5 break-all text-xl font-extrabold sm:text-2xl">{value??"—"}</p>}
+ </div>;
+}
+function OrderOutcomes({p}:{p:MarketPerformance}){
+ const o=p.orders;
+ const parts=[["Delivered",o.delivered,"bg-emerald-500"],["Returned",o.returned,"bg-amber-500"],["Failed",o.failed,"bg-rose-500"],["Cancelled",o.cancelled,"bg-slate-400"],["Other",o.unknown,"bg-slate-200"]] as const;
+ const total=Math.max(o.recorded,parts.reduce((n,[,v])=>n+v,0));
+ return <div>
+  <p className="text-sm"><span className="text-2xl font-extrabold">{o.recorded}</span> <span className="text-muted-foreground">orders recorded</span></p>
+  <div className="mt-3 flex h-3 overflow-hidden rounded-full bg-muted" role="img" aria-label={parts.map(([l,v])=>l+" "+v).join(", ")}>{total>0&&parts.map(([l,v,c])=>v>0&&<span key={l} className={c} style={{width:(v/total*100)+"%"}}/>)}</div>
+  <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">{parts.map(([l,v,c])=><li key={l} className="inline-flex items-center gap-1.5"><span className={"h-2.5 w-2.5 rounded-full "+c} aria-hidden="true"/>{l} <b>{v}</b></li>)}</ul>
+ </div>;
+}
+function StatusBars({statuses}:{statuses:Record<string,number>}){
+ const rows=Object.entries(statuses).sort((a,b)=>b[1]-a[1]);const max=Math.max(1,...rows.map(([,v])=>v));
+ return <ul className="space-y-2">{rows.map(([status,count])=><li key={status} className="grid grid-cols-[minmax(6rem,10rem)_1fr_2.5rem] items-center gap-3 text-sm"><span className="truncate capitalize text-muted-foreground" title={status.replace(/_/g," ")}>{status.replace(/_/g," ")}</span><span className="h-2.5 rounded-full bg-muted"><span className="block h-full rounded-full bg-primary" style={{width:(count/max*100)+"%"}}/></span><b className="text-right">{count}</b></li>)}</ul>;
+}
+function StatusBadge({status}:{status:string}){
+ const tone=/approved|active|live|delivered|published/.test(status)?"bg-emerald-50 text-emerald-800 border-emerald-200":/pending|draft|review/.test(status)?"bg-amber-50 text-amber-900 border-amber-200":/reject|fail|retired|archived|paused/.test(status)?"bg-rose-50 text-rose-800 border-rose-200":"bg-muted text-foreground border-border";
+ return <span className={"inline-flex rounded-full border px-2 py-0.5 text-[11px] font-bold capitalize "+tone}>{status.replace(/_/g," ")}</span>;
+}
+function Pill({on,label}:{on:boolean;label:string}){
+ return <span className={"inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-semibold "+(on?"border-amber-300 bg-amber-50 text-amber-900":"bg-background")}><span className={"h-2 w-2 rounded-full "+(on?"bg-amber-500":"bg-slate-300")} aria-hidden="true"/>{label} {on?"on":"off"}</span>;
+}
+function Empty({text}:{text:string}){
+ return <p className="rounded-2xl border border-dashed bg-background px-4 py-6 text-center text-sm text-muted-foreground">{text}</p>;
+}
+function ConnectionMissing(){
+ return <section role="status" className="space-y-4 rounded-3xl border bg-card p-6 shadow-soft sm:p-8">
+  <div className="flex items-start gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary-soft text-primary"><Settings2 className="h-6 w-6" aria-hidden="true"/></span><div><h1 className="text-xl font-extrabold">Dashboard not connected</h1><p className="mt-1 text-sm leading-7 text-muted-foreground">This build has no public Supabase URL and publishable key, so no private records can load. Set <code className="rounded bg-muted px-1">VITE_YAWMIYATI_SUPABASE_URL</code> and <code className="rounded bg-muted px-1">VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY</code> (never a service-role key).</p></div></div>
+  <a href="https://supabase.com/dashboard/project/skhtunkknshvolturqlm/settings/api-keys" target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-primary px-5 text-sm font-semibold text-primary hover:bg-primary-soft">Open public API settings <ExternalLink className="h-4 w-4" aria-hidden="true"/></a>
+ </section>;
 }
