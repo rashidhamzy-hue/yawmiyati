@@ -10,6 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import {AnalyticsRoot} from "@/components/analytics/AnalyticsRoot";
 import tajawalArabic400 from "@fontsource/tajawal/files/tajawal-arabic-400-normal.woff2?url";
 import tajawalArabic800 from "@fontsource/tajawal/files/tajawal-arabic-800-normal.woff2?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -99,6 +100,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <AnalyticsRoot />
     </QueryClientProvider>
   );
 }

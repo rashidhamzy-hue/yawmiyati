@@ -1,4 +1,5 @@
 import {useEffect,useRef,useState,type FormEvent} from "react";
+import {track} from "@/lib/analytics/analytics";
 import {ArrowLeft,Search,Sparkles,X,Package,LoaderCircle} from "lucide-react";
 import type {MarketCode} from "@/lib/store/markets";
 import {marketIdentity} from "@/lib/store/market-identity";
@@ -54,6 +55,7 @@ export function StoreSearchOverlay({market,open,onClose}:{market:MarketCode;open
   const timer=setTimeout(()=>{void fetchPublicSearch(origin,key,market,q).then(rows=>{if(alive)setServerResults({market,query:q,rows});}).catch(()=>{if(alive)setServerResults(null);}).finally(()=>{if(alive)setServerBusy(false);});},250);
   return()=>{alive=false;clearTimeout(timer);};
  },[open,market,q,isolated]);
+ useEffect(()=>{const term=q.trim();if(!open||term.length<2)return;const t=setTimeout(()=>track("search_typed",{query:term.slice(0,80)}),1500);return()=>clearTimeout(t);},[q,open]);
  if(!open)return null;
  const localResults=visibleItems?smartCatalogSearch(q,visibleItems,10):[];
  const remoteResults=serverResults?.market===market&&serverResults.query===q?serverResults.rows:[];
@@ -62,7 +64,7 @@ export function StoreSearchOverlay({market,open,onClose}:{market:MarketCode;open
  const recommended=suggestEditorialCategories(q);
  const ordered=experience.categoryOrder.map(slug=>categories.find(c=>c.slug===slug)).filter((c):c is (typeof categories)[number]=>Boolean(c));
  const shown=q.trim()?ordered.filter(x=>recommended.some(s=>s.slug===x.slug)):ordered;
- function submit(event:FormEvent){event.preventDefault();input.current?.blur();}
+ function submit(event:FormEvent){event.preventDefault();input.current?.blur();if(q.trim())track("search_submitted",{query:q.trim().slice(0,80),category_matches:shown.length});}
  return <div className="fixed inset-0 z-[90] flex justify-center bg-foreground/70 p-0 backdrop-blur-sm sm:items-start sm:px-4 sm:pt-[7vh]" dir="rtl" role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
   <section ref={dialog} onKeyDown={e=>{if(e.key!=="Tab")return;const elements=Array.from(dialog.current?.querySelectorAll<HTMLElement>('button:not([disabled]),a[href],input:not([disabled])')??[]).filter(x=>x.getClientRects().length>0);if(!elements.length)return;const first=elements[0],last=elements[elements.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}} role="dialog" aria-modal="true" aria-label="بحث يومياتي الذكي" className="flex h-[100dvh] w-full max-w-3xl flex-col overflow-hidden bg-background text-foreground shadow-2xl sm:h-auto sm:max-h-[87vh] sm:rounded-[2rem]">
    <header className="flex items-center justify-between gap-3 border-b px-5 py-4 sm:px-8">
