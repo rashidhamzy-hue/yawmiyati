@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import {AnalyticsRoot} from "@/components/analytics/AnalyticsRoot";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { captureError } from "@/lib/monitoring/sentry-client";
 import {img} from "@/lib/store/images";
 import {ArrowRight,RefreshCw,Search} from "lucide-react";
 
@@ -30,7 +31,7 @@ function NotFoundComponent() {
 }
 function ErrorComponent({error,reset}:ErrorComponentProps){
  const router=useRouter();
- useEffect(()=>{reportLovableError(error,{boundary:"tanstack_root_error_component"});},[error]);
+ useEffect(()=>{reportLovableError(error,{boundary:"tanstack_root_error_component"});captureError(error,{boundary:"tanstack_root_error_component"});},[error]);
  return <main dir="rtl" className="min-h-screen bg-background px-4 py-12 text-foreground sm:py-20">
   <div className="mx-auto max-w-3xl rounded-[2rem] border bg-card p-7 text-center shadow-soft sm:p-14">
    <a href="/sa" className="font-display text-2xl font-extrabold text-primary">يومياتي<span className="text-gold">.</span></a>

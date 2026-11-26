@@ -1,11 +1,13 @@
 import {useEffect,useState} from "react";
 import {useRouterState} from "@tanstack/react-router";
+import {startErrorMonitoring} from "@/lib/monitoring/sentry-client";
 import {analyticsEnabled,initAnalytics,readConsent,setConsent,trackPageview} from "@/lib/analytics/analytics";
 
 /** Sends a $pageview on every route change and shows the consent prompt once. */
 export function AnalyticsRoot(){
  const pathname=useRouterState({select:s=>s.location.pathname});
  const [askConsent,setAskConsent]=useState(false);
+ useEffect(()=>{startErrorMonitoring();},[]);
  useEffect(()=>{
   if(!analyticsEnabled())return;
   // Start after the page has fully loaded and settled, so analytics never competes
