@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useState} from "react";
 import {previewCatalogActive,useOfferVersions} from "@/lib/store/offer-source";
 import {offerListing} from "@/lib/store/offer-version";
-import {ImageOff} from "lucide-react";
+import {ImageOff,SlidersHorizontal} from "lucide-react";
 import {publicBrowserConfig} from "@/lib/store/staging-public-config";
 import {parseMinorUnits,type MarketCode} from "@/lib/store/markets";
 import {fetchPublicCatalog,formatListingPrice,type PublicCategorySlug,type PublicListing} from "@/lib/store/public-catalog";
@@ -15,6 +15,7 @@ const {origin,key}=publicBrowserConfig(import.meta.env.VITE_YAWMIYATI_SUPABASE_U
 export function ApprovedCategoryProductGrid({market,slug,categoryTitle}:{market:MarketCode;slug:PublicCategorySlug;categoryTitle:string}){
  const [catalog,setCatalog]=useState<PublicListing[]>([]);
  const [visibleCount,setVisibleCount]=useState(16);
+ const [filtersOpen,setFiltersOpen]=useState(false);
  const offers=useOfferVersions(market);
  const [sort,setSort]=useState("featured");
  const [query,setQuery]=useState("");
@@ -44,8 +45,11 @@ export function ApprovedCategoryProductGrid({market,slug,categoryTitle}:{market:
    <span className="text-xs text-muted-foreground">{approved.length} منتج</span>
   </div>
   {offers.state==="ready"&&<p role="note" className="rounded-xl border border-dashed p-3 text-xs">منتجات للمعاينة فقط، لا يمكن إرسال طلب فعلي.</p>}
-  <div className="grid gap-2 rounded-2xl border bg-card p-3 sm:grid-cols-4"><input type="search" aria-label="البحث في هذا القسم" placeholder="ابحثي في هذا القسم" value={query} onChange={e=>setQuery(e.target.value)} className="field min-w-0 text-sm sm:col-span-2"/><select aria-label="ترتيب المنتجات" value={sort} onChange={e=>setSort(e.target.value)} className="field max-w-full text-xs"><option value="popular" disabled={!approved.some(row=>row.popularity_rank!==undefined)}>الأكثر رواجاً</option><option value="featured">مختارات يومياتي</option><option value="low">السعر: الأقل أولاً</option><option value="high">السعر: الأعلى أولاً</option></select><div className="grid grid-cols-2 gap-2"><input inputMode="decimal" aria-label="أقل سعر" placeholder="من السعر" value={minPrice} onChange={e=>setMinPrice(e.target.value)} className="field min-w-0 text-xs"/><input inputMode="decimal" aria-label="أعلى سعر" placeholder="إلى السعر" value={maxPrice} onChange={e=>setMaxPrice(e.target.value)} className="field min-w-0 text-xs"/></div></div>
-  {!approved.some(row=>row.popularity_rank!==undefined)&&<p className="text-xs text-muted-foreground">سيُتاح ترتيب الأكثر رواجاً عند توفر بيانات طلبات موثّقة لهذا المتجر.</p>}
+  <div className="rounded-2xl border bg-card p-2 sm:p-3">
+   <div className="flex items-center gap-2"><select aria-label="ترتيب المنتجات" value={sort} onChange={e=>setSort(e.target.value)} className="field min-h-11 min-w-0 flex-1 text-xs"><option value="popular" disabled={!approved.some(row=>row.popularity_rank!==undefined)}>الأكثر رواجاً</option><option value="featured">مختارات يومياتي</option><option value="low">السعر: الأقل أولاً</option><option value="high">السعر: الأعلى أولاً</option></select><button type="button" aria-expanded={filtersOpen} aria-controls="category-filters" onClick={()=>setFiltersOpen(v=>!v)} className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold sm:hidden"><SlidersHorizontal className="h-4 w-4" aria-hidden="true"/>تصفية{(query||minPrice||maxPrice)?" •":""}</button></div>
+   <div id="category-filters" className={(filtersOpen?"grid":"hidden")+" mt-2 gap-2 sm:grid sm:grid-cols-3"}><input type="search" aria-label="البحث في هذا القسم" placeholder="ابحثي في هذا القسم" value={query} onChange={e=>setQuery(e.target.value)} className="field min-h-11 min-w-0 text-sm sm:col-span-2"/><div className="grid grid-cols-2 gap-2"><input inputMode="decimal" aria-label="أقل سعر" placeholder="من السعر" value={minPrice} onChange={e=>setMinPrice(e.target.value)} className="field min-w-0 text-xs"/><input inputMode="decimal" aria-label="أعلى سعر" placeholder="إلى السعر" value={maxPrice} onChange={e=>setMaxPrice(e.target.value)} className="field min-w-0 text-xs"/></div></div>
+  </div>
+  {!approved.some(row=>row.popularity_rank!==undefined)&&<p className="hidden text-xs text-muted-foreground sm:block">سيُتاح ترتيب الأكثر رواجاً عند توفر بيانات طلبات موثّقة لهذا المتجر.</p>}
   {invalidPrice&&<p role="alert" className="text-sm text-destructive">تحققي من نطاق السعر.</p>}{!invalidPrice&&!shown.length&&<p role="status" className="rounded-xl border p-4 text-sm">لا توجد نتائج مطابقة. جرّبي تعديل البحث أو نطاق السعر.</p>}
   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
    {shown.slice(0,visibleCount).map(item=><article key={item.listing_id} className="overflow-hidden rounded-2xl border bg-card">
