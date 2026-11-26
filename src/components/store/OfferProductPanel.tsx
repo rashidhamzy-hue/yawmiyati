@@ -3,7 +3,7 @@ import { Check, ImageOff, ShoppingBag, Truck } from "lucide-react";
 import { paymentLabel } from "../../../supabase/functions/_shared/payment-policy";
 import type { MarketCode } from "@/lib/store/markets";
 import { doorMinor, exactUnitPrice, formatMinor, marketZones, type ApprovedOfferVersion, type PublicPack } from "@/lib/store/offer-version";
-import { addOfferLine, setOfferZone, useOfferCart } from "@/lib/store/offer-cart";
+import { addOfferLine, selectPreviewQuantity, setOfferZone, useOfferCart } from "@/lib/store/offer-cart";
 
 export function FixtureNotice() {
   return <p role="note" data-offer-fixture-notice className="rounded-xl border border-dashed border-primary/40 bg-primary-soft px-4 py-2 text-xs font-bold leading-6 text-primary">
@@ -32,7 +32,7 @@ export function OfferProductPanel({ market, version, versions }: { market: Marke
   const pickZone = (id: string) => { setChosenZone(id); setOfferZone(market, id); setWithAddOn(false); setStatus(""); };
   const add = (buyNow=false) => {
     if (!effective || !zone) return;
-    setStatus(addOfferLine(market, { listing_id: version.listing_id, slug: version.slug, version_id: version.version_id, revision: version.revision,
+    setStatus((version.slug.startsWith("preview-")?selectPreviewQuantity:addOfferLine)(market, { listing_id: version.listing_id, slug: version.slug, version_id: version.version_id, revision: version.revision,
       pack_id: effective.pack_id, add_on_id: addOn && withAddOn ? addOn.add_on_id : null }, zone.zone_id));
     if(buyNow)window.location.assign("/"+market+"/checkout");
   };
