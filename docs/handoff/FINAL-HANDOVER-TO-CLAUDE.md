@@ -19,6 +19,28 @@ This handover audit made no product/design changes, no schema changes, no Cloudf
 - Numerous historical feature/build/fix branches remain. They were not deleted. This audit did not exhaustively compare every branch tip against `main`, so Claude must check branch divergence before treating any branch as disposable or claiming there is no unmerged work.
 - Lovable is connected to this repository; `AGENTS.md` explicitly warns against rewriting published history. Do not force-push, rebase, amend, or squash pushed commits.
 
+
+
+### Branches with verified branch-only commits
+
+The following branch tips were compared against `main` and have commits not contained in `main` (ahead counts are from the comparison performed during this audit). They were deliberately left untouched:
+
+| Branch | Commits ahead of main | Status |
+|---|---:|---|
+| `feat/product-merchandising-intelligence` | 1 | Diverged |
+| `feat/five-market-product-discovery` | 11 | Diverged |
+| `fix/search-navigation-popularity-five-markets` | 9 | Diverged |
+| `fix/mobile-market-switcher-final` | 2 | Diverged |
+| `engineering/catalog-intelligence` | 6 | Diverged |
+| `engineering/storefront-real-catalog` | 11 | Diverged |
+| `feat/final-five-market-commerce-polish` | 8 | Diverged |
+| `fix/product-page-wayfinding-five-markets` | 3 | Diverged |
+| `build/m10d-approved-category-browse` | 8 | Diverged |
+
+The following checked refs are fully behind `main` and have no unique commits to merge: `feat/m12-offer-storefront`, `fix/final-product-merchandising`, and `fix/final-five-store-ux-polish-20261125`.
+
+This was a targeted comparison of the most relevant feature branches, not an exhaustive compare of all 155 refs. The nine branches in the table are confirmed unmerged work; Claude should compare the remaining refs before deleting or closing anything.
+
 ## Supabase migrations
 
 Live migration history contains 27 applied migrations. For every row below, the SQL stored in `supabase_migrations.schema_migrations.statements[1]` was compared byte-for-byte with the matching repository file; all 27 match. The two newest files were missing at the start of this audit and have now been restored from the database history.
