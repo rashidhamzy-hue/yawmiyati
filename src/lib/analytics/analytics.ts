@@ -8,6 +8,7 @@
  */
 import type {PostHog} from "posthog-js";
 import {pageContext} from "./page-context";
+import {attributionProps,persistAttributionAfterConsent} from "./attribution";
 
 export type Consent="granted"|"denied"|"unknown";
 const CONSENT_KEY="yawmiyati.consent.v1";
@@ -33,7 +34,7 @@ export function readConsent():Consent{
 
 function baseProps(){
  const ctx=pageContext(window.location.pathname);
- return {...ctx,app:"storefront",staging:window.location.hostname.endsWith("workers.dev")};
+ return {...ctx,...attributionProps(),app:"storefront",staging:window.location.hostname.endsWith("workers.dev")};
 }
 
 export function initAnalytics():Promise<PostHog|null>{
@@ -79,6 +80,7 @@ export function trackPageview(){
 
 export function setConsent(value:"granted"|"denied"){
  try{window.localStorage.setItem(CONSENT_KEY,value);}catch{/* private mode: keep memory-only */}
+ if(value==="granted")persistAttributionAfterConsent();
  track("consent_decided",{consent:value});
  if(!client)return;
  if(value==="granted"){client.set_config({persistence:"localStorage+cookie"});client.startSessionRecording();}

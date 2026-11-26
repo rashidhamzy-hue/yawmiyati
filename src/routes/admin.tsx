@@ -8,6 +8,7 @@ import { useState, useRef, useMemo, type FormEvent, type ReactNode } from "react
 import { dashboardClient, type DashboardSummary, type MarketPerformance, type CatalogRow, type Recommendation, type AiPolicy } from "../lib/store/dashboard-client";
 import { CommercialReview } from "@/components/store/CommercialReview";
 import { OwnerActionQueue } from "@/components/store/OwnerActionQueue";
+import { BrainPanel } from "@/components/owner/BrainPanel";
 import { markets, type MarketCode } from "../lib/store/markets";
 import {summarizeOwnerMarket,formatRecordedMinor} from "@/lib/store/owner-dashboard-presentation";
 import {marketIdentity} from "@/lib/store/market-identity";
@@ -123,6 +124,7 @@ function OwnerDashboard(){
      <ul className="mt-3 space-y-2">{overview.alerts.map((alert,i)=><li role="status" key={alert.code+":"+i}><p className="font-bold">{alert.title}</p><p className="opacity-80">{alert.detail}</p></li>)}</ul>
     </details>}
    </section>
+   {origin&&key&&<BrainPanel key={"brain-"+market} market={market} origin={origin} publicKey={key} token={token}/>}
    {data&&<OwnerActionQueue market={market} catalog={catalog} recommendations={recommendations} policy={policy}/>}
    {performance&&<Card id="performance" title={"Performance · last "+performance.window_days+" days"} icon={ChartNoAxesCombined}>
     <OrderOutcomes p={performance}/>
@@ -164,7 +166,7 @@ function OwnerDashboard(){
 }
 
 const names:Record<MarketCode,string>={sa:"Saudi Arabia",ae:"UAE",om:"Oman",eg:"Egypt",iq:"Iraq"};
-const sections=[["Overview","#overview"],["Performance","#performance"],["Catalog","#catalog"],["Approvals","#approvals"],["Reviews","#reviews"],["Safety","#safety"]] as const;
+const sections=[["Overview","#overview"],["Brain","#brain"],["Performance","#performance"],["Catalog","#catalog"],["Approvals","#approvals"],["Reviews","#reviews"],["Safety","#safety"]] as const;
 const inputClass="block h-12 w-full rounded-xl border bg-background px-4 text-base outline-none transition-shadow focus:border-primary focus:ring-2 focus:ring-primary/20";
 function Field({label,children}:{label:string;children:ReactNode}){
  return <label className="block space-y-1.5 text-sm font-semibold"><span>{label}</span>{children}</label>;
