@@ -3,6 +3,7 @@ import {afterEach,expect,it,vi} from "vitest";
 vi.mock("../lib/store/staging-public-config",()=>({publicBrowserConfig:()=>({origin:"",key:""})}));
 import {StoreFrame} from "../components/store/StoreChrome";
 import {MarketPreview} from "../components/store/MarketPreview";
+import {ApprovedCatalogBrowser} from "../lib/store/ApprovedProductExperience";
 afterEach(()=>{document.body.innerHTML="";});
 it("opens the same in-page search from mobile navigation, never changes routes",()=>{
  render(<StoreFrame market="sa"><h1>المتجر</h1></StoreFrame>);
@@ -35,3 +36,5 @@ it("shows product breadcrumbs with reliable home and catalogue destinations",()=
  expect(within(nav).getByRole("link",{name:"الرئيسية"}).getAttribute("href")).toBe("/sa");
  expect(within(nav).getByRole("link",{name:"كل المنتجات"}).getAttribute("href")).toBe("/sa/search");
 });
+
+it("keeps the all-products catalogue compact with one heading, search, filters and popularity sorting",()=>{render(<ApprovedCatalogBrowser market="sa" products={[{listing_id:"p1",slug:"p1",title:"منتج تجريبي",price_minor:"1000",currency:"SAR"}]}/>);expect(screen.getByRole("heading",{level:1,name:"كل المنتجات"})).toBeTruthy();expect(screen.getByRole("searchbox",{name:"بحث المنتجات"})).toBeTruthy();const sort=screen.getByRole("combobox",{name:"ترتيب المنتجات"});expect(within(sort).getByRole("option",{name:"الأكثر رواجاً"}).hasAttribute("disabled")).toBe(false);});

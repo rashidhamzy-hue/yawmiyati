@@ -25,7 +25,7 @@ describe("Yawmiyati premium storefront",()=>{
  });
  it("renders a focused search page without homepage hero clutter",()=>{
   render(<MarketPreview market="sa" searchOnly initialSearch="قهوة"/>);
-  expect(screen.getByRole("heading",{name:"ابحثي في منتجات يومياتي"})).toBeTruthy();
+  expect(screen.getByRole("heading",{level:1,name:"كل المنتجات"})).toBeTruthy();
   expect(screen.queryByRole("heading",{level:1,name:/كل يوم يستحق/})).toBeNull();
   expect(screen.getByRole("searchbox",{name:"بحث المنتجات المعتمدة"})).toBeTruthy();
  });
