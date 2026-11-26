@@ -7,6 +7,9 @@
 import { useSyncExternalStore } from "react";
 import type { MarketCode } from "./markets";
 import { parseStoredCart, type OfferCart, type OfferCartLine } from "./offer-version";
+import { track } from "../analytics/analytics";
+
+const lineProps = (l: OfferCartLine) => ({ listing_id: l.listing_id, product_slug: l.slug, pack_id: l.pack_id, add_on_id: l.add_on_id });
 
 const EVENT = "yawmiyati:offer-cart";
 export const offerCartKey = (market: MarketCode) => "yawmiyati-offer-cart:v1:" + market;
@@ -32,6 +35,7 @@ export function addOfferLine(market: MarketCode, line: OfferCartLine, zoneId: st
   const cart = readOfferCart(market);
   const exists = cart.lines.some(l => l.slug === line.slug && l.pack_id === line.pack_id && l.add_on_id === line.add_on_id);
   write({ ...cart, zone_id: zoneId ?? cart.zone_id, lines: exists ? cart.lines : [...cart.lines, line] });
+  if (!exists) track("add_to_cart", { ...lineProps(line), cart_lines: cart.lines.length + 1 });
   return exists ? "already" : "added";
 }
 /** Replace an existing sample quantity for the same product without duplicating its line. */
@@ -40,21 +44,27 @@ export function selectPreviewQuantity(market:MarketCode,line:OfferCartLine,zoneI
  const existing=cart.lines.find(l=>l.listing_id===line.listing_id);
  const lines=cart.lines.filter(l=>l.listing_id!==line.listing_id);
  write({...cart,zone_id:zoneId,lines:[...lines,line]});
+ if(existing?.pack_id!==line.pack_id)track(existing?"pack_changed":"add_to_cart",{...lineProps(line),previous_pack_id:existing?.pack_id??null});
  return existing?.pack_id===line.pack_id?"already":"added";
 }
 export function updateOfferLine(market: MarketCode, index: number, line: OfferCartLine) {
   const cart = readOfferCart(market);
   const lines = [...cart.lines];
   if (index < 0 || index >= lines.length) return;
+  const before = lines[index];
   lines[index] = line;
   write({ ...cart, lines });
+  track("cart_line_updated", { ...lineProps(line), previous_pack_id: before.pack_id, previous_add_on_id: before.add_on_id });
 }
 export function removeOfferLine(market: MarketCode, index: number) {
   const cart = readOfferCart(market);
+  const removed = cart.lines[index];
   write({ ...cart, lines: cart.lines.filter((_, i) => i !== index) });
+  if (removed) track("remove_from_cart", { ...lineProps(removed), cart_lines: cart.lines.length - 1 });
 }
 export function setOfferZone(market: MarketCode, zoneId: string) {
   write({ ...readOfferCart(market), zone_id: zoneId });
+  track("delivery_zone_selected", { zone_id: zoneId });
 }
 export function clearOfferCart(market: MarketCode) {
   write({ market, zone_id: null, lines: [] });
