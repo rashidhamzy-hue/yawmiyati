@@ -1,0 +1,29 @@
+# Captures UX review screenshots (fixtures, loopback only) and pushes them to the qa/ux-screens-output branch.
+name: UX screens
+on:
+  workflow_dispatch:
+  push:
+    branches: [qa/ux-screens]
+permissions:
+  contents: write
+jobs:
+  screens:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: npm install --no-save --no-package-lock playwright@1.58.2 && npx playwright install --with-deps chromium
+      - name: Start storefront with isolated fixtures
+        run: |
+          VITE_YAWMIYATI_OFFER_FIXTURES=true bun run dev --host 127.0.0.1 --port 4176 > /tmp/dev.log 2>&1 &
+          for n in $(seq 1 60); do curl --fail --silent http://127.0.0.1:4176/sa/ >/dev/null && exit 0; sleep 2; done; cat /tmp/dev.log; exit 1
+      - run: node scripts/ux-screens.cjs
+      - name: Publish screenshots to qa/ux-screens-output
+        run: |
+          cd ux-screens
+          git init -q && git checkout -q -b qa/ux-screens-output
+          git config user.name "github-actions[bot]" && git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add . && git commit -qm "UX screens $(date -u +%FT%TZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" qa/ux-screens-output
