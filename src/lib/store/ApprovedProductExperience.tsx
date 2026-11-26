@@ -58,18 +58,15 @@ export function ApprovedCatalogBrowser({market,products,onOpen,images={}}:{marke
   const reset=()=>{setQuery("");setSort("default");setMin("");setMax("");setCategory("all");setPage(1);};
   const hasFilters=Boolean(query||min||max||sort!=="default"||category!=="all");
   return <section dir="rtl" aria-label="تصفحي جميع المنتجات" className="space-y-5">
-    <div className="flex flex-wrap items-end justify-between gap-3">
-      <div><p className="text-xs font-extrabold text-primary">كتالوج يومياتي</p><h2 className="font-display text-2xl font-extrabold sm:text-3xl">اكتشفي كل المنتجات</h2><p className="mt-1 text-sm text-muted-foreground">رتّبي المنتجات وحددي ميزانيتك للوصول إلى ما يناسبك.</p></div>
-      <span className="rounded-full bg-primary-soft px-3 py-2 text-xs font-bold text-primary">{categoryProducts.length} منتج متاح للعرض</span>
-    </div>
-    {availableCategories.length>0&&<nav aria-label="تصفية حسب القسم" className="flex gap-2 overflow-x-auto pb-1">{["all",...availableCategories].map(slug=><button key={slug} type="button" aria-pressed={category===slug} onClick={()=>{setCategory(slug);setPage(1);}} className={"min-h-10 shrink-0 rounded-full border px-4 text-xs font-bold "+(category===slug?"border-primary bg-primary text-primary-foreground":"bg-card text-foreground")}>{slug==="all"?"كل الأقسام":categoryNames[slug]}</button>)}</nav>}
-    <div className="grid gap-3 rounded-2xl border border-border/70 bg-card p-4 shadow-soft sm:grid-cols-2 lg:grid-cols-4">
+    <div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="text-[11px] font-extrabold text-primary">كتالوج يومياتي</p><h1 className="font-display text-xl font-extrabold leading-tight sm:text-2xl">كل المنتجات</h1></div><span className="shrink-0 rounded-full bg-primary-soft px-3 py-2 text-xs font-bold text-primary">{categoryProducts.length} منتج</span></div>
+    {availableCategories.length>0&&<nav aria-label="تصفية حسب القسم" className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{["all",...availableCategories].map(slug=><button key={slug} type="button" aria-pressed={category===slug} onClick={()=>{setCategory(slug);setPage(1);}} className={"min-h-10 shrink-0 rounded-full border px-4 text-xs font-bold "+(category===slug?"border-primary bg-primary text-primary-foreground":"bg-card text-foreground")}>{slug==="all"?"كل الأقسام":categoryNames[slug]}</button>)}</nav>}
+    <div className="grid gap-3 rounded-2xl border border-border/70 bg-card p-3 shadow-soft sm:grid-cols-2 sm:p-4 lg:grid-cols-4">
       <label className="text-sm font-bold lg:col-span-2">ابحثي في المنتجات
         <span className="relative mt-2 block"><input type="search" aria-label="بحث المنتجات" maxLength={120} value={query} onChange={e=>{setQuery(e.target.value);setPage(1);}} placeholder="مثلاً: عناية، مطبخ، تنظيم..." className="field min-h-12 w-full pr-4"/></span>
       </label>
       <label className="text-sm font-bold">ترتيب حسب
         <select aria-label="ترتيب المنتجات" value={sort} onChange={e=>{setSort(e.target.value as ApprovedSort);setPage(1);}} className="field mt-2 min-h-12 w-full">
-          <option value="popular" disabled={!products.some(row=>row.popularity_rank!==undefined)}>الأكثر رواجاً</option><option value="default">الأكثر صلة</option><option value="price_asc">السعر: الأقل أولاً</option><option value="price_desc">السعر: الأعلى أولاً</option><option value="title">الاسم</option>
+          <option value="popular">الأكثر رواجاً</option><option value="default">الأكثر صلة</option><option value="price_asc">السعر: الأقل أولاً</option><option value="price_desc">السعر: الأعلى أولاً</option><option value="title">الاسم</option>
         </select>
       </label>
       <div className="grid grid-cols-2 gap-2">
@@ -81,7 +78,6 @@ export function ApprovedCatalogBrowser({market,products,onOpen,images={}}:{marke
         {hasFilters&&<button type="button" onClick={reset} className="min-h-10 px-3 text-xs font-bold text-primary underline underline-offset-4">مسح التصفية</button>}
       </div>
     </div>
-    {!products.some(row=>row.popularity_rank!==undefined)&&<p className="text-xs text-muted-foreground">سيُتاح ترتيب الأكثر رواجاً عند توفر بيانات طلبات موثّقة لهذا المتجر.</p>}
     {invalidRange?<p role="alert" className="rounded-xl border border-destructive/30 p-4 text-sm">أدخلي سعراً صحيحاً، وتأكدي أن الحد الأدنى لا يتجاوز الحد الأعلى.</p>:result!.total===0?
       <div className="rounded-2xl border bg-card px-5 py-12 text-center"><PackageSearchFallback/><h3 className="mt-3 font-bold">ما لقينا منتجات تطابق اختياراتك</h3><p className="mt-2 text-sm text-muted-foreground">جرّبي تخفيف التصفية أو تغيير كلمة البحث.</p><button type="button" onClick={reset} className="btn-outline mt-4 min-h-11">عرض كل المنتجات</button></div>:
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
