@@ -21,7 +21,7 @@ export function ApprovedCategoryProductGrid({market,slug,categoryTitle}:{market:
  const [minPrice,setMinPrice]=useState("");
  const [maxPrice,setMaxPrice]=useState("");
  useEffect(()=>{setVisibleCount(16);setQuery("");setSort("featured");},[market,slug]);
- useEffect(()=>setVisibleCount(16),[query,sort]);
+ useEffect(()=>setVisibleCount(16),[query,sort,minPrice,maxPrice]);
  useEffect(()=>{
   if(previewCatalogActive()||offers.state!=="off"||!origin||!key){setCatalog([]);return;}
   let active=true;setCatalog([]);
