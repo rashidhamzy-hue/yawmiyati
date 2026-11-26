@@ -24,7 +24,7 @@ export function StoreCommerceGuard({market,type}:{market:MarketCode;type:keyof t
  // Approved offer versions (isolated fixture mode only, for now) replace the empty
  // state when this market's cart holds selections. Orders are never submitted.
  const offers=useOfferVersions(market),offerCart=useOfferCart(market);
- if(type!=="order"&&offers.state==="ready"&&offerCart.lines.length)return <StoreFrame market={market}><OfferCartPage market={market} type={type} versions={offers.versions}/></StoreFrame>;
+ if(type!=="order"&&offers.state==="ready"&&offerCart.lines.length)return <StoreFrame market={market} focused={type==="checkout"}><OfferCartPage market={market} type={type} versions={offers.versions}/></StoreFrame>;
  const entry=content[type],Icon=entry.icon,path="/"+market;
  const copy=customerServiceCopy[market];
  return <StoreFrame market={market}>
