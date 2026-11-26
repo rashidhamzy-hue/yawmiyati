@@ -15,7 +15,7 @@ import {recommendOffers} from "@/lib/store/offer-recommendations";
 import {curateCatalog} from "@/lib/store/curated-merchandising";
 import {relatedVerifiedProducts} from "@/lib/store/verified-merchandising";
 import {ReleasedEditorial} from "./EditorialPage";
-import {ApprovedProductGallery} from "@/lib/store/ApprovedProductExperience";
+import {ApprovedCatalogBrowser,ApprovedProductGallery} from "@/lib/store/ApprovedProductExperience";
 import {smartCatalogSearch,suggestEditorialCategories,SEARCH_GROUPS} from "@/lib/store/smart-search";
 import {type MarketCode} from "@/lib/store/markets";
 import {fetchPublicCatalog,fetchPublicDetail,fetchPublicSearch,formatListingPrice,type PublicListing,type PublicDetail} from "@/lib/store/public-catalog";
@@ -149,7 +149,7 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
       {(term.trim()?suggestions:SEARCH_GROUPS).slice(0,6).map(group=><a key={group.slug} href={path+"/c/"+group.slug} className="inline-flex min-h-10 items-center rounded-full border border-border bg-card px-4 text-xs font-bold text-primary transition-colors hover:border-primary/40 hover:bg-primary-soft">{group.title}</a>)}
       {term.trim()&&<Button variant="outline" onClick={()=>setTerm("")} className="min-h-11 rounded-full px-4 text-xs font-semibold text-muted-foreground">مسح البحث</Button>}
     </div>}
-    {browseEmpty?<BrowseProducts market={market}/>:offers.state==="off"&&(!origin||!key)?<EmptyProducts title="تعرّفي على مجموعات يومياتي" message="تظهر هنا المنتجات التي تتوافر لها بيانات معتمدة. اكتشفي أقسام البيت والجمال والعناية."/>
+    {searchOnly&&rows!==null&&!error?<ApprovedCatalogBrowser market={market} products={rows} images={Object.fromEntries(rows.map(row=>[row.listing_id,imageFor(row)]))}/>:browseEmpty?<BrowseProducts market={market}/>:offers.state==="off"&&(!origin||!key)?<EmptyProducts title="تعرّفي على مجموعات يومياتي" message="تظهر هنا المنتجات التي تتوافر لها بيانات معتمدة. اكتشفي أقسام البيت والجمال والعناية."/>
     :error?<div role="alert" className="mt-8 rounded-3xl border bg-card p-8 text-center"><h3 className="font-bold">تعذّر تحميل المنتجات في الوقت الحالي</h3><Button variant="outline" className="mt-4 min-h-11" onClick={()=>setAttempt(v=>v+1)}>إعادة المحاولة</Button></div>
     :rows===null?<div role="status" aria-live="polite" className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">{Array.from({length:4},(_,i)=><div key={i} className="animate-pulse rounded-2xl border bg-card p-3"><div className="aspect-square rounded-xl bg-muted"/><div className="mt-3 h-4 w-3/4 rounded bg-muted"/><div className="mt-3 h-4 w-1/2 rounded bg-muted"/></div>)}</div>
     :slug&&offerVersion&&offerVersions?<div className="mt-8"><OfferProductPanel key={offerVersion.version_id} market={market} version={offerVersion} versions={offerVersions}/>
