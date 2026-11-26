@@ -16,7 +16,7 @@ import {curateCatalog} from "@/lib/store/curated-merchandising";
 import {relatedVerifiedProducts} from "@/lib/store/verified-merchandising";
 import {ReleasedEditorial} from "./EditorialPage";
 import {ApprovedCatalogBrowser,ApprovedProductGallery} from "@/lib/store/ApprovedProductExperience";
-import {smartCatalogSearch,suggestEditorialCategories,SEARCH_GROUPS} from "@/lib/store/smart-search";
+import {smartCatalogSearch} from "@/lib/store/smart-search";
 import {type MarketCode} from "@/lib/store/markets";
 import {fetchPublicCatalog,fetchPublicDetail,fetchPublicSearch,formatListingPrice,type PublicListing,type PublicDetail} from "@/lib/store/public-catalog";
 import {previewCatalogActive,useOfferVersions} from "@/lib/store/offer-source";
@@ -107,7 +107,6 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
  const remoteMatches=remoteSearch?.query===term?remoteSearch.rows:[];
  const matchedIds=new Set(localMatches.map(x=>x.listing_id));
  const matching=[...localMatches,...remoteMatches.filter(x=>!matchedIds.has(x.listing_id))];
- const suggestions=suggestEditorialCategories(term);
  const homePage=!searchOnly&&!slug;
  const browseEmpty=homePage&&!term.trim()&&offers.state==="off"&&(!origin||!key||rows?.length===0);
  return <div dir="rtl" data-yawmiyati-market={market} className="min-h-screen overflow-x-clip bg-background text-foreground">
@@ -136,19 +135,8 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
     </section>
    </>}
 
-   {searchOnly&&<section aria-label="اكتشفي المنتجات" className="mx-auto max-w-7xl px-4 pt-5 sm:px-6 lg:px-8">
-    <div className="relative isolate flex min-h-[200px] items-center overflow-hidden rounded-[1.75rem] bg-foreground sm:min-h-[260px]">
-     <img src={img["cat-home"]} alt="" className="absolute inset-0 h-full w-full object-cover object-center" fetchPriority="high"/>
-     <div className="absolute inset-0 bg-gradient-to-l from-black/80 via-black/45 to-black/15"/>
-     <div className="relative p-7 text-white sm:p-11"><span className="text-xs font-bold text-[#f5dab1]">البحث في يومياتي</span><h1 className="mt-3 font-display text-3xl font-extrabold sm:text-4xl">{experience.searchCta}</h1><p className="mt-3 max-w-xl text-sm leading-7 text-white/85">ابحثي باسم المنتج، أو اكتشفي الأقسام والأفكار اللي تناسب ذوقك.</p></div>
-    </div>
-   </section>}
    <section id="collection" className={"mx-auto max-w-7xl scroll-mt-24 px-4 pb-8 sm:px-6 lg:px-8 "+(searchOnly||slug?"pt-8 sm:pt-12":"pt-6 sm:pt-8")}>
     <div className="flex flex-wrap items-end justify-between gap-5">{homePage?<h2 className="font-display text-xl font-extrabold sm:text-3xl">{experience.collectionTitle}</h2>:<SectionIntro eyebrow={shopName} title={slug?"تفاصيل المنتج":searchOnly?"ابحثي في منتجات يومياتي":experience.collectionTitle} description={slug?undefined:searchOnly?"البحث يفهم اختلاف كتابة الكلمات العربية، الكلمات القريبة، وأسماء المنتجات المتاحة للعرض.":undefined}/>} {searchOnly&&(!rows||error||!origin||!key)&&<label className="relative block w-full sm:w-auto"><Search className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"/><input type="search" className="field w-full pr-12 sm:w-72" value={term} onChange={e=>setTerm(e.target.value)} placeholder="ابحثي بين المنتجات" aria-label="بحث المنتجات المعتمدة"/></label>}</div>
-    {!slug&&<div className={(searchOnly||term.trim()?"mt-5 flex":"hidden")+" flex-wrap items-center gap-2"} aria-label="اقتراحات البحث">
-      {(term.trim()?suggestions:SEARCH_GROUPS).slice(0,6).map(group=><a key={group.slug} href={path+"/c/"+group.slug} className="inline-flex min-h-10 items-center rounded-full border border-border bg-card px-4 text-xs font-bold text-primary transition-colors hover:border-primary/40 hover:bg-primary-soft">{group.title}</a>)}
-      {term.trim()&&<Button variant="outline" onClick={()=>setTerm("")} className="min-h-11 rounded-full px-4 text-xs font-semibold text-muted-foreground">مسح البحث</Button>}
-    </div>}
     {searchOnly&&rows!==null&&!error?<ApprovedCatalogBrowser market={market} products={rows} images={Object.fromEntries(rows.map(row=>[row.listing_id,imageFor(row)]))}/>:browseEmpty?<BrowseProducts market={market}/>:offers.state==="off"&&(!origin||!key)?<EmptyProducts title="تعرّفي على مجموعات يومياتي" message="تظهر هنا المنتجات التي تتوافر لها بيانات معتمدة. اكتشفي أقسام البيت والجمال والعناية."/>
     :error?<div role="alert" className="mt-8 rounded-3xl border bg-card p-8 text-center"><h3 className="font-bold">تعذّر تحميل المنتجات في الوقت الحالي</h3><Button variant="outline" className="mt-4 min-h-11" onClick={()=>setAttempt(v=>v+1)}>إعادة المحاولة</Button></div>
     :rows===null?<div role="status" aria-live="polite" className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">{Array.from({length:4},(_,i)=><div key={i} className="animate-pulse rounded-2xl border bg-card p-3"><div className="aspect-square rounded-xl bg-muted"/><div className="mt-3 h-4 w-3/4 rounded bg-muted"/><div className="mt-3 h-4 w-1/2 rounded bg-muted"/></div>)}</div>
