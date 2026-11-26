@@ -8,9 +8,10 @@ export function AnalyticsRoot(){
  const [askConsent,setAskConsent]=useState(false);
  useEffect(()=>{
   if(!analyticsEnabled())return;
-  const start=()=>{void initAnalytics();};
-  const w=window as Window&{requestIdleCallback?:(cb:()=>void,o?:{timeout:number})=>number};
-  if(w.requestIdleCallback)w.requestIdleCallback(start,{timeout:3000});else setTimeout(start,1500);
+  // Start after the page has fully loaded and settled, so analytics never competes
+  // with the hero image or fonts on slow mobile connections.
+  const start=()=>{setTimeout(()=>{void initAnalytics();},2500);};
+  if(document.readyState==="complete")start();else window.addEventListener("load",start,{once:true});
   setAskConsent(readConsent()==="unknown");
  },[]);
  useEffect(()=>{trackPageview();},[pathname]);

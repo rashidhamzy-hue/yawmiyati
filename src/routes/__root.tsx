@@ -11,8 +11,6 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import {AnalyticsRoot} from "@/components/analytics/AnalyticsRoot";
-import tajawalArabic400 from "@fontsource/tajawal/files/tajawal-arabic-400-normal.woff2?url";
-import tajawalArabic800 from "@fontsource/tajawal/files/tajawal-arabic-800-normal.woff2?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import {img} from "@/lib/store/images";
 import {ArrowRight,RefreshCw,Search} from "lucide-react";
@@ -68,8 +66,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-      { rel: "preload", href: tajawalArabic400, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
-      { rel: "preload", href: tajawalArabic800, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
     ],
   }),
   shellComponent: RootShell,
