@@ -46,8 +46,8 @@ export function StoreHeader({market}:{market:MarketCode}){
    <nav aria-label="التنقل الرئيسي" className="mr-5 hidden items-center gap-7 text-sm font-bold lg:flex">{navLinks.map(([title,hash])=><a href={path+(hash.startsWith("/")?hash:hash)} key={hash} className="transition-colors hover:text-primary">{title}</a>)}</nav>
    <div className="mr-auto flex items-center gap-2">
     <details ref={countrySelector} className="group relative">
-     <summary aria-label={"البلد والعملة: "+identity.fullName+"، "+identity.currencyLong} aria-controls="yawmiyati-market-options" className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-full border border-border/90 bg-card px-2.5 py-1.5 text-xs font-bold text-foreground shadow-sm transition-colors hover:border-primary/40 hover:bg-primary-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:px-3.5">
-      <span className="text-xl leading-none" role="img" aria-label={"علم "+identity.name}>{identity.flag}</span>
+     <summary aria-label={"البلد والعملة: "+identity.fullName+"، "+identity.currencyLong+" ("+identity.name+" "+identity.currencyLabel+")"} aria-controls="yawmiyati-market-options" className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-full border border-border/90 bg-card px-2.5 py-1.5 text-xs font-bold text-foreground shadow-sm transition-colors hover:border-primary/40 hover:bg-primary-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:px-3.5">
+      <span className="text-xl leading-none" aria-hidden="true">{identity.flag}</span>
       <span className="hidden whitespace-nowrap sm:inline">{identity.name}</span>
       <span className="hidden h-4 w-px bg-border sm:inline"/>
       <span className="whitespace-nowrap text-[11px] font-extrabold text-primary" dir="rtl">{identity.currencyLabel}</span>
