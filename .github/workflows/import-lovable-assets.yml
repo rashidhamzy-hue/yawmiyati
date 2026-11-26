@@ -1,0 +1,39 @@
+# One-off: copy the 8 Lovable-hosted images (src/assets/p*.jpg.asset.json pointers)
+# into the repository so the build no longer depends on the retired Lovable project.
+# Runs only on this branch; removed again before merge.
+name: Import Lovable assets (one-off)
+on:
+  push:
+    branches: [chore/handover-reality]
+    paths: [.github/workflows/import-lovable-assets.yml]
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and verify
+        env:
+          BASE: https://preview--souq-of-saudi.lovable.app
+        run: |
+          set -euo pipefail
+          for n in 1 2 3 4 5 6 7 8; do
+            ptr="src/assets/p${n}.jpg.asset.json"
+            url="$BASE$(jq -r .url "$ptr")"
+            want=$(jq -r .size "$ptr")
+            curl -fsSL --retry 3 -o "src/assets/p${n}.jpg" "$url"
+            got=$(stat -c %s "src/assets/p${n}.jpg")
+            type=$(file -b --mime-type "src/assets/p${n}.jpg")
+            echo "p${n}.jpg size=$got expected=$want type=$type"
+            [ "$type" = "image/jpeg" ] || { echo "not a jpeg"; exit 1; }
+            [ "$got" = "$want" ] || { echo "size mismatch"; exit 1; }
+          done
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/assets/p*.jpg
+          git commit -m "Import 8 Lovable-hosted images into the repository (verified size and type)"
+          git push
