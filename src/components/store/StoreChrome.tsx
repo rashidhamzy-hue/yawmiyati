@@ -86,10 +86,11 @@ export function StoreFooter({market}:{market:MarketCode}){
   <a href={path+"/info/help"} className="flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-primary"><HelpCircle className="h-5 w-5"/>المساعدة</a>
  </nav></>;
 }
-export function StoreFrame({market,children}:{market:MarketCode;children:ReactNode}){
+/** `focused` drops the footer and mobile bottom nav so checkout has one job: finishing the order. */
+export function StoreFrame({market,children,focused=false}:{market:MarketCode;children:ReactNode;focused?:boolean}){
  return <div dir="rtl" data-yawmiyati-market={market} className="min-h-screen overflow-x-clip bg-background text-foreground">
   <a href="#main-content" className="skip-link">تخطي إلى المحتوى</a>
   <div className="bg-primary px-4 py-2 text-center text-[11px] font-semibold tracking-wide text-primary-foreground sm:text-xs">{marketExperience[market].announcement}</div>
-  <StoreHeader market={market}/><main id="main-content">{children}</main><StoreFooter market={market}/>
+  <StoreHeader market={market}/><main id="main-content">{children}</main>{focused?<p className="border-t border-border px-4 py-6 text-center text-xs text-muted-foreground">الدفع نقداً عند الاستلام · نتصل بك لتأكيد الطلب قبل الشحن</p>:<StoreFooter market={market}/>}
  </div>;
 }
