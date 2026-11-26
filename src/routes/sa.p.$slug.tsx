@@ -1,7 +1,8 @@
 import {createFileRoute} from "@tanstack/react-router";
 import {MarketPreview} from "@/components/store/MarketPreview";
-import {productPageMetadata} from "@/lib/store/store-page-metadata";
+import {loadProductSeo,productHead} from "@/lib/seo/route-head";
 export const Route=createFileRoute("/sa/p/$slug")({
- head:()=>{const m=productPageMetadata("sa");return {meta:[{title:m.title},{name:"description",content:m.description},{name:"robots",content:m.robots}]};},
+ loader:({params})=>loadProductSeo("sa",params.slug),
+ head:({loaderData})=>productHead("sa",loaderData),
  component:()=>{const {slug}=Route.useParams();return <MarketPreview market="sa" slug={slug}/>;}
 });

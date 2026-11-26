@@ -3,6 +3,7 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { posthogProxyTarget, proxyPosthog } from "./lib/analytics/posthog-proxy";
+import { handleSeoRequest, robotsHeaderFor } from "./lib/seo/endpoints";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -45,6 +46,14 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+// Staging and preview hosts must never be indexed, even after launch.
+function withRobotsHeader(response: Response, value: string | null): Response {
+  if (!value) return response;
+  const headers = new Headers(response.headers);
+  headers.set("x-robots-tag", value);
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
 // Hosting compresses every response at the edge. Never compress a body (gzip, brotli,
 // CompressionStream) or set content-encoding here or in a server route: the body gets encoded
 // twice and renders garbled.
@@ -55,10 +64,13 @@ export default {
       try { return await proxyPosthog(request, proxyTarget); }
       catch { return new Response(null, { status: 502 }); }
     }
+    const robotsHeader = robotsHeaderFor(new URL(request.url).hostname);
     try {
+      const seo = await handleSeoRequest(request);
+      if (seo) return withRobotsHeader(seo, robotsHeader);
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      return withRobotsHeader(await normalizeCatastrophicSsrResponse(response), robotsHeader);
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {
