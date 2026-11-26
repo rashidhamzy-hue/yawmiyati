@@ -7,7 +7,11 @@ import { cartSuggestions } from "@/lib/store/offer-recommendations";
 import { addOfferLine, removeOfferLine, setOfferZone, updateOfferLine, useOfferCart } from "@/lib/store/offer-cart";
 import { FixtureNotice } from "./OfferProductPanel";
 
-const money = (market: MarketCode, minor: bigint) => minor > 0n ? formatMinor(market, minor) : "مشمول";\nfunction selectableCartPacks(row:PricedLine,zoneId:string|null){\n if(!row.version)return [];\n return row.version.packs.filter(pack=>pack.selectable&&(!zoneId||row.version!.zones.some(zone=>zone.zone_id===zoneId&&zone.pack_ids.includes(pack.pack_id))));\n}
+const money = (market: MarketCode, minor: bigint) => minor > 0n ? formatMinor(market, minor) : "مشمول";
+function selectableCartPacks(row:PricedLine,zoneId:string|null){
+ if(!row.version)return [];
+ return row.version.packs.filter(pack=>pack.selectable&&(!zoneId||row.version!.zones.some(zone=>zone.zone_id===zoneId&&zone.pack_ids.includes(pack.pack_id))));
+}
 const problem: Record<Exclude<PricedLine["status"], "ok">, string> = {
   missing: "هذا المنتج لم يعد معروضاً. احذفيه من السلة.",
   changed: "تغيّرت تفاصيل هذا العرض بعد إضافته. احذفيه وأعيدي اختياره من صفحة المنتج.",
@@ -39,7 +43,8 @@ export function OfferCartPage({ market, type, versions }: { market: MarketCode; 
       {row.version?.image && <img src={row.version.image.url} alt="" className="h-20 w-20 shrink-0 rounded-xl bg-[#efe6d7] object-contain" />}
       <div className="min-w-0 flex-1 space-y-1 text-sm">
         <a href={path + "/p/" + encodeURIComponent(row.line.slug)} className="block font-extrabold hover:text-primary">{row.version?.title ?? row.line.slug}</a>
-        <p className="text-muted-foreground">{row.pack?.label ?? "عبوة غير متاحة"}</p>\n        {!review&&row.status==="ok"&&selectableCartPacks(row,priced.zone?.zone_id??cart.zone_id).length>1&&<label className="mt-2 block text-xs font-bold">الكمية / العبوة<select aria-label={"تعديل الكمية أو العبوة لـ "+(row.version?.title??"المنتج")} value={row.line.pack_id} onChange={e=>updateOfferLine(market,i,{...row.line,pack_id:e.target.value,add_on_id:null})} className="field mt-1 min-h-10 w-full text-xs">{selectableCartPacks(row,priced.zone?.zone_id??cart.zone_id).map(pack=><option key={pack.pack_id} value={pack.pack_id}>{pack.label} · {formatMinor(market,pack.price_minor)}</option>)}</select></label>}
+        <p className="text-muted-foreground">{row.pack?.label ?? "عبوة غير متاحة"}</p>
+        {!review&&row.status==="ok"&&selectableCartPacks(row,priced.zone?.zone_id??cart.zone_id).length>1&&<label className="mt-2 block text-xs font-bold">الكمية / العبوة<select aria-label={"تعديل الكمية أو العبوة لـ "+(row.version?.title??"المنتج")} value={row.line.pack_id} onChange={e=>updateOfferLine(market,i,{...row.line,pack_id:e.target.value,add_on_id:null})} className="field mt-1 min-h-10 w-full text-xs">{selectableCartPacks(row,priced.zone?.zone_id??cart.zone_id).map(pack=><option key={pack.pack_id} value={pack.pack_id}>{pack.label} · {formatMinor(market,pack.price_minor)}</option>)}</select></label>}
         {row.status === "ok" ? <dl className="grid grid-cols-[auto_1fr] gap-x-3 text-xs">
           <dt>السعر</dt><dd className="font-bold">{money(market, row.price_minor)}</dd>
           <dt className="flex items-center gap-1"><Truck className="h-3.5 w-3.5" aria-hidden="true" />التوصيل</dt><dd className="font-bold">{money(market, row.delivery_minor)}</dd>
