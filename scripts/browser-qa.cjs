@@ -73,7 +73,8 @@ async function main(){
        await dialog.waitFor({state:"hidden"});
      }
      if(width===390||width===1440){
-       const editorial=page.locator('main img[src^="https://images.unsplash.com/"]');
+       // Licensed Unsplash photos are served same-origin through the Worker's /media/ route (S1 round 4).
+       const editorial=page.locator('main img[src^="/media/photo-"]');
        assert.ok(await editorial.count()>=6,label+": incomplete licensed editorial photo set");
        for(const index of [0,1,2]){
          const item=editorial.nth(index);
