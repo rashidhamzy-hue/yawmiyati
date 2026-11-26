@@ -1,0 +1,1 @@
+create extension if not exists pg_cron with schema pg_catalog; select cron.schedule('yawmiyati-refresh-product-merchandising','17 * * * *',$$select public.refresh_product_merchandising_scores(30);$$);
