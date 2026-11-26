@@ -2,7 +2,10 @@
  * Stable responsive variants for the licensed Unsplash editorial photo CDN.
  * Supplier product images use their own trusted media pipeline instead.
  */
+const LOCAL=/^\/editorial\/([a-z-]+)-\d+\.webp$/;
 export function editorialSrcSet(url:string):string|undefined{
+ const local=LOCAL.exec(url);
+ if(local)return [240,360,480,768,1080,1600].map(w=>`/editorial/${local[1]}-${w}.webp ${w}w`).join(", ");
  if(!url.startsWith("https://images.unsplash.com/photo-"))return undefined;
  const widths=[240,360,480,640,768,960,1280,1600,1920];
  return widths.map(width=>{

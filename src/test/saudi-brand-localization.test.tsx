@@ -4,7 +4,7 @@ import {StoreHeader,StoreFooter,StoreFrame} from "../components/store/StoreChrom
 import {marketIdentity} from "../lib/store/market-identity";
 it("uses Saudi flag and readable local riyal rather than orphan SAR badge",()=>{
  render(<StoreHeader market="sa"/>);
- const chooser=screen.getByLabelText(/^البلد والعملة: المملكة العربية السعودية، ريال سعودي/);
+ const chooser=screen.getByText("البلد والعملة: المملكة العربية السعودية، ريال سعودي").closest("summary")!;
  expect(chooser).toBeTruthy();
  expect(chooser.textContent).toContain("🇸🇦");
  expect(chooser.textContent).toContain("ر.س");

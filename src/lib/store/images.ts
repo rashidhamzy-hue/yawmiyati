@@ -5,8 +5,9 @@
  * on 2026-11-20. Sources and authors: docs/EDITORIAL-IMAGE-SOURCES.md.
  *
  * These replace Lovable-only /__l5e/ asset pointers which do not work in
- * standalone GitHub/Vite deployment. Hosting is currently Unsplash CDN.
- * Self-hosted versions may replace these URLs without touching page code.
+ * standalone GitHub/Vite deployment. Since 26 Nov 2026 they are served from our own
+ * origin as responsive WebP (copied under the Unsplash License), which removes a
+ * third-party connection from the mobile critical path.
  * p1–p8 (legacy illustrative photos, never real merchandise) are bundled
  * from src/assets since the Lovable retirement on 26 Nov 2026.
  */
@@ -20,7 +21,8 @@ import p7 from "@/assets/p7.jpg";
 import p8 from "@/assets/p8.jpg";
 
 const photo=(id:string,width:number)=>`https://images.unsplash.com/${id}?auto=format&fit=crop&w=${width}&q=78`;
-export const img={
+/** Absolute originals, used only where an absolute URL is required (Open Graph / social previews). */
+export const editorialRemote={
  "hero":photo("photo-1767720580810-58be50f89bf8",1800),
  "cat-home":photo("photo-1762529716272-b316f61502e7",1200),
  "cat-kitchen":photo("photo-1765341448915-57b22d2c53ae",1200),
@@ -28,6 +30,17 @@ export const img={
  "cat-fashion":photo("photo-1559563458-527698bf5295",1000),
  "cat-wellness":photo("photo-1675149476008-83dbfa2ee917",1000),
  "cat-organize":photo("photo-1652349566831-1b41ce15ba6c",1000),
+} as const;
+/** Same-origin responsive WebP copies (public/editorial/<key>-<width>.webp, widths 240–1600). */
+const local=(key:string,width:number)=>`/editorial/${key}-${width}.webp`;
+export const img={
+ "hero":local("hero",1600),
+ "cat-home":local("cat-home",1080),
+ "cat-kitchen":local("cat-kitchen",1080),
+ "cat-beauty":local("cat-beauty",1080),
+ "cat-fashion":local("cat-fashion",1080),
+ "cat-wellness":local("cat-wellness",1080),
+ "cat-organize":local("cat-organize",1080),
  "p1":p1,"p2":p2,"p3":p3,"p4":p4,
  "p5":p5,"p6":p6,"p7":p7,"p8":p8,
 } as const;
