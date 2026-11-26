@@ -1,6 +1,7 @@
 import {useEffect,useState} from "react";
 import {useRouterState} from "@tanstack/react-router";
 import {startErrorMonitoring} from "@/lib/monitoring/sentry-client";
+import {captureAttribution} from "@/lib/analytics/attribution";
 import {analyticsConfigured,analyticsEnabled,initAnalytics,readConsent,setConsent,trackPageview} from "@/lib/analytics/analytics";
 
 /** Sends a $pageview on every route change and shows the consent prompt once. */
@@ -9,7 +10,7 @@ export function AnalyticsRoot(){
  // Rendered on the server for everyone (painted with the page, not ~3 s later after hydration);
  // the inline head precheck hides it instantly for visitors who already answered.
  const [askConsent,setAskConsent]=useState(analyticsConfigured);
- useEffect(()=>{startErrorMonitoring();},[]);
+ useEffect(()=>{startErrorMonitoring();try{captureAttribution();}catch{/* never block the page */}},[]);
  useEffect(()=>{
   if(!analyticsEnabled())return;
   // Start after the page has fully loaded and settled, so analytics never competes
