@@ -80,7 +80,7 @@ export function StoreFooter({market}:{market:MarketCode}){
   <div className="border-t border-white/15 px-4 py-5 text-center text-xs text-white/65">© ٢٠٢٦ يومياتي. جميع الحقوق محفوظة.</div>
  </footer><nav aria-label="التنقل السريع للجوال" className="store-mobile-nav fixed inset-x-0 bottom-0 z-[55] grid grid-cols-4 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_18px_rgba(0,0,0,.08)] backdrop-blur-lg md:hidden">
   <a href={path} className="flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-bold text-primary"><Home className="h-5 w-5"/>الرئيسية</a>
-  <a href={path+"#discover"} className="flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-primary"><LayoutGrid className="h-5 w-5"/>الأقسام</a>
+  <a href={path+"/#discover"} className="flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-primary"><LayoutGrid className="h-5 w-5"/>الأقسام</a>
   <button type="button" onClick={()=>document.dispatchEvent(new CustomEvent("yawmiyati:open-search"))} className="flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-primary"><Search className="h-5 w-5"/>البحث</button>
   <a href={path+"/info/help"} className="flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-primary"><HelpCircle className="h-5 w-5"/>المساعدة</a>
  </nav></>;
