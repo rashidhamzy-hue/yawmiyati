@@ -37,13 +37,14 @@ export function OfferProductPanel({ market, version, versions }: { market: Marke
     if(buyNow)window.location.assign("/"+market+"/checkout");
   };
   return <article dir="rtl" className="grid gap-6 lg:grid-cols-2" aria-label="تفاصيل المنتج" data-offer-version={version.version_id}>
+    <h1 className="col-span-full font-display text-2xl font-extrabold leading-relaxed sm:text-3xl lg:hidden">{version.title}</h1>
     <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border bg-[#efe6d7]">
       {version.image ? <img src={version.image.url} alt={version.image.alt} width={720} height={720} fetchPriority="high" decoding="async" className="h-full w-full object-contain" /> :
         <div className="flex flex-col items-center gap-3 text-muted-foreground"><ImageOff className="h-12 w-12" aria-hidden="true" /><span>لا تتوفر صورة معتمدة</span></div>}
     </div>
     <div className="space-y-5">
       <FixtureNotice />
-      <h1 className="font-display text-2xl font-extrabold leading-relaxed sm:text-3xl">{version.title}</h1>
+      <h1 className="hidden font-display text-2xl font-extrabold leading-relaxed sm:text-3xl lg:block">{version.title}</h1>
       {pack&&<p className="text-2xl font-extrabold text-primary">{formatMinor(market,pack.price_minor)}</p>}
       {version.description.trim() && <p className="whitespace-pre-wrap text-sm leading-7 text-muted-foreground">{version.description}</p>}
 
