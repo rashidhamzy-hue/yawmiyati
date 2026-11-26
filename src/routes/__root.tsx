@@ -12,6 +12,7 @@ import appCss from "../styles.css?url";
 import {AnalyticsRoot} from "@/components/analytics/AnalyticsRoot";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { captureError } from "@/lib/monitoring/sentry-client";
+import { CONSENT_PRECHECK_SCRIPT } from "@/lib/analytics/analytics";
 import {img} from "@/lib/store/images";
 import {ArrowRight,RefreshCw,Search} from "lucide-react";
 
@@ -60,6 +61,7 @@ export const Route = createRootRoute({
       { name: "twitter:card", content: "summary_large_image" },
       
     ],
+    scripts: [{ children: CONSENT_PRECHECK_SCRIPT }],
     links: [
       {
         rel: "stylesheet",

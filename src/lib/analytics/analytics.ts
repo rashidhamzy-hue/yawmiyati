@@ -19,6 +19,13 @@ let loading:Promise<PostHog|null>|null=null;
 const queue:[string,Record<string,unknown>][]=[];
 
 export function analyticsEnabled(){return typeof window!=="undefined"&&!!key;}
+/** Same answer on the server and in the browser (build-time key), so SSR and hydration agree. */
+export function analyticsConfigured(){return !!key;}
+/**
+ * Inline <head> script: hides the server-rendered consent prompt before first paint
+ * when this visitor already answered, so it never flashes and never becomes a late LCP.
+ */
+export const CONSENT_PRECHECK_SCRIPT=`try{var v=localStorage.getItem(${JSON.stringify("yawmiyati.consent.v1")});if(v==="granted"||v==="denied"){var s=document.createElement("style");s.textContent="[data-consent-banner]{display:none!important}";document.head.appendChild(s);}}catch(e){}`;
 
 export function readConsent():Consent{
  try{const v=window.localStorage.getItem(CONSENT_KEY);return v==="granted"||v==="denied"?v:"unknown";}catch{return "unknown";}
