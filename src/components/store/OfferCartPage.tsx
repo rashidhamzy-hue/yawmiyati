@@ -6,6 +6,7 @@ import { formatMinor, priceOfferCart, type ApprovedOfferVersion, type PricedLine
 import { cartSuggestions } from "@/lib/store/offer-recommendations";
 import { addOfferLine, removeOfferLine, setOfferZone, updateOfferLine, useOfferCart } from "@/lib/store/offer-cart";
 import { FixtureNotice } from "./OfferProductPanel";
+import { CodCheckoutForm } from "./CodCheckoutForm";
 
 const money = (market: MarketCode, minor: bigint) => minor > 0n ? formatMinor(market, minor) : "مشمول";
 function selectableCartPacks(row:PricedLine,zoneId:string|null){
@@ -25,6 +26,7 @@ export function OfferCartPage({ market, type, versions }: { market: MarketCode; 
   const path = "/" + market;
   const review = type === "checkout";
   const [completed,setCompleted]=useState(false);
+  const [formValid,setFormValid]=useState(false);
   const sample=versions.length>0&&versions.every(v=>v.slug.startsWith("preview-"+market+"-"));
   const suggestions=!review&&priced.checkoutReady?cartSuggestions(cart,versions):[];
   return <section className="mx-auto max-w-4xl px-4 pb-20 pt-7 sm:px-6 sm:pt-10 lg:px-8" aria-labelledby="offer-cart-title">
@@ -62,14 +64,16 @@ export function OfferCartPage({ market, type, versions }: { market: MarketCode; 
       <p className="mt-1 text-xs text-muted-foreground">{paymentLabel}{priced.zone ? " · " + priced.zone.label : ""}</p>
       {!priced.checkoutReady && priced.lines.length > 0 && <p className="mt-3 text-xs font-bold text-destructive">راجعي العناصر المعلّمة قبل متابعة الطلب.</p>}
       {review ? <div className="mt-5 space-y-3">
+        {priced.checkoutReady&&<div className="rounded-xl border bg-background p-4"><CodCheckoutForm market={market} onValidityChange={setFormValid}/></div>}
         <button type="button" disabled className="btn-primary inline-flex min-h-12 w-full items-center justify-center gap-2 opacity-60 sm:w-auto" aria-describedby="orders-off-note"><Lock className="h-4 w-4" aria-hidden="true" />تأكيد الطلب</button>
-        <p id="orders-off-note" className="text-xs leading-6 text-muted-foreground">استقبال الطلبات غير مفعّل في هذه البيئة. لا تُجمع بيانات شخصية ولا يُنشأ أي طلب.</p>
-        {sample&&priced.checkoutReady&&<div className="rounded-xl border bg-background p-4"><h2 className="font-bold">تجربة إتمام الطلب</h2><p className="mt-2 text-xs leading-6 text-muted-foreground">بيانات وهمية فقط، لا يُرسل أي طلب.</p><dl className="mt-3 space-y-2 text-sm"><div><dt className="font-bold">الاسم</dt><dd>عميلة تجريبية</dd></div><div><dt className="font-bold">العنوان</dt><dd>عنوان اختبار · {priced.zone?.label}</dd></div><div><dt className="font-bold">طريقة الدفع</dt><dd>الدفع عند الاستلام</dd></div></dl><button type="button" onClick={()=>setCompleted(true)} disabled={completed} className="btn-primary mt-4 min-h-12 w-full">{completed?"اكتملت المحاكاة":"إتمام طلب تجريبي"}</button>{completed&&<p role="status" className="mt-3 text-sm font-bold text-primary">تمت محاكاة الطلب بنجاح. لم يُرسل طلب حقيقي.</p>}</div>}
+        <p id="orders-off-note" className="text-xs leading-6 text-muted-foreground">استقبال الطلبات غير مفعّل في هذه البيئة. البيانات تبقى في هذه الصفحة فقط، ولا تُرسل ولا يُنشأ أي طلب.</p>
+        {sample&&priced.checkoutReady&&<div className="rounded-xl border bg-background p-4"><h2 className="font-bold">تجربة إتمام الطلب</h2><p className="mt-2 text-xs leading-6 text-muted-foreground">منتجات تجريبية فقط، لا يُرسل أي طلب.</p><button type="button" onClick={()=>setCompleted(true)} disabled={completed||!formValid} className="btn-primary mt-4 min-h-12 w-full disabled:opacity-60">{completed?"اكتملت المحاكاة":"إتمام طلب تجريبي"}</button>{!formValid&&!completed&&<p className="mt-2 text-xs text-muted-foreground">أكملي بيانات التوصيل أولاً.</p>}{completed&&<p role="status" className="mt-3 text-sm font-bold text-primary">تمت محاكاة الطلب بنجاح. لم يُرسل طلب حقيقي.</p>}</div>}
         <a href={path + "/cart"} className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-primary">تعديل السلة <ArrowLeft className="h-4 w-4" aria-hidden="true" /></a>
       </div> : <div className="mt-5 flex flex-wrap gap-3">
-        {priced.checkoutReady ? <a href={path + "/checkout"} className="btn-primary inline-flex min-h-12 items-center gap-2">مراجعة الطلب <ArrowLeft className="h-4 w-4" aria-hidden="true" /></a>
+        {priced.checkoutReady ? <a href={path + "/checkout"} className="btn-primary inline-flex min-h-12 w-full items-center justify-center gap-2 sm:w-auto">مراجعة الطلب <ArrowLeft className="h-4 w-4" aria-hidden="true" /></a>
           : <span aria-disabled="true" className="btn-primary inline-flex min-h-12 items-center gap-2 opacity-50">مراجعة الطلب</span>}
         <a href={path + "#collection"} className="btn-outline inline-flex min-h-12 items-center">متابعة التسوق</a>
+        {priced.checkoutReady&&<p className="w-full text-xs font-bold text-muted-foreground">الدفع نقداً عند الاستلام · نتصل بك لتأكيد الطلب قبل الشحن</p>}
       </div>}
     </section>
     {suggestions.length>0&&<section aria-label="اقتراحات إضافية" className="mt-6 space-y-3"><h2 className="font-display text-lg font-extrabold">اختيارات إضافية قد تعجبك</h2>{suggestions.map(({version,pack,zone,total})=><article key={version.listing_id} className="flex items-center gap-3 rounded-xl border bg-card p-3">{version.image&&<img src={version.image.url} alt="" loading="lazy" className="h-16 w-16 shrink-0 rounded-lg object-contain"/>}<div className="min-w-0 flex-1"><a href={path+"/p/"+encodeURIComponent(version.slug)} className="line-clamp-2 text-sm font-bold">{version.title}</a><p className="mt-1 text-xs text-muted-foreground">إضافة للإجمالي: {formatMinor(market,total)}</p></div><button type="button" className="btn-outline min-h-11 shrink-0 text-xs" onClick={()=>addOfferLine(market,{listing_id:version.listing_id,slug:version.slug,version_id:version.version_id,revision:version.revision,pack_id:pack.pack_id,add_on_id:null},zone.zone_id)}>أضيفي</button></article>)}</section>}

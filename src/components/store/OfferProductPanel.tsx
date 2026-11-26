@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ImageOff, ShoppingBag, Truck } from "lucide-react";
+import { Banknote, Check, ImageOff, PhoneCall, ReceiptText, ShoppingBag, Truck } from "lucide-react";
 import { paymentLabel } from "../../../supabase/functions/_shared/payment-policy";
 import type { MarketCode } from "@/lib/store/markets";
 import { doorMinor, exactUnitPrice, formatMinor, marketZones, type ApprovedOfferVersion, type PublicPack } from "@/lib/store/offer-version";
@@ -37,7 +37,10 @@ export function OfferProductPanel({ market, version, versions }: { market: Marke
     if(buyNow)window.location.assign("/"+market+"/checkout");
   };
   return <article dir="rtl" className="grid gap-6 lg:grid-cols-2" aria-label="تفاصيل المنتج" data-offer-version={version.version_id}>
-    <h1 className="col-span-full font-display text-2xl font-extrabold leading-relaxed sm:text-3xl lg:hidden">{version.title}</h1>
+    <div className="col-span-full lg:hidden">
+      <h1 className="font-display text-2xl font-extrabold leading-relaxed sm:text-3xl">{version.title}</h1>
+      {pack&&<p className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1"><span className="text-2xl font-extrabold text-primary">{formatMinor(market,pack.price_minor)}</span>{effective&&zone&&<span className="text-xs font-bold text-muted-foreground">الإجمالي عند الاستلام {formatMinor(market,doorMinor(effective,zone))}</span>}</p>}
+    </div>
     <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border bg-[#efe6d7]">
       {version.image ? <img src={version.image.url} alt={version.image.alt} width={720} height={720} fetchPriority="high" decoding="async" className="h-full w-full object-contain" /> :
         <div className="flex flex-col items-center gap-3 text-muted-foreground"><ImageOff className="h-12 w-12" aria-hidden="true" /><span>لا تتوفر صورة معتمدة</span></div>}
@@ -45,7 +48,7 @@ export function OfferProductPanel({ market, version, versions }: { market: Marke
     <div className="space-y-5">
       <FixtureNotice />
       <h1 className="hidden font-display text-2xl font-extrabold leading-relaxed sm:text-3xl lg:block">{version.title}</h1>
-      {pack&&<p className="text-2xl font-extrabold text-primary">{formatMinor(market,pack.price_minor)}</p>}
+      {pack&&<p className="hidden text-2xl font-extrabold text-primary lg:block">{formatMinor(market,pack.price_minor)}</p>}
       {version.description.trim() && <p className="whitespace-pre-wrap text-sm leading-7 text-muted-foreground">{version.description}</p>}
 
       {zones.length > 1 && <fieldset className="space-y-2">
@@ -92,10 +95,15 @@ export function OfferProductPanel({ market, version, versions }: { market: Marke
       </section>
 
       <div className="grid grid-cols-2 gap-3">
-        <button type="button" onClick={()=>add(true)} disabled={!effective||!zone} className="btn-primary min-h-12 disabled:opacity-50">اشتري الآن</button>
-        <button type="button" onClick={()=>add()} disabled={!effective || !zone} className="btn-outline inline-flex min-h-12 w-full items-center justify-center gap-2 disabled:opacity-50"><ShoppingBag className="h-5 w-5" aria-hidden="true" />أضيفي إلى السلة</button>
-        {status && <a href={"/" + market + "/checkout"} className="btn-outline inline-flex min-h-12 w-full items-center gap-2 sm:w-auto">مراجعة الطلب مباشرة</a>}
-        {status && <p role="status" className="inline-flex items-center gap-2 text-sm font-bold text-primary"><Check className="h-4 w-4" aria-hidden="true" />{status === "added" ? "أُضيف إلى السلة" : "موجود في السلة"} · <a href={"/" + market + "/cart"} className="underline underline-offset-4">عرض السلة</a></p>}
+        <button type="button" onClick={()=>add(true)} disabled={!effective||!zone} className="btn-primary min-h-12 whitespace-nowrap px-3 disabled:opacity-50">اشتري الآن</button>
+        <button type="button" onClick={()=>add()} disabled={!effective || !zone} className="btn-outline inline-flex min-h-12 w-full items-center justify-center gap-1.5 whitespace-nowrap px-3 text-sm disabled:opacity-50"><ShoppingBag className="h-4 w-4 shrink-0" aria-hidden="true" />أضيفي إلى السلة</button>
+        <ul aria-label="لماذا الطلب آمن" className="col-span-2 grid grid-cols-3 gap-2 text-center text-[11px] font-bold leading-5 text-muted-foreground">
+          <li className="flex flex-col items-center gap-1 rounded-xl bg-muted/60 px-2 py-2"><Banknote className="h-4 w-4 text-primary" aria-hidden="true"/>الدفع عند الاستلام</li>
+          <li className="flex flex-col items-center gap-1 rounded-xl bg-muted/60 px-2 py-2"><PhoneCall className="h-4 w-4 text-primary" aria-hidden="true"/>نتصل لتأكيد طلبك</li>
+          <li className="flex flex-col items-center gap-1 rounded-xl bg-muted/60 px-2 py-2"><ReceiptText className="h-4 w-4 text-primary" aria-hidden="true"/>الإجمالي واضح قبل الطلب</li>
+        </ul>
+        {status && <a href={"/" + market + "/checkout"} className="btn-outline col-span-2 inline-flex min-h-12 w-full items-center justify-center gap-2">مراجعة الطلب مباشرة</a>}
+        {status && <p role="status" className="col-span-2 inline-flex items-center gap-2 text-sm font-bold text-primary"><Check className="h-4 w-4" aria-hidden="true" />{status === "added" ? "أُضيف إلى السلة" : "موجود في السلة"} · <a href={"/" + market + "/cart"} className="underline underline-offset-4">عرض السلة</a></p>}
       </div>
     </div>
     {zone&&effective&&<div data-mobile-buybar className="fixed inset-x-0 bottom-[calc(60px+env(safe-area-inset-bottom))] z-40 border-t border-border bg-background/95 p-3 shadow-[0_-6px_24px_rgba(0,0,0,.10)] backdrop-blur-lg md:hidden"><div className="mx-auto flex max-w-xl items-center gap-3"><div className="min-w-0 flex-1"><span className="block text-[11px] text-muted-foreground">الإجمالي عند الاستلام</span><strong className="block truncate text-sm font-extrabold text-primary">{formatMinor(market,doorMinor(effective,zone))}</strong></div><button type="button" onClick={()=>add(true)} className="btn-primary min-h-12 shrink-0 px-6">اشتري الآن</button></div></div>}

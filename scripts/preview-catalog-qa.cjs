@@ -37,9 +37,15 @@ async function main(){
   await page.locator("[data-cart-door-total]").waitFor();
   assert.equal(await page.locator("[data-cart-door-total]").innerText(),door);
   assert.ok(await page.getByRole("button",{name:"تأكيد الطلب"}).isDisabled());
+  assert.equal(await page.locator("form[action]").count(),0);
+  assert.ok(await page.getByRole("button",{name:"إتمام طلب تجريبي"}).isDisabled());
+  const sample={sa:"0501234567",ae:"0501234567",om:"91234567",eg:"01012345678",iq:"07701234567"}[market];
+  await page.getByLabel("الاسم الكامل").fill("عميلة تجريبية");
+  await page.getByLabel("رقم الجوال").fill(sample);
+  await page.locator('input[name="city"]').fill("مدينة اختبار");
+  await page.getByLabel("العنوان بالتفصيل").fill("حي الاختبار، شارع ١، مبنى ٢");
   await page.getByRole("button",{name:"إتمام طلب تجريبي"}).click();
   await page.getByText("تمت محاكاة الطلب بنجاح. لم يُرسل طلب حقيقي.").waitFor();
-  assert.equal(await page.locator('form,input[type=tel]').count(),0);
   await page.goto(base+"/"+market+"/c/home",{waitUntil:"domcontentloaded"});
   const categoryGrid=page.getByRole("region",{name:"منتجات القسم"});
   await categoryGrid.locator('article a[href*="/p/preview-"]').first().waitFor({timeout:20000});
@@ -51,6 +57,7 @@ async function main(){
    assert.equal(await switches.locator('[aria-current="page"]').getAttribute("href"),"/"+market+"/c/"+slug);
   }
   await page.getByRole("combobox",{name:"ترتيب المنتجات"}).selectOption("low");
+  await page.getByRole("button",{name:/تصفية/}).click();
   await page.getByRole("searchbox",{name:"البحث في هذا القسم"}).fill("zzzz-no-match");
   await categoryGrid.getByText("لا توجد نتائج مطابقة.",{exact:false}).waitFor();
   await page.getByRole("searchbox",{name:"البحث في هذا القسم"}).fill("");

@@ -51,6 +51,9 @@ describe("M12 storefront offer wiring", () => {
     render(<OfferCartPage market="sa" type="checkout" versions={sa} />);
     expect(document.querySelector("[data-cart-door-total]")?.textContent).toMatch(/٨٥/);
     expect(screen.getByRole("button", { name: "تأكيد الطلب" })).toHaveProperty("disabled", true);
-    expect(document.querySelector("form,input[type=tel],input[name=phone]")).toBeNull();
+    const form=document.querySelector("form")!;
+    expect(form.getAttribute("action")).toBeNull();
+    expect(form.hasAttribute("data-private")).toBe(true);
+    expect(document.querySelector("input[type=tel]")).not.toBeNull();
   });
 });
