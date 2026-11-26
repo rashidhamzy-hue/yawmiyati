@@ -1,0 +1,51 @@
+# One-off: copy the licensed Unsplash editorial photos (see docs/EDITORIAL-IMAGE-SOURCES.md)
+# to our own origin as responsive WebP, and add small variants of the /browse tiles.
+# Same-origin images remove an extra DNS/TLS connection from the mobile critical path.
+name: Import editorial images (one-off)
+on:
+  push:
+    branches: [perf/s1-round2]
+    paths: [.github/workflows/import-editorial-images.yml]
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and convert
+        run: |
+          set -euo pipefail
+          mkdir -p public/editorial
+          declare -A ids=(
+            [hero]=photo-1767720580810-58be50f89bf8
+            [cat-home]=photo-1762529716272-b316f61502e7
+            [cat-kitchen]=photo-1765341448915-57b22d2c53ae
+            [cat-beauty]=photo-1778373620793-a369943bf9b3
+            [cat-fashion]=photo-1559563458-527698bf5295
+            [cat-wellness]=photo-1675149476008-83dbfa2ee917
+            [cat-organize]=photo-1652349566831-1b41ce15ba6c
+          )
+          for key in "${!ids[@]}"; do
+            for w in 240 360 480 768 1080 1600; do
+              q=60; [ $w -ge 1080 ] && q=66
+              curl -fsSL --retry 3 -o "public/editorial/$key-$w.webp" \
+                "https://images.unsplash.com/${ids[$key]}?auto=compress&fm=webp&fit=crop&w=$w&q=$q"
+              [ "$(file -b --mime-type public/editorial/$key-$w.webp)" = image/webp ] || { echo "bad $key $w"; exit 1; }
+            done
+          done
+          sudo apt-get -qq install -y webp >/dev/null
+          for f in public/browse/*.webp; do
+            b=$(basename "$f" .webp)
+            dwebp -quiet "$f" -o /tmp/$b.png
+            cwebp -quiet -q 62 -resize 180 0 /tmp/$b.png -o "public/browse/$b-180.webp"
+          done
+          du -sh public/editorial; ls public/browse
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/editorial public/browse
+          git commit -m "Self-host editorial photos as responsive WebP; add 180w browse tiles"
+          git push
