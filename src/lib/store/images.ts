@@ -5,9 +5,7 @@
  * on 2026-11-20. Sources and authors: docs/EDITORIAL-IMAGE-SOURCES.md.
  *
  * These replace Lovable-only /__l5e/ asset pointers which do not work in
- * standalone GitHub/Vite deployment. Since 26 Nov 2026 they are served from our own
- * origin as responsive WebP (copied under the Unsplash License), which removes a
- * third-party connection from the mobile critical path.
+ * standalone GitHub/Vite deployment. Hosting is the Unsplash image CDN (AVIF/WebP).
  * p1–p8 (legacy illustrative photos, never real merchandise) are bundled
  * from src/assets since the Lovable retirement on 26 Nov 2026.
  */
@@ -31,16 +29,10 @@ export const editorialRemote={
  "cat-wellness":photo("photo-1675149476008-83dbfa2ee917",1000),
  "cat-organize":photo("photo-1652349566831-1b41ce15ba6c",1000),
 } as const;
-/** Same-origin responsive WebP copies (public/editorial/<key>-<width>.webp, widths 240–1600). */
-const local=(key:string,width:number)=>`/editorial/${key}-${width}.webp`;
+/** Editorial photos stay on the Unsplash image CDN: it serves AVIF/WebP per browser,
+ * which measured lighter and faster than our own WebP copies (Lighthouse, 26 Nov 2026). */
 export const img={
- "hero":local("hero",1600),
- "cat-home":local("cat-home",1080),
- "cat-kitchen":local("cat-kitchen",1080),
- "cat-beauty":local("cat-beauty",1080),
- "cat-fashion":local("cat-fashion",1080),
- "cat-wellness":local("cat-wellness",1080),
- "cat-organize":local("cat-organize",1080),
+ ...editorialRemote,
  "p1":p1,"p2":p2,"p3":p3,"p4":p4,
  "p5":p5,"p6":p6,"p7":p7,"p8":p8,
 } as const;
