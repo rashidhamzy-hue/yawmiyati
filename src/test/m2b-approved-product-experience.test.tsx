@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { ApprovedCatalogBrowser, ApprovedProductGallery } from "../lib/store/ApprovedProductExperience";
 import { filterApprovedListings, presentApprovedDetail, validateApprovedExtra } from "../lib/store/approved-product-experience";
-import type { PublicDetail, PublicListing } from "../lib/store/public-catalog";
+import { parsePublicListings, type PublicDetail, type PublicListing } from "../lib/store/public-catalog";
 
 const sa: PublicListing[] = [
   { listing_id:"approved-1", slug:"item-a", title:"منظم أنيق", price_minor:"12900", currency:"SAR" },
@@ -18,10 +18,18 @@ const approved = {
 } as const;
 
 describe("M2B approved-only catalogue",()=>{
+  it("accepts only positive integer owner-approved popularity ranks",()=>{
+    const row={listing_id:"ranked-1",slug:"ranked",title:"منتج",price_minor:"1000",currency:"SAR",popularity_rank:2};
+    expect(parsePublicListings([row],"sa")[0].popularity_rank).toBe(2);
+    expect(()=>parsePublicListings([{...row,popularity_rank:0}],"sa")).toThrow();
+    expect(()=>parsePublicListings([{...row,popularity_rank:1.5}],"sa")).toThrow();
+  });
   it("filters, sorts and paginates only passed approved public rows",()=>{
     expect(filterApprovedListings(sa,"sa",{query:"انـيق".replace("ـ","")}).total).toBe(1);
     expect(filterApprovedListings(sa,"sa",{sort:"price_asc"}).products[0].slug).toBe("item-c");
     expect(filterApprovedListings(sa,"sa",{sort:"price_desc"}).products[0].slug).toBe("item-a");
+    const ranked=[{...sa[0],popularity_rank:3},{...sa[1],popularity_rank:1},{...sa[2],popularity_rank:2}];
+    expect(filterApprovedListings(ranked,"sa",{sort:"popular"}).products.map(row=>row.slug)).toEqual(["item-b","item-c","item-a"]);
     expect(filterApprovedListings(sa,"sa",{minPriceMinor:6000,maxPriceMinor:10000}).total).toBe(1);
     expect(filterApprovedListings(sa,"sa",{page:2,pageSize:2}).products).toHaveLength(1);
   });

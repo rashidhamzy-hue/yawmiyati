@@ -69,7 +69,7 @@ export function ApprovedCatalogBrowser({market,products,onOpen,images={}}:{marke
       </label>
       <label className="text-sm font-bold">ترتيب حسب
         <select aria-label="ترتيب المنتجات" value={sort} onChange={e=>{setSort(e.target.value as ApprovedSort);setPage(1);}} className="field mt-2 min-h-12 w-full">
-          <option value="default">الأكثر صلة</option><option value="price_asc">السعر: الأقل أولاً</option><option value="price_desc">السعر: الأعلى أولاً</option><option value="title">الاسم</option>
+          <option value="popular" disabled={!products.some(row=>row.popularity_rank!==undefined)}>الأكثر رواجاً</option><option value="default">الأكثر صلة</option><option value="price_asc">السعر: الأقل أولاً</option><option value="price_desc">السعر: الأعلى أولاً</option><option value="title">الاسم</option>
         </select>
       </label>
       <div className="grid grid-cols-2 gap-2">
@@ -81,6 +81,7 @@ export function ApprovedCatalogBrowser({market,products,onOpen,images={}}:{marke
         {hasFilters&&<button type="button" onClick={reset} className="min-h-10 px-3 text-xs font-bold text-primary underline underline-offset-4">مسح التصفية</button>}
       </div>
     </div>
+    {!products.some(row=>row.popularity_rank!==undefined)&&<p className="text-xs text-muted-foreground">سيُتاح ترتيب الأكثر رواجاً عند توفر بيانات طلبات موثّقة لهذا المتجر.</p>}
     {invalidRange?<p role="alert" className="rounded-xl border border-destructive/30 p-4 text-sm">أدخلي سعراً صحيحاً، وتأكدي أن الحد الأدنى لا يتجاوز الحد الأعلى.</p>:result!.total===0?
       <div className="rounded-2xl border bg-card px-5 py-12 text-center"><PackageSearchFallback/><h3 className="mt-3 font-bold">ما لقينا منتجات تطابق اختياراتك</h3><p className="mt-2 text-sm text-muted-foreground">جرّبي تخفيف التصفية أو تغيير كلمة البحث.</p><button type="button" onClick={reset} className="btn-outline mt-4 min-h-11">عرض كل المنتجات</button></div>:
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
