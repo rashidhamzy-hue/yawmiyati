@@ -36,6 +36,7 @@ export function initAnalytics():Promise<PostHog|null>{
  loading=import("posthog-js").then(({default:posthog})=>{
   posthog.init(key!,{
    api_host:host,
+   ui_host:"https://us.posthog.com",
    defaults:"2025-05-24",
    capture_pageview:false,          // we send our own $pageview with market/page_type
    capture_pageleave:true,          // includes scroll depth → "where did they leave"
