@@ -40,11 +40,12 @@ export async function handleProductMedia(request:Request,upstream:typeof fetch=f
  if(!target)return new Response("Not found",{status:404});
  const a=request.headers.get("accept")??"";
  const accept=a.includes("image/webp")?"image/webp,image/*;q=0.8":"image/jpeg,image/png,image/*;q=0.8";
- const res=await upstream(target,{headers:{accept},redirect:"error",
+ // Workers accept only "follow" or "manual"; a redirect from the media host is treated as missing.
+ const res=await upstream(target,{headers:{accept},redirect:"manual",
   cf:{cacheEverything:true,cacheTtl:2592000,cacheKey:target+"#"+accept.split(",")[0]},
  } as RequestInit);
  const type=res.headers.get("content-type")??"";
- if(res.status===404||res.status===403)return new Response("Not found",{status:404});
+ if(res.status===404||res.status===403||(res.status>=300&&res.status<400))return new Response("Not found",{status:404});
  if(!res.ok||!type.startsWith("image/"))return new Response(null,{status:502});
  // Only our own headers go out: nothing from the upstream response identifies it.
  return new Response(request.method==="HEAD"?null:res.body,{status:200,headers:{
