@@ -35,8 +35,18 @@ Every paid call → `brain_cost_ledger` (tokens, web searches, exact micro-USD a
 ## Secrets (Supabase → Edge Functions → Secrets; never in the browser or repo)
 `ANTHROPIC_API_KEY`, and per market `WOO_SA_URL` (https origin of the Woo site), `WOO_SA_KEY` (ck_…), `WOO_SA_SECRET` (cs_…) — same pattern `WOO_AE_*`, `WOO_OM_*`, `WOO_EG_*`, `WOO_IQ_*`. GitHub repository secret `SUPABASE_ACCESS_TOKEN` for deployment.
 
+## Publish approved picks to the storefront (27 Nov 2026)
+**Status:** CI-PASSED source; migration `20261127130000_brain_publish.sql` tested on a local Postgres 16 with every repo migration applied (`docs/brain-publish-test.sql`, rollback-only). **Not yet applied to staging** and not browser-tested with real data.
+
+- `/admin` → Yawmiyati Brain → **On the store**: *Publish approved products* calls `brain_publish_approved(store, run)`. Each approved pick becomes (or refreshes) a `country_listings` + `listing_variants` row plus a `brain_listings` row holding the customer-safe page (title, subtitle, description, bullets, specs, FAQ, SEO title/description), the brain's price, the category and up to 12 Taager picture ids. Picks are left out, with a reason shown to the owner, when they are missing from the Taager sync, unpriced, have page wording to fix, are priced outside Taager's minimum/maximum, or have no usable pictures.
+- **Shown only while true, re-checked on every public read** (`brain_listing_state` → `current_catalog_release`): market release flag on; listing published; Taager sync newer than `brain_settings.stock_max_age_hours` (default 72); in stock by Taager's own signals; price still ≥ Taager's minimum and ≤ its maximum. A quick sync that reports a product out of stock, or a Taager price rise above our price, hides it without any owner action.
+- **Release flag stays with the owner:** *Show store to visitors* / *Hide store from visitors* call `brain_set_release` (membership-checked, every change written to `catalog_release_log`). Checkout flags are untouched. *Take all products off* calls `brain_unpublish`.
+- **Public RPCs:** `public_catalog` now also returns `approved_category_slugs`, `category_release`, `image` (picture id); new `public_product_page(store, slug)` returns the approved page for a visible brain listing, else null. Search and detail keep their shape.
+- **Pictures:** the storefront Worker serves `/media/p/<uuid>.<ext>` (full) and `/media/p/360/<uuid>.<ext>` (cards) by fetching the same file from Taager's media host and caching it at Cloudflare for 30 days (`src/lib/store/product-media.ts`). Shoppers never see the supplier host; Supabase serves no picture bytes (no egress). Trade-off: a picture Taager deletes disappears after the cache expires. Copying published pictures to Cloudflare R2 is the follow-up once R2 is enabled on the account (free tier, needs the owner to turn it on).
+- **Storefront:** cards show the first picture; the product page renders `ReleasedProductPage` (gallery, price, COD/delivery/returns lines from the shared customer copy, bullets, description, specs, FAQ). No order can be placed from it.
+
 ## Not built yet (next)
-1. **Publish approved products to the storefront** (bridge approved rows → `catalog_products`/`country_listings` + editorial pages + media rehosting) — release flags stay off until launch.
+1. Product videos, Taager quantity offers (tiers) and bundle contents on the product page; SEO head (title/description/image) from the approved page on the server render; R2 copies of published pictures.
 2. **Autopilot scheduler** (daily: refresh stock/prices, add N products/store, retire weak ones) — toggle exists, disabled.
 3. **Brain C learning** from real visits/orders (attribution is captured now; order outcomes come with Phase 6).
 4. Native bundle composition beyond what Woo exposes (M11): bundles are labelled, never invented.
