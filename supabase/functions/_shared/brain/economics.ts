@@ -1,20 +1,22 @@
-// Taager economics (published policy, 26 Nov 2026):
+// Taager economics (published policy, 26 Nov 2026; owner pricing decision 27 Nov 2026):
 // - Customer pays our product price + Taager's delivery fee (SA 28 SAR, AE 19 AED, OM 3 OMR, EG 95-105 EGP, IQ 7,000 IQD).
-// - Delivered order: we earn price - Taager cost. Taager's "minimum selling price" is the floor.
-//   Saudi: 15% of profit ADDED above the minimum is deducted as VAT.
+// - Delivered order: we earn price - Taager cost. Saudi: 15% of profit ADDED above Taager's minimum price is deducted as VAT.
+// - Taager's minimum and maximum selling prices are reference points, NOT limits (owner, 27 Nov 2026):
+//   the brain prices from our cost, the margin and what other shops charge. The only hard rule is never a loss.
+//   Whether Taager accepts an order below its minimum or above its maximum is unproven until the first test order (G1),
+//   so such prices are marked on the decision.
 // - Refused order: no profit; Egypt charges the merchant 5 EGP, others nothing published.
 // - Free delivery (our choice) means we absorb the delivery fee from profit.
-// All money is integer minor units. Unknown inputs stay unknown: no price is proposed without cost AND floor.
+// All money is integer minor units. No price is proposed without Taager's cost.
 import { minorToUsd, usdToMinor, type MarketFacts } from "./markets.ts";
 
-export type ProfitInputs = { cost_minor: number; floor_minor: number };
+export type ProfitInputs = { cost_minor: number; floor_minor: number | null };
 
 export function profitDelivered(price: number, inp: ProfitInputs, m: MarketFacts, freeDelivery = false): number {
-  if (price < inp.floor_minor) throw Error("below_taager_floor");
-  const base = inp.floor_minor - inp.cost_minor;
-  const added = price - inp.floor_minor;
+  // VAT applies to profit added above Taager's minimum (no minimum known: treat all profit as added, the cautious case).
+  const added = Math.max(0, price - (inp.floor_minor ?? inp.cost_minor));
   const vat = Math.ceil((added * m.vatOnAddedProfitBps) / 10000);
-  return base + added - vat - (freeDelivery ? m.shippingMinor : 0);
+  return price - inp.cost_minor - vat - (freeDelivery ? m.shippingMinor : 0);
 }
 
 export function expectedPerOrder(profit: number, deliveryRateBps: number, m: MarketFacts): number {
@@ -39,7 +41,7 @@ export function pricePoints(from: number, to: number, m: MarketFacts): number[] 
       if (ok) out.add(whole * unit);
     }
   }
-  if (!out.size || Math.min(...out) > from) out.add(from); // the floor itself is always a candidate
+  if (!out.size || Math.min(...out) > from) out.add(from); // the lower bound itself is always a candidate
   return [...out].filter((v) => v >= from && v <= Math.max(to, from)).sort((a, b) => a - b);
 }
 
@@ -76,6 +78,9 @@ export type PriceDecision = {
   conversion_factor?: number;
   delivery_rate_bps?: number;
   needs_owner_review?: boolean;
+  /** Where the price sits against Taager's own minimum / maximum (reference only; unproven with Taager until G1). */
+  taager_position?: "below_minimum" | "within" | "above_maximum" | "unknown";
+  taager_minimum_minor?: number | null;
   notes: string[];
 };
 
@@ -88,8 +93,8 @@ export function decidePrice(args: {
   const { m } = args;
   const notes: string[] = [];
   const { cost_minor, floor_minor, suggested_minor } = args.inputs;
-  if (cost_minor === null || floor_minor === null) return { state: "blocked", blocked_reason: "missing_taager_cost_or_minimum_price", notes };
-  if (floor_minor < cost_minor) return { state: "blocked", blocked_reason: "minimum_price_below_cost", notes };
+  const max_minor = args.inputs.max_minor ?? null;
+  if (cost_minor === null || cost_minor <= 0) return { state: "blocked", blocked_reason: "missing_taager_cost", notes };
   const rate = args.deliveryRateBps ?? m.defaultDeliveryRateBps;
   const strong = args.competitors.filter((c) => c.match === "exact" && c.confidence >= 0.6);
   const weak = args.competitors.filter((c) => c.match === "similar" && c.confidence >= 0.5);
@@ -97,23 +102,35 @@ export function decidePrice(args: {
   const ref = basis === "exact" ? median(strong.map((c) => c.price_minor)) : basis === "similar" ? median(weak.map((c) => c.price_minor)) : null;
   // Similar items are a weaker anchor: allow a 10% premium for the exact item being sold.
   const compTotal = ref === null ? null : basis === "similar" ? Math.round(ref * 1.1) : ref;
-  // Without market evidence never explore upward: use Taager's suggested price if it is above the floor, else the floor.
-  const uncapped = compTotal === null ? Math.max(floor_minor, suggested_minor ?? floor_minor) : Math.max(floor_minor * 2, suggested_minor ?? 0, compTotal * 1.2);
-  // Never propose more than the supplier accepts (Taager pricingRange.max).
-  const ceiling = args.inputs.max_minor && args.inputs.max_minor >= floor_minor ? args.inputs.max_minor : null;
-  const top = ceiling === null ? uncapped : Math.min(uncapped, ceiling);
+  const inputs = { cost_minor, floor_minor };
+  // The cheapest price that still earns something; Taager's minimum is not a floor.
+  const from = cost_minor + 1;
+  let candidates: number[];
+  if (compTotal === null) {
+    // No market evidence: never explore. Use Taager's default selling price as the anchor when it earns anything;
+    // otherwise (Taager minimum profit 0) the product needs research before it can be priced.
+    const anchor = Math.max(floor_minor ?? 0, suggested_minor ?? 0);
+    if (anchor <= cost_minor) return { state: "blocked", blocked_reason: "needs_market_research", notes: ["Taager's minimum profit is 0 and no other shop was found: price unknown."] };
+    candidates = pricePoints(anchor, anchor, m);
+  } else {
+    candidates = pricePoints(from, Math.max(Math.round(compTotal * 1.25), from), m);
+  }
   let best: { price: number; score: number; profit: number; exp: number; f: number } | null = null;
-  for (const price of pricePoints(floor_minor, top, m).filter((p) => ceiling === null || p <= ceiling)) {
-    const profit = profitDelivered(price, { cost_minor, floor_minor }, m);
+  for (const price of candidates) {
+    const profit = profitDelivered(price, inputs, m);
     if (profit <= 0) continue;
     const exp = expectedPerOrder(profit, rate, m);
+    if (exp <= 0) continue;
     const f = compTotal === null ? 1 : conversionFactor(price + m.shippingMinor, compTotal);
     const score = exp * f;
     if (!best || score > best.score || (score === best.score && price < best.price)) best = { price, score, profit, exp, f };
   }
   if (!best) return { state: "blocked", blocked_reason: "no_profitable_price", notes };
   const positioning = compTotal === null ? "unknown" : best.price + m.shippingMinor < compTotal * 0.97 ? "cheaper" : best.price + m.shippingMinor <= compTotal * 1.03 ? "matched" : "dearer";
-  if (basis === "none") notes.push("No competing retailer found: priced at Taager's minimum/suggested level.");
+  if (basis === "none") notes.push("No competing retailer found: priced at Taager's default selling price.");
+  const taager_position = floor_minor === null ? "unknown" : best.price < floor_minor ? "below_minimum" : max_minor !== null && max_minor > 0 && best.price > max_minor ? "above_maximum" : "within";
+  if (taager_position === "below_minimum") notes.push("Priced below Taager's minimum to match the market; confirm Taager accepts it with the first test order.");
+  if (taager_position === "above_maximum") notes.push("Priced above Taager's maximum; confirm Taager accepts it with the first test order.");
   if (positioning === "dearer") notes.push("Delivered total is above other retailers even at the best price; demand will be weaker.");
   const thin = best.profit < usdToMinor(2, m);
   if (thin) notes.push("Thin margin (under ~$2 per delivered order): owner review.");
@@ -124,7 +141,7 @@ export function decidePrice(args: {
     margin_on_price_pct: Math.round((best.profit / best.price) * 1000) / 10,
     competitor_reference_minor: compTotal, competitor_basis: basis, competitor_count: basis === "exact" ? strong.length : weak.length,
     positioning, conversion_factor: Math.round(best.f * 100) / 100, delivery_rate_bps: rate,
-    needs_owner_review: thin || basis === "none", notes,
+    needs_owner_review: thin || basis === "none", taager_position, taager_minimum_minor: floor_minor, notes,
   };
 }
 
