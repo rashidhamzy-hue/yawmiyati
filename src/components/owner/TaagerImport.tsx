@@ -65,13 +65,15 @@ export function TaagerImport({ market, origin, publicKey, token }: Props) {
       if (alive.current) setError((e as Error).message);
     }
   }, [client, market]);
+  // A market switch clears the panel; a renewed sign-in (new token) only reloads the counts.
   useEffect(() => {
     setSummary(null);
     setBlocks([]);
     setFileName("");
     setError("");
     setDone("");
-    setProgress(null);
+  }, [market]);
+  useEffect(() => {
     void load();
   }, [load]);
 

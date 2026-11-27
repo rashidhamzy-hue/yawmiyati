@@ -4,8 +4,8 @@ import { OfferSelectionDemo } from "../components/store/OfferSelectionDemo";
 import {publicBrowserConfig} from "@/lib/store/staging-public-config";
 import { createFileRoute } from "@tanstack/react-router";
 import {AlertTriangle,BarChart3,Boxes,ChartNoAxesCombined,ClipboardCheck,ExternalLink,LockKeyhole,LogOut,PackageSearch,PauseCircle,RefreshCw,Settings2,ShieldCheck,ShoppingBag,Users,Wallet,type LucideIcon} from "lucide-react";
-import { useState, useRef, useMemo, type FormEvent, type ReactNode } from "react";
-import { dashboardClient, type DashboardSummary, type MarketPerformance, type CatalogRow, type Recommendation, type AiPolicy } from "../lib/store/dashboard-client";
+import { useState, useRef, useMemo, useEffect, type FormEvent, type ReactNode } from "react";
+import { dashboardClient, type OwnerSession, type DashboardSummary, type MarketPerformance, type CatalogRow, type Recommendation, type AiPolicy } from "../lib/store/dashboard-client";
 import { CommercialReview } from "@/components/store/CommercialReview";
 import { OwnerActionQueue } from "@/components/store/OwnerActionQueue";
 import { BrainPanel } from "@/components/owner/BrainPanel";
@@ -44,9 +44,22 @@ function OwnerDashboard(){
   catch{if(id===generation.current)setError("Unable to load this market. Verify access or sign in again.");}
   finally{if(id===generation.current)setBusy(false);}
  }
+ // Renew the owner session in memory shortly before it expires (refresh token never stored).
+ const refreshTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+ const sessionGen=useRef(0);
+ useEffect(()=>()=>{if(refreshTimer.current)clearTimeout(refreshTimer.current);},[]);
+ function keepAlive(s:OwnerSession){
+  if(refreshTimer.current)clearTimeout(refreshTimer.current);
+  if(!s.refresh)return;
+  const refresh=s.refresh;const gen=sessionGen.current;
+  refreshTimer.current=setTimeout(async()=>{
+   try{const next=await dashboardClient(origin,key).refreshSession(refresh);if(gen===sessionGen.current){setToken(next.access);keepAlive(next);}}
+   catch{if(gen===sessionGen.current)setError("Your session ended. Sign in again.");}
+  },Math.max(60,s.expiresIn-120)*1000);
+ }
  async function signIn(e:FormEvent){
   e.preventDefault();setBusy(true);setError("");
-  try{const access=await dashboardClient(origin,key).signIn(email,password);setToken(access);await load(market,access);}
+  try{sessionGen.current++;const s=await dashboardClient(origin,key).signInSession(email,password);setToken(s.access);keepAlive(s);await load(market,s.access);}
   catch{setError("Sign-in failed. Check your credentials and staging configuration.");setBusy(false);}
   finally{setPassword("");}
  }
@@ -79,7 +92,7 @@ function OwnerDashboard(){
   }catch{if(currentGeneration===generation.current)setCatalogPageError("Could not load more catalog records. Retry after checking access.");}
   finally{if(currentGeneration===generation.current){catalogPageInFlight.current=false;setCatalogLoading(false);}}
  }
- function signOut(){generation.current++;setToken("");setData(null);setPerformance(null);setCatalog([]);setCatalogHasMore(false);setCatalogNextOffset(0);setCatalogLoading(false);setCatalogPageError("");catalogPageInFlight.current=false;setRecommendations([]);setPolicy(null);setError("");setBusy(false);}
+ function signOut(){generation.current++;sessionGen.current++;if(refreshTimer.current)clearTimeout(refreshTimer.current);setToken("");setData(null);setPerformance(null);setCatalog([]);setCatalogHasMore(false);setCatalogNextOffset(0);setCatalogLoading(false);setCatalogPageError("");catalogPageInFlight.current=false;setRecommendations([]);setPolicy(null);setError("");setBusy(false);}
  const signedIn=Boolean(token);
  const loading=busy&&!data;
  return <main dir="ltr" className="min-h-screen bg-background pb-20 text-foreground">

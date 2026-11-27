@@ -66,7 +66,7 @@ ignores Woo prices and uses Taager financials. Matching key Woo ↔ Taager: **SK
 2. Import stores everything per market+SKU in `taager_catalog` (private; RPCs `taager_import_*`, owner membership checked). Quick imports never erase stored detail; listing-price changes set `price_changed_at`; SKUs missing from the latest full read are counted.
 3. Brain run reads `taager_catalog` first (provider `taager_api`): exact cost / minimum / maximum, tiers, sale window, upsell discounts, declared bundles, success rate, media, text. WooCommerce stays the fallback source and is only needed for SKU presence.
 4. Owner runs **Taager add all** on the picks (next: an "add these SKUs" mode) so only chosen products enter WooCommerce, where orders route to Taager.
-5. Ongoing: **quick** sync for all countries, by hand or the automatic repeat (e.g. every 6 hours with the tab open). Known limit: the owner page's sign-in lasts about an hour without refresh, so a long automatic run may report "sign in again"; the data is then kept for Download.
+5. Ongoing: **quick** sync for all countries, by hand or the automatic repeat (e.g. every 6 hours with the tab open). The owner page renews its sign-in in memory (refresh token never stored), so it stays signed in while open; if renewal fails it says "sign in again" and the Taager tab keeps the data for Download.
 ## 5. Only a real test order can prove (G1)
 What Taager actually charges/credits for a 2–3 piece order placed through WooCommerce; final delivered profit; refusal handling.
 
