@@ -1,8 +1,9 @@
 -- Publish owner-approved Yawmiyati Brain picks (Taager source) to the storefront.
 -- Owner-only RPCs create or refresh the listing from the brain's approved Arabic page, price and Taager media ids.
 -- Visibility is re-checked on every public read against the latest owner-run Taager sync:
---   market release flag on, listing published, in stock, sync fresh enough,
---   price still at or above Taager's minimum and at or below its maximum.
+--   market release flag on, listing published, in stock, sync fresh enough, price still above Taager's cost.
+-- Taager's minimum and maximum selling prices are references only (owner decision, 27 Nov 2026): the brain
+-- prices from cost, margin and other shops; the one hard rule is never selling at a loss.
 -- Nothing here enables checkout, submits orders or changes a release flag on its own.
 
 alter table public.brain_settings
@@ -67,9 +68,8 @@ language sql stable security definer set search_path = '' as $$
       when t.sku is null then 'missing_from_catalogue'
       when t.synced_at < now() - make_interval(hours => bs.stock_max_age_hours) then 'stale_sync'
       when not public.taager_row_orderable(t.listing, t.detail) then 'out_of_stock'
-      when public.taager_minor(t.financials->'price', s.minor_digits) is null then 'no_supplier_price'
-      when b.price_minor < public.taager_minor(t.financials->'price', s.minor_digits) then 'below_supplier_minimum'
-      when b.price_minor > public.taager_minor(t.financials->'pricingRange'->'max', s.minor_digits) then 'above_supplier_maximum'
+      when public.taager_minor(t.financials->'originalPrice', s.minor_digits) is null then 'no_supplier_cost'
+      when b.price_minor <= public.taager_minor(t.financials->'originalPrice', s.minor_digits) then 'below_supplier_cost'
     end
   from public.brain_listings b
   join public.stores s on s.code = b.store_code
@@ -140,7 +140,7 @@ create function public.brain_publish_approved(p_store text, p_run uuid) returns 
 language plpgsql volatile security definer set search_path = '' as $$
 declare
   a public.brain_product_analysis%rowtype; t public.taager_catalog%rowtype; b public.brain_listings%rowtype;
-  v_digits smallint; v_price bigint; v_min bigint; v_max bigint; v_reason text; v_media jsonb; v_page jsonb;
+  v_digits smallint; v_price bigint; v_cost bigint; v_reason text; v_media jsonb; v_page jsonb;
   v_slug text; v_title text; v_category text; v_product uuid; v_listing uuid; v_variant uuid;
   v_new integer := 0; v_updated integer := 0; v_skipped jsonb := '[]'::jsonb;
 begin
@@ -157,8 +157,7 @@ begin
      order by c.synced_at desc limit 1;
     v_price := case when a.decision->>'state' = 'priced' and jsonb_typeof(a.decision->'price_minor') = 'number'
                     then (a.decision->>'price_minor')::numeric::bigint end;
-    v_min := public.taager_minor(t.financials->'price', v_digits);
-    v_max := public.taager_minor(t.financials->'pricingRange'->'max', v_digits);
+    v_cost := public.taager_minor(t.financials->'originalPrice', v_digits);
     v_title := btrim(coalesce(a.content->>'title', ''));
     -- Pictures only, by Taager media id; the storefront serves them from its own /media/p/ path.
     select coalesce(jsonb_agg(jsonb_build_object('id', m.id, 'alt', left(coalesce(nullif(btrim(a.content->'image_alt'->>((m.n - 1)::int)), ''), v_title), 180)) order by m.n), '[]'::jsonb)
@@ -172,9 +171,8 @@ begin
       when v_price is null or v_price <= 0 then 'no_price'
       when length(v_title) not between 1 and 500 or length(btrim(coalesce(a.content->>'description', ''))) not between 1 and 10000 then 'no_page_content'
       when coalesce(a.content->'issues', '[]'::jsonb) ?| array['banned_wording_present', 'price_in_text', 'missing_title', 'missing_description'] then 'page_content_needs_fix'
-      when v_min is null then 'no_supplier_price'
-      when v_price < v_min then 'below_supplier_minimum'
-      when v_price > v_max then 'above_supplier_maximum'
+      when v_cost is null then 'no_supplier_cost'
+      when v_price <= v_cost then 'below_supplier_cost'
       when jsonb_array_length(v_media) = 0 then 'no_pictures'
     end;
     if v_reason is not null then

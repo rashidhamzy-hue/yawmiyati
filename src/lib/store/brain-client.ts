@@ -29,7 +29,7 @@ export type PublicationStatus = {
 export const PUBLISH_REASONS: Record<string, string> = {
   not_in_taager_catalogue: "not in the latest Taager sync", missing_from_catalogue: "gone from the Taager sync",
   no_price: "the brain could not price it", no_page_content: "no Arabic page written", page_content_needs_fix: "the Arabic page has wording to fix",
-  no_supplier_price: "Taager shows no price", below_supplier_minimum: "our price is now under Taager's minimum", above_supplier_maximum: "our price is over Taager's maximum",
+  no_supplier_cost: "Taager shows no cost", below_supplier_cost: "our price is at or under Taager's cost (would be a loss)",
   no_pictures: "no usable pictures", out_of_stock: "out of stock at Taager", stale_sync: "Taager sync is too old", unpublished: "taken off the store by you", price_mismatch: "price changed outside the brain",
 };
 
