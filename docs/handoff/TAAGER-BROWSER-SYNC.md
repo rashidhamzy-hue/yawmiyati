@@ -20,9 +20,9 @@ Sources in `tools/taager/`; `node tools/taager/build-bookmarklets.mjs` prints th
 
 | Tool | What it does | Proven |
 |---|---|---|
-| `add-all.js` (v2) | On any Taager listing page: for each card opens the store icon box, clicks **WooCommerce ⊕** when enabled, skips greyed-out (already added) and risky titles (regex), 1.2–2.6 s between adds, Stop button, auto-scroll. Typing **0** = record card facts only. Records card text per product (price, crossed price, piece offers, stock range) to localStorage → "Download facts". | 5/5 then 100/100 ×3 added on 27 Nov; store went 94 → ~400 products |
+| `add-all.js` (v3) | Pick-list mode: paste `ym:<country>:<ids>` from /admin to add exactly the approved products. Otherwise on any Taager listing page: for each card opens the store icon box, clicks **WooCommerce ⊕** when enabled, skips greyed-out (already added) and risky titles (regex), 1.2–2.6 s between adds, Stop button, auto-scroll. Typing **0** = record card facts only. Records card text per product (price, crossed price, piece offers, stock range) to localStorage → "Download facts". | 5/5 then 100/100 ×3 added on 27 Nov; store went 94 → ~400 products |
 | `recorder.js` (v2) | Records the Taager web app's own merchant-API responses (+ header *names*, auth scheme and length only — never the token) for mapping. Skips auth/wallet/payout/payment URLs, blanks emails/phones. | 2 recordings 27 Nov |
-| `sync.js` (v3) | Full catalogue read: picks up the app's own request headers in memory (never saved), then pages `GET /api/products/variants` and for each product `GET /merchant-info` (Arabic) + `/alternatives`, 0.4–0.8 s pacing, downloads one JSON. Prompt: number of products (0 = all). | mocked test only |
+| `sync.js` (v4) | Catalogue read for one, several or all five countries in one click (same login; the `country` header is switched per request). **full** = every product in detail; **quick** = every listing (prices, stock, lock state) plus detail only for products that are new or whose listing changed since the last run in this browser (fingerprints in `localStorage` `ym_taager_fp_<country>`, no prices sent anywhere else). Optional automatic repeat every N hours while the tab stays open. Results go either to a download (`countries:[...]` file) or straight to the owner page through a **Live link** (`window.open` + `postMessage`; the /admin page accepts only `https://taager.com` / `www.taager.com` and answers with an ack). v3 single-country files still import. | v3 live on Iraq (749 SKUs); v4 mocked test (2 countries, quick re-run fetched only the changed product) |
 
 Card DOM facts (for add-all): store icon `button#store-actions-button` (ids are not unique) opens a Radix popover
 (`aria-controls`); inside it `button#add-to-store-stores.wooCommerce-btn` — **enabled = not added (⊕), `disabled` = already in store (✓)**.
@@ -61,12 +61,12 @@ Simple product, Arabic name + description, **all images copied to the Woo site**
 No cost, no tiers, no Taager id in public data. Woo price (garden set 408 SAR) matches none of Taager's numbers → the brain
 ignores Woo prices and uses Taager financials. Matching key Woo ↔ Taager: **SKU**.
 
-## 4. Operating model (per country store)
-1. Owner opens Taager in his Chrome (country selected) → **Taager sync** → 0 → Download → attach / import (Claude loads it into `supplier_offers` + brain tables).
-2. Brain studies the whole catalogue (cost, min/max price, tiers, sale dates, rates, stock, alternatives, bundles, media, text) → picks.
-3. Owner runs **Taager add all** on the picks (next step: an "add these SKUs" mode) so only chosen products enter WooCommerce, where orders route to Taager.
-4. Weekly: sync again (prices, sales, stock change) + New Arrivals.
-
+## 4. Operating model (all five stores)
+1. Owner opens Taager in his Chrome → **Taager sync** → `all` → `full` (first time) → OK for Live link → signs in once in the owner window that opens, Live link on. Without Live link: Download, then /admin → **Taager catalogue** → Choose file → Import (one country or all).
+2. Import stores everything per market+SKU in `taager_catalog` (private; RPCs `taager_import_*`, owner membership checked). Quick imports never erase stored detail; listing-price changes set `price_changed_at`; SKUs missing from the latest full read are counted.
+3. Brain run reads `taager_catalog` first (provider `taager_api`): exact cost / minimum / maximum, tiers, sale window, upsell discounts, declared bundles, success rate, media, text. WooCommerce stays the fallback source and is only needed for SKU presence.
+4. Owner approves the brain's picks in /admin → **Copy pick list** (`ym:<country>:<taager product ids>`, approved only) → on Taager's all-products page for that country runs **Taager add all** (v3) and pastes it: only those products are added to WooCommerce (auto-scroll until all are found; the risky-title filter is skipped because the owner approved them).
+5. Ongoing: **quick** sync for all countries, by hand or the automatic repeat (e.g. every 6 hours with the tab open). The owner page renews its sign-in in memory (refresh token never stored), so it stays signed in while open; if renewal fails it says "sign in again" and the Taager tab keeps the data for Download.
 ## 5. Only a real test order can prove (G1)
 What Taager actually charges/credits for a 2–3 piece order placed through WooCommerce; final delivered profit; refusal handling.
 

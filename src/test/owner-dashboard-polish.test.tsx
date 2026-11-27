@@ -9,7 +9,7 @@ vi.mock("../components/store/AccountOfferReview",()=>({AccountOfferReview:()=> <
 vi.mock("../components/store/OfferSelectionDemo",()=>({OfferSelectionDemo:()=> <div>offer-demo</div>}));
 vi.mock("@/components/store/OwnerActionQueue",()=>({OwnerActionQueue:()=> <div>action-queue</div>}));
 vi.mock("../lib/store/dashboard-client",()=>({dashboardClient:()=>({
- signIn:async()=>"token-1",
+ signIn:async()=>"token-1",signInSession:async()=>({access:"token-1",refresh:null,expiresIn:3600}),
  summary:async(_t:string,m:string)=>{calls.push("summary:"+m);return {store:m,currency:cur[m],orders:12,customers:9,order_statuses:{delivered:7,confirmation_pending:3,refused:2},recorded_net_minor:"15050"};},
  catalog:async()=>[{listing_id:"1",slug:"cup",title:"Coffee cup",listing_status:"approved",variant_count:2,available_count:1}],
  recommendations:async()=>[{id:"r1",kind:"price_change",rationale:"Margin below floor",state:"pending",proposal:{price:"99"},created_at:"2026-11-26"}],

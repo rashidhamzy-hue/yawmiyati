@@ -18,6 +18,12 @@ export interface DashboardSummary {
  store: MarketCode; currency: string; orders: number; customers: number;
  order_statuses: Record<string,number>; recorded_net_minor: string;
 }
+export type OwnerSession = { access: string; refresh: string | null; expiresIn: number };
+function session(data: { access_token?: unknown; refresh_token?: unknown; expires_in?: unknown }): OwnerSession {
+ if(typeof data?.access_token!=="string") throw new Error("Authentication failed");
+ const exp=typeof data.expires_in==="number"&&data.expires_in>0?data.expires_in:3600;
+ return { access: data.access_token, refresh: typeof data.refresh_token==="string"?data.refresh_token:null, expiresIn: exp };
+}
 export function dashboardClient(origin: string, publicKey: string, request: typeof fetch = fetch) {
  const url = new URL(origin);
  if (url.protocol !== "https:" || url.username || url.password || url.pathname !== "/" || url.search || url.hash || !publicKey) throw new Error("Dashboard configuration unavailable");
@@ -28,7 +34,7 @@ export function dashboardClient(origin: string, publicKey: string, request: type
      if(!payload||!Object.hasOwn(markets,payload.p_store as string))throw Error("Invalid owner market");
      if(typeof token!=="string"||!token.trim()||token.length>8192||/[\x00-\x20\x7f]/.test(token))
        throw Error("Owner authentication required");
-   } else if(path!=="/auth/v1/token?grant_type=password"){
+   } else if(path!=="/auth/v1/token?grant_type=password"&&path!=="/auth/v1/token?grant_type=refresh_token"){
      throw Error("Invalid owner endpoint");
    }
    const response = await request(new URL(path,url), {
@@ -52,6 +58,14 @@ export function dashboardClient(origin: string, publicKey: string, request: type
      const data=await call("/auth/v1/token?grant_type=password",{email,password});
      if(typeof data.access_token!=="string") throw new Error("Authentication failed");
      return data.access_token;
+   },
+   /** Sign in and keep the refresh token (memory only) so long sessions, such as the Taager live link, stay signed in. */
+   async signInSession(email:string,password:string):Promise<OwnerSession> {
+     return session(await call("/auth/v1/token?grant_type=password",{email,password}));
+   },
+   async refreshSession(refreshToken:string):Promise<OwnerSession> {
+     if(typeof refreshToken!=="string"||!refreshToken||refreshToken.length>4096)throw Error("Authentication failed");
+     return session(await call("/auth/v1/token?grant_type=refresh_token",{refresh_token:refreshToken}));
    },
    async policy(token:string,market:MarketCode):Promise<AiPolicy>{return call("/rest/v1/rpc/dashboard_ai_policy",{p_store:market},token);},
    async pauseAi(token:string,market:MarketCode):Promise<void>{await call("/rest/v1/rpc/pause_market_ai",{p_store:market},token);},

@@ -35,6 +35,8 @@ export type ParsedTaagerSync = {
   country: string;
   version: number | null;
   mode: "full" | "quick" | null;
+  /** v4: false when the read was stopped or a listing page failed (then it is not a full read). */
+  complete: boolean | null;
   started_at: string | null;
   finished_at: string | null;
   rows: TaagerImportRow[];
@@ -68,28 +70,59 @@ const SKU = /^[A-Za-z0-9_-]{4,64}$/;
 const isObj = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === "object" && !Array.isArray(v);
 
-/** Parse and validate a sync file for one market. Throws a plain-language error the owner can act on. */
-export function parseTaagerSync(text: string, market: MarketCode): ParsedTaagerSync {
-  let data: unknown;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    throw Error("This is not a Taager sync file (it is not valid JSON).");
+const marketOf = (country: unknown) =>
+  (Object.keys(TAAGER_COUNTRY) as MarketCode[]).find((m) => TAAGER_COUNTRY[m] === country);
+
+/**
+ * Parse a sync file (v3: one country at the top level; v4: `countries: [...]`), given as text or
+ * as the object the Taager tab posts. Returns one parsed block per country in the file.
+ */
+export function parseTaagerFile(input: string | unknown): ParsedTaagerSync[] {
+  let data: unknown = input;
+  if (typeof input === "string") {
+    try {
+      data = JSON.parse(input);
+    } catch {
+      throw Error("This is not a Taager sync file (it is not valid JSON).");
+    }
   }
-  if (!isObj(data) || data.source !== "taager-merchant-sync" || !Array.isArray(data.listing))
+  if (!isObj(data) || data.source !== "taager-merchant-sync")
     throw Error(
       "This is not a Taager sync file. Use the file named taager-sync-<country>-<date>.json.",
     );
-  const country = TAAGER_COUNTRY[market];
-  const fileCountry = typeof data.country === "string" ? data.country : "";
-  if (fileCountry !== country) {
-    const other = (Object.keys(TAAGER_COUNTRY) as MarketCode[]).find(
-      (m) => TAAGER_COUNTRY[m] === fileCountry,
-    );
-    throw Error(
-      `This file is for ${other ? NAME[other] : fileCountry || "another country"}, not ${NAME[market]}. Switch the market above or pick the right file.`,
-    );
+  const version = typeof data.version === "number" ? data.version : null;
+  const blocks = Array.isArray(data.countries) ? data.countries : [data];
+  const out: ParsedTaagerSync[] = [];
+  for (const block of blocks) {
+    if (!isObj(block) || !Array.isArray(block.listing)) continue;
+    const market = marketOf(block.country);
+    if (!market) continue;
+    out.push(parseCountry(block, market, version));
   }
+  if (!out.length)
+    throw Error(
+      "This is not a Taager sync file. Use the file named taager-sync-<country>-<date>.json.",
+    );
+  return out;
+}
+
+/** Parse and validate a sync file for one market. Throws a plain-language error the owner can act on. */
+export function parseTaagerSync(text: string, market: MarketCode): ParsedTaagerSync {
+  const all = parseTaagerFile(text);
+  const mine = all.find((p) => p.market === market);
+  if (mine) return mine;
+  const names = all.map((p) => NAME[p.market]).join(", ");
+  throw Error(
+    `This file is for ${names}, not ${NAME[market]}. Switch the market above or pick the right file.`,
+  );
+}
+
+function parseCountry(
+  data: Record<string, unknown>,
+  market: MarketCode,
+  version: number | null,
+): ParsedTaagerSync {
+  const country = TAAGER_COUNTRY[market];
   const details = isObj(data.details) ? data.details : {};
   const alternatives = isObj(data.alternatives) ? data.alternatives : {};
   const bySku = new Map<string, TaagerImportRow>();
@@ -151,8 +184,9 @@ export function parseTaagerSync(text: string, market: MarketCode): ParsedTaagerS
   return {
     market,
     country,
-    version: typeof data.version === "number" ? data.version : null,
+    version,
     mode,
+    complete: typeof data.complete === "boolean" ? data.complete : null,
     started_at: typeof data.started_at === "string" ? data.started_at : null,
     finished_at: typeof data.finished_at === "string" ? data.finished_at : null,
     rows,
