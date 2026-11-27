@@ -9,6 +9,7 @@ import { dashboardClient, type DashboardSummary, type MarketPerformance, type Ca
 import { CommercialReview } from "@/components/store/CommercialReview";
 import { OwnerActionQueue } from "@/components/store/OwnerActionQueue";
 import { BrainPanel } from "@/components/owner/BrainPanel";
+import { TaagerImport } from "@/components/owner/TaagerImport";
 import { markets, type MarketCode } from "../lib/store/markets";
 import {summarizeOwnerMarket,formatRecordedMinor} from "@/lib/store/owner-dashboard-presentation";
 import {marketIdentity} from "@/lib/store/market-identity";
@@ -124,6 +125,7 @@ function OwnerDashboard(){
      <ul className="mt-3 space-y-2">{overview.alerts.map((alert,i)=><li role="status" key={alert.code+":"+i}><p className="font-bold">{alert.title}</p><p className="opacity-80">{alert.detail}</p></li>)}</ul>
     </details>}
    </section>
+   {origin&&key&&<TaagerImport key={"taager-"+market} market={market} origin={origin} publicKey={key} token={token}/>}
    {origin&&key&&<BrainPanel key={"brain-"+market} market={market} origin={origin} publicKey={key} token={token}/>}
    {data&&<OwnerActionQueue market={market} catalog={catalog} recommendations={recommendations} policy={policy}/>}
    {performance&&<Card id="performance" title={"Performance · last "+performance.window_days+" days"} icon={ChartNoAxesCombined}>
