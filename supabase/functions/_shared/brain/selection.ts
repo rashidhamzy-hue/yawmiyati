@@ -35,7 +35,7 @@ const KILL_TITLE: [string, RegExp][] = [
   ["weapons", /سلاح|ذخيره|صاعق(?! (?:ال)?(?:حشرات|ناموس|بعوض|ذباب))|مسدس(?! (?:ال)?(?:غسيل|مساج|تدليك|مسامير|لحام|خياطه|حجامه|براغي|تثبيت|ماء|مياه|فوم|رش|شمع|غراء|حراري|سيليكون|دهان|هواء|بخار))|(?<!قلم )رصاص(?!ي)|weapon|(?<!(?:spray|glue|massage|foam|water|heat|caulk|paint|nail|wash) )\bgun\b|taser|ammo/],
   ["sexual", /جنسي|تاخير القذف|منشط|انتصاب|sexual|erection|libido/],
   ["medicine_claims", /علاج|يعالج|دواء|ادويه|تخسيس|حرق الدهون|حبوب (?:تخسيس|طبيه|تكبير)|كبسولات(?! (?:ال)?قهوه)|مكمل غذائي|سكري|ضغط الدم|\bcure|\btreat(s|ment)\b|slimming|weight loss pill|supplement|diabet/],
-  ["counterfeit_brands", /\b(apple|iphone|airpods|samsung|nike|adidas|dior|chanel|gucci|louis vuitton|rolex|dyson)\b/],
+  ["counterfeit_brands", /\b(apple|iphone|airpods|samsung|nike|adidas|dior|chanel|gucci|louis vuitton|rolex|dyson|high copy|semi original|master copy)\b|(?:^|\s)(?:ال)?(?:ايفون|ابل|ايربودز|سامسونج|نايك|اديداس|ديور|شانيل|غوتشي|جوتشي|رولكس|دايسون|شبيه|كوبي|ماستر كوبي)(?:\s|$)/],
 ];
 const KILL_DESCRIPTION: [string, RegExp][] = [
   ["tobacco_vape", /سجائر الكترونيه|معسل|vape|e-cigarette|hookah/],

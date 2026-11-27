@@ -198,5 +198,8 @@ describe("risk rules on real supplier wording",()=>{
   expect(rc("شيشة الكترونية").kills).toContain("tobacco_vape");
   expect(rc("علبة","حبوب تخسيس طبيعية").kills).toContain("medicine_claims");
   expect(rc("مسدس صوت").kills).toContain("weapons");
+  expect(rc("تابلت مزود بكيبورد شبيه الايفون i15 Pro").kills).toContain("counterfeit_brands");
+  expect(rc("ساعة ذكية سامسونج").kills).toContain("counterfeit_brands");
+  expect(rc("سرير قابل للطي").kills).toEqual([]);
  });
 });
