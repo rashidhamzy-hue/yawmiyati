@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { BrainCircuit, CheckCircle2, ChevronDown, CircleAlert, ExternalLink, Loader2, Play, PauseCircle, PlugZap, RotateCw, Sparkles, XCircle } from "lucide-react";
 import { brainClient, BRAIN_STAGES, money, usd, type BrainItem, type BrainOverview, type BrainRun } from "@/lib/store/brain-client";
 import type { MarketCode } from "@/lib/store/markets";
+import { StorePublication } from "./StorePublication";
 
 type Props = { market: MarketCode; origin: string; publicKey: string; token: string };
 
@@ -102,6 +103,7 @@ export function BrainPanel({ market, origin, publicKey, token }: Props) {
     {run?.summary?.cost && <CostSummary cost={run.summary.cost} />}
     {items.length > 0 && run && <SelectedList items={items} market={market} busy={busy} fromTaager={(run.summary as { source?: string }).source === "taager_api"}
       decide={(decision, list) => act(() => client.decide(market, run.id, decision, list))} />}
+    <StorePublication client={client} market={market} runId={run?.id ?? null} approved={items.filter((i) => i.owner_decision === "approved").length} />
   </section>;
 }
 

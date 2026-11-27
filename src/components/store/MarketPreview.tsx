@@ -15,6 +15,8 @@ import {recommendOffers} from "@/lib/store/offer-recommendations";
 import {curateCatalog} from "@/lib/store/curated-merchandising";
 import {relatedVerifiedProducts} from "@/lib/store/verified-merchandising";
 import {ReleasedEditorial} from "./EditorialPage";
+import {ReleasedProductPage} from "./ReleasedProductPage";
+import {productMediaPath} from "@/lib/store/product-media";
 import {ApprovedCatalogBrowser,ApprovedProductGallery} from "@/lib/store/ApprovedProductExperience";
 import {smartCatalogSearch} from "@/lib/store/smart-search";
 import {type MarketCode} from "@/lib/store/markets";
@@ -78,7 +80,13 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
  const offers=useOfferVersions(market);
  const offerVersions=offers.state==="ready"?offers.versions:null;
  const offerVersion=slug&&offerVersions?offerVersions.find(v=>v.slug===slug)??null:null;
- const imageFor=(item:PublicListing)=>offerVersions?.find(v=>v.listing_id===item.listing_id)?.image??null;
+ // Released listings carry a picture id; search results and related items reuse the one already loaded.
+ const imageFor=(item:PublicListing)=>{
+  const offer=offerVersions?.find(v=>v.listing_id===item.listing_id)?.image;
+  if(offer)return offer;
+  const id=item.image??rows?.find(r=>r.listing_id===item.listing_id)?.image;
+  return id?{url:productMediaPath(id,360),alt:item.title}:null;
+ };
  useEffect(()=>{
   if(offers.state==="loading"){setRows(null);setDetail(null);return;}
   if(offers.state==="ready"){
@@ -151,8 +159,8 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
     :slug&&offerVersion&&offerVersions?<div className="mt-8"><OfferProductPanel key={offerVersion.version_id} market={market} version={offerVersion} versions={offerVersions}/>
       <div className="mt-8"><h3 className="mb-4 font-display text-xl font-extrabold">اختيارات أخرى من يومياتي</h3><div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{recommendOffers(offerVersion,offerVersions).map(v=><ShopCard key={v.listing_id} item={offerListing(v)} market={market} image={v.image}/>)}</div></div></div>
     :slug&&offerVersions?<EmptyProducts title="هذا المنتج غير موجود في الكتالوج" message="قد تتغير حالة المنتجات بحسب اعتماد البيانات والتوافر."/>
-    :slug?detail?<div className="mt-8"><ReleasedEditorial key={market+slug} origin={origin} apiKey={key} market={market} slug={slug} fallback={<ApprovedProductGallery key={detail.listing_id} market={market} detail={detail}/>}/>
-      <div className="mt-8"><h3 className="mb-4 font-display text-xl font-extrabold">اختيارات أخرى من يومياتي</h3>{relatedVerifiedProducts(detail,rows).length?<div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{relatedVerifiedProducts(detail,rows).map(item=><ShopCard key={item.listing_id} item={item} market={market}/>)}</div>:<p className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">تصفحي المزيد من الأقسام والمنتجات المعتمدة في يومياتي.</p>}</div></div>
+    :slug?detail?<div className="mt-8"><ReleasedEditorial key={market+slug} origin={origin} apiKey={key} market={market} slug={slug} fallback={<ReleasedProductPage key={detail.listing_id} origin={origin} apiKey={key} market={market} detail={detail} fallback={<ApprovedProductGallery market={market} detail={detail}/>}/>}/>
+      <div className="mt-8"><h3 className="mb-4 font-display text-xl font-extrabold">اختيارات أخرى من يومياتي</h3>{relatedVerifiedProducts(detail,rows).length?<div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{relatedVerifiedProducts(detail,rows).map(item=><ShopCard key={item.listing_id} item={item} market={market} image={imageFor(item)}/>)}</div>:<p className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">تصفحي المزيد من الأقسام والمنتجات المعتمدة في يومياتي.</p>}</div></div>
     :<EmptyProducts title="هذا المنتج غير موجود في الكتالوج" message="قد تتغير حالة المنتجات بحسب اعتماد البيانات والتوافر."/>
     :matching.length?<>{offerVersions&&<div className="mt-5"><FixtureNotice/></div>}<div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">{matching.slice(0,visibleCount).map(item=><ShopCard key={item.listing_id} item={item} market={market} image={imageFor(item)}/>)}</div>{matching.length>visibleCount&&<div className="mt-6 text-center"><p className="mb-3 text-xs text-muted-foreground">{Math.min(visibleCount,matching.length)} / {matching.length}</p><button type="button" className="btn-outline" onClick={()=>setVisibleCount(n=>n+16)}>عرض المزيد من المنتجات</button></div>}</>
     :<EmptyProducts title={rows.length?"لم نجد منتجات مطابقة":"من هنا تبدأ اختياراتك"} message={rows.length?"جرّبي البحث بكلمة مختلفة.":"تصفّحي الأقسام واستكشفي الأفكار اللي تعجبك."}/>}
