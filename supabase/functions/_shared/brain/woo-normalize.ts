@@ -7,7 +7,7 @@ export type OfferImage = { src: string; alt: string | null; position: number };
 export type OfferVideo = { url: string; source: "meta" | "description"; host: string };
 export type OfferRow = {
   store_code: string;
-  provider: "taager_woo";
+  provider: "taager_woo" | "taager_api";
   product_id: number;
   variation_id: number;
   parent_id: number | null;

@@ -100,7 +100,7 @@ export function heuristicMapping(keyStats: Record<string, { count: number; numer
   return mapping;
 }
 
-export type Economics = { cost_minor: number | null; floor_minor: number | null; suggested_minor: number | null; source: string[] };
+export type Economics = { cost_minor: number | null; floor_minor: number | null; suggested_minor: number | null; max_minor?: number | null; source: string[] };
 /** Pull cost / floor / suggested price for one offer using the mapping. Unknown stays null (never zero). */
 export function economicsInputs(o: OfferRow, mapping: FieldMapping, m: MarketFacts): Economics {
   const read = (key?: string | null) => (key ? decimalToMinor(o.meta[key] as unknown, m.minorDigits) : null);
@@ -116,7 +116,11 @@ export function economicsInputs(o: OfferRow, mapping: FieldMapping, m: MarketFac
   if (floor === null && mapping.floor_source === "woo_regular_price" && o.regular_price_minor) { floor = o.regular_price_minor; source.push("floor:woo.regular_price(owner-mapped)"); }
   if (floor === null && mapping.floor_source === "woo_price" && o.price_minor) { floor = o.price_minor; source.push("floor:woo.price(owner-mapped)"); }
   const suggested = mapping.suggested_key ? read(mapping.suggested_key) : null;
-  return { cost_minor: cost, floor_minor: floor, suggested_minor: suggested, source };
+  // Taager's highest accepted selling price (only Taager-sourced offers carry it, already in minor units).
+  const maxRaw = o.meta["taager_max_price_minor"];
+  const max = typeof maxRaw === "number" && Number.isSafeInteger(maxRaw) && maxRaw > 0 ? maxRaw : null;
+  if (max !== null) source.push("max:taager.pricingRange");
+  return { cost_minor: cost, floor_minor: floor, suggested_minor: suggested, max_minor: max, source };
 }
 
 // ---------- Capability report ----------

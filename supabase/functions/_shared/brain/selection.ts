@@ -27,12 +27,21 @@ export function mapCategory(o: Pick<OfferRow, "title" | "categories">): StoreCat
 }
 
 // Hard kills: never sold by Yawmiyati. Soft flags: allowed, but the owner sees them.
-const KILL: [string, RegExp][] = [
+// Supplier descriptions are long and full of loose wording ("علاج" for fixing clothes, "no smoke",
+// "works with iPhone"), so the broad patterns read only the title and categories; the description
+// is checked only for unambiguous terms.
+const KILL_TITLE: [string, RegExp][] = [
   ["tobacco_vape", /سجائر|دخان|شيشه|معسل|فيب|vape|cigar|tobacco|hookah/],
-  ["weapons", /سلاح|مسدس|صاعق|رصاص|weapon|gun|taser|ammo/],
+  ["weapons", /سلاح|ذخيره|صاعق(?! (?:ال)?(?:حشرات|ناموس|بعوض|ذباب))|مسدس(?! (?:ال)?(?:غسيل|مساج|تدليك|مسامير|لحام|خياطه|حجامه|براغي|تثبيت|ماء|مياه|فوم|رش|شمع|غراء|حراري|سيليكون|دهان|هواء|بخار))|(?<!قلم )رصاص(?!ي)|weapon|(?<!(?:spray|glue|massage|foam|water|heat|caulk|paint|nail|wash) )\bgun\b|taser|ammo/],
   ["sexual", /جنسي|تاخير القذف|منشط|انتصاب|sexual|erection|libido/],
-  ["medicine_claims", /علاج|يعالج|دواء|ادويه|تخسيس|حرق الدهون|حبوب (?:تخسيس|طبيه|تكبير)|كبسولات|مكمل غذائي|سكري|ضغط الدم|cure|treat(s|ment)|slimming|weight loss pill|capsule|supplement|diabet/],
+  ["medicine_claims", /علاج|يعالج|دواء|ادويه|تخسيس|حرق الدهون|حبوب (?:تخسيس|طبيه|تكبير)|كبسولات(?! (?:ال)?قهوه)|مكمل غذائي|سكري|ضغط الدم|\bcure|\btreat(s|ment)\b|slimming|weight loss pill|supplement|diabet/],
   ["counterfeit_brands", /\b(apple|iphone|airpods|samsung|nike|adidas|dior|chanel|gucci|louis vuitton|rolex|dyson)\b/],
+];
+const KILL_DESCRIPTION: [string, RegExp][] = [
+  ["tobacco_vape", /سجائر الكترونيه|معسل|vape|e-cigarette|hookah/],
+  ["weapons", /سلاح ناري|ذخيره|taser|ammo/],
+  ["sexual", /جنسي|تاخير القذف|انتصاب|sexual|erection|libido/],
+  ["medicine_claims", /حبوب (?:تخسيس|طبيه|تكبير)|مكمل غذائي|weight loss pill|dietary supplement/],
 ];
 const FLAGS: [string, RegExp][] = [
   ["cosmetic_claims", /تبييض|تفتيح|تجاعيد|حب الشباب|تساقط الشعر|whiten|anti.?aging|wrinkle|acne|hair loss/],
@@ -42,8 +51,11 @@ const FLAGS: [string, RegExp][] = [
 ];
 
 export function riskCheck(o: Pick<OfferRow, "title" | "categories" | "description">) {
-  const text = normalizeTitle([o.title, ...o.categories.map((c) => c.name), (o.description ?? "").slice(0, 1500)].join(" "));
-  return { kills: KILL.filter(([, re]) => re.test(text)).map(([k]) => k), flags: FLAGS.filter(([, re]) => re.test(text)).map(([k]) => k) };
+  const head = normalizeTitle([o.title, ...o.categories.map((c) => c.name)].join(" "));
+  const body = normalizeTitle((o.description ?? "").replace(/<[^>]+>/g, " ").slice(0, 1500));
+  const kills = new Set([...KILL_TITLE.filter(([, re]) => re.test(head)), ...KILL_DESCRIPTION.filter(([, re]) => re.test(body))].map(([k]) => k));
+  const text = head + " " + body;
+  return { kills: [...kills], flags: FLAGS.filter(([, re]) => re.test(text)).map(([k]) => k) };
 }
 
 export type PrefilterRow = {
@@ -69,16 +81,20 @@ export function prefilter(offers: OfferRow[], mapping: FieldMapping, m: MarketFa
     if (o.stock_status === "outofstock") reasons.push("out_of_stock");
     if (!o.images.length) reasons.push("no_images");
     if (econ.cost_minor === null || econ.floor_minor === null) reasons.push("economics_unknown");
-    else if (econ.floor_minor <= econ.cost_minor) reasons.push("no_margin_at_minimum_price");
+    else if (econ.floor_minor < econ.cost_minor) reasons.push("minimum_price_below_cost");
+    else if (econ.floor_minor === econ.cost_minor && mapping.confidence !== "owner") reasons.push("no_margin_at_minimum_price");
     if (reasons.length) { rows.push({ ...base, stage: "excluded", prefilter_score: 0, reasons }); continue; }
-    const spreadUsd = minorToUsd(econ.floor_minor! - econ.cost_minor!, m);
+    // Supplier-stated zero minimum profit (Taager): all profit comes from our markup, so rank on a
+    // cautious 15% markup at 60% weight; the decide step prices it properly after research.
+    const zeroMin = econ.floor_minor === econ.cost_minor;
+    const spreadUsd = zeroMin ? minorToUsd(Math.round(econ.floor_minor! * 0.15), m) * 0.6 : minorToUsd(econ.floor_minor! - econ.cost_minor!, m);
     const media = o.images.length >= 3 ? 1 : o.images.length === 2 ? 0.85 : 0.7;
     const text = (o.description ?? "").replace(/<[^>]+>/g, "").length > 200 ? 1 : 0.85;
     const cat = base.category ? 1 : 0.7;
     const kindFactor = kind.kind === "title_claims_multipack" || kind.kind === "bundle_unverified" ? 0.9 : 1;
     const video = o.videos.length ? 1.05 : 1;
     const score = Math.round(Math.min(spreadUsd, 25) * media * text * cat * kindFactor * video * 100) / 100;
-    rows.push({ ...base, stage: "shortlisted", prefilter_score: score, reasons: [`spread≈$${spreadUsd.toFixed(2)} at Taager minimum`] });
+    rows.push({ ...base, stage: "shortlisted", prefilter_score: score, reasons: [zeroMin ? `spread≈$${spreadUsd.toFixed(2)} assumed (Taager minimum profit is 0)` : `spread≈$${spreadUsd.toFixed(2)} at Taager minimum`] });
   }
   // Keep the best offer per potential family, then cap categories, then cut to the shortlist size.
   const shortlisted = rows.filter((r) => r.stage === "shortlisted").sort((a, b) => b.prefilter_score - a.prefilter_score);

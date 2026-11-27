@@ -4,6 +4,7 @@
 // and every call's exact cost is written to brain_cost_ledger.
 import { MARKETS, minorToDecimal, type Market, type MarketFacts } from "./markets.ts";
 import { normalizeWoo, type OfferRow } from "./woo-normalize.ts";
+import { normalizeTaager, TAAGER_MAPPING, type TaagerCatalogRow } from "./taager-normalize.ts";
 import { capabilityReport, offerKind, type FieldMapping } from "./catalog-analysis.ts";
 import { prefilter, finalScore, selectFinal, merchandise, type StoreCategory } from "./selection.ts";
 import { decidePrice, freeDeliveryThreshold, type PriceDecision } from "./economics.ts";
@@ -22,7 +23,7 @@ type Analysis = { product_id: number; variation_id: number; title: string; famil
   prefilter_score: number | null; score: number | null; economics: Record<string, unknown>; research: Record<string, unknown> | null; decision: PriceDecision | null;
   content: Record<string, unknown> | null; flags: string[]; reasons: string[]; cost_microusd: number };
 
-const OFFER_COLS = "product_id,variation_id,parent_id,product_type,status,sku,title,currency,price_minor,regular_price_minor,sale_price_minor,stock_status,stock_quantity,categories,attributes,images,videos,meta,description,short_description,raw";
+const OFFER_COLS = "provider,product_id,variation_id,parent_id,product_type,status,sku,title,currency,price_minor,regular_price_minor,sale_price_minor,stock_status,stock_quantity,categories,attributes,images,videos,meta,description,short_description,raw";
 const key = (a: { product_id: number; variation_id: number }) => `${a.product_id}:${a.variation_id}`;
 
 // ---------------- WooCommerce ----------------
@@ -37,19 +38,22 @@ export async function wooGet(creds: WooCreds, path: string, f: typeof fetch = fe
 }
 
 // ---------------- helpers ----------------
+type Source = "taager_api" | "taager_woo";
+const runSource = (run: Run): Source => ((run.summary as { source?: Source }).source === "taager_api" ? "taager_api" : "taager_woo");
+
 async function loadOffers(db: Db, store: string, runId: string): Promise<OfferRow[]> {
   const out: OfferRow[] = [];
   for (let offset = 0; offset < 100_000; offset += 1000) {
     const page = await db.select<OfferRow>("supplier_offers", `select=${OFFER_COLS}&store_code=eq.${store}&last_run_id=eq.${runId}&order=product_id,variation_id&limit=1000&offset=${offset}`);
-    out.push(...page.map((o) => ({ ...o, store_code: store, provider: "taager_woo" as const, revision: "" })));
+    out.push(...page.map((o) => ({ ...o, store_code: store, provider: o.provider ?? "taager_woo", revision: "" })));
     if (page.length < 1000) break;
   }
   return out;
 }
-async function loadOffersByKeys(db: Db, store: string, keys: { product_id: number; variation_id: number }[]) {
+async function loadOffersByKeys(db: Db, store: string, keys: { product_id: number; variation_id: number }[], provider: Source = "taager_woo") {
   if (!keys.length) return new Map<string, OfferRow>();
   const ids = [...new Set(keys.map((k) => k.product_id))].join(",");
-  const rows = await db.select<OfferRow>("supplier_offers", `select=${OFFER_COLS}&store_code=eq.${store}&product_id=in.(${ids})`);
+  const rows = await db.select<OfferRow>("supplier_offers", `select=${OFFER_COLS}&store_code=eq.${store}&provider=eq.${provider}&product_id=in.(${ids})`);
   return new Map(rows.map((r) => [key(r), r]));
 }
 async function spentToday(db: Db, store: string) { return Number(await db.rpc<number>("brain_spent_today", { p_store: store })) || 0; }
@@ -66,7 +70,33 @@ async function pool<T>(items: T[], n: number, fn: (x: T) => Promise<void>) {
 }
 
 // ---------------- stages ----------------
+// Preferred source: the owner's Taager merchant sync (exact cost / minimum / maximum, tiers, bundles).
+async function stageIngestTaager(d: Deps, run: Run, m: MarketFacts, deadline: number) {
+  const c = run.cursor as { offset?: number; ingested?: number };
+  c.offset ??= 0; c.ingested ??= 0;
+  while (Date.now() < deadline) {
+    const page = await d.db.select<TaagerCatalogRow>("taager_catalog", `select=market,sku,product_id,variant_id,item_type,name,listing,detail,alternatives,synced_at,price_changed_at&market=eq.${run.store_code}&order=sku&limit=200&offset=${c.offset}`);
+    if (page.length) {
+      const now = Date.now();
+      const rows = page.map((r) => normalizeTaager(run.store_code, m, r, now));
+      await d.db.upsert("supplier_offers", rows.map((r) => ({ ...r, last_run_id: run.id, last_seen_at: new Date().toISOString() })), "store_code,provider,product_id,variation_id");
+      c.ingested += rows.length;
+      c.offset += page.length;
+    }
+    if (page.length < 200) { run.stage = "audit"; break; }
+  }
+  run.progress.ingested = c.ingested;
+  run.progress.woo_total_products = null;
+  run.progress.taager_catalog_products = c.ingested;
+  run.cursor = c;
+}
+
 async function stageIngest(d: Deps, run: Run, m: MarketFacts, deadline: number) {
+  if (!(run.summary as { source?: string }).source) {
+    const any = await d.db.select<{ sku: string }>("taager_catalog", `select=sku&market=eq.${run.store_code}&limit=1`);
+    run.summary.source = any.length ? "taager_api" : "taager_woo";
+  }
+  if (runSource(run) === "taager_api") return stageIngestTaager(d, run, m, deadline);
   if (!d.woo) throw Error("missing_woo_credentials");
   const f = d.fetchImpl ?? fetch;
   const c = run.cursor as { page?: number; totalPages?: number | null; pendingVariable?: number[]; ingested?: number };
@@ -107,8 +137,9 @@ async function stageAudit(d: Deps, run: Run, m: MarketFacts, settings: Settings)
   const offers = await loadOffers(d.db, run.store_code, run.id);
   if (!offers.length) throw Error("no_products_ingested");
   const report = capabilityReport(offers, m);
-  let mapping: FieldMapping = settings.field_mapping?.confidence === "owner" ? settings.field_mapping : report.field_mapping;
-  if (mapping.confidence !== "owner" && d.anthropicKey) {
+  const fromTaager = runSource(run) === "taager_api";
+  let mapping: FieldMapping = fromTaager ? TAAGER_MAPPING : settings.field_mapping?.confidence === "owner" ? settings.field_mapping : report.field_mapping;
+  if (!fromTaager && mapping.confidence !== "owner" && d.anthropicKey) {
     const est = estimateMax(settings.research_model, 6000, 600, 0);
     if ((await spentToday(d.db, run.store_code)) + est <= settings.daily_budget_microusd) {
       try {
@@ -131,7 +162,7 @@ async function stageAudit(d: Deps, run: Run, m: MarketFacts, settings: Settings)
   }
   const { key_stats: _ks, ...publicReport } = report;
   await d.db.upsert("supplier_capability_reports", { run_id: run.id, store_code: run.store_code, report: { ...publicReport, field_mapping: mapping } }, "run_id");
-  if (settings.field_mapping?.confidence !== "owner") await d.db.patch("brain_settings", `store_code=eq.${run.store_code}`, { field_mapping: mapping, updated_at: new Date().toISOString() });
+  if (!fromTaager && settings.field_mapping?.confidence !== "owner") await d.db.patch("brain_settings", `store_code=eq.${run.store_code}`, { field_mapping: mapping, updated_at: new Date().toISOString() });
   run.summary.capability = { offers: report.totals.offers, products: report.totals.products, variations: report.totals.variations, offers_with_video: report.media.offers_with_video, offer_kinds: report.offer_kinds, mapping };
   run.stage = "prefilter";
 }
@@ -162,7 +193,7 @@ async function stageResearch(d: Deps, run: Run, m: MarketFacts, settings: Settin
     if (!batch.length) { run.stage = "decide"; return; }
     const est = estimateMax(settings.research_model, 3000, 1500, settings.max_searches_per_product) * batch.length;
     if (!(await budgetOk(d, run, settings, est))) { run.status = "paused_budget"; return; }
-    const offers = await loadOffersByKeys(d.db, run.store_code, batch);
+    const offers = await loadOffersByKeys(d.db, run.store_code, batch, runSource(run));
     await pool(batch, conc, async (a) => {
       const o = offers.get(key(a));
       let research: Record<string, unknown>, cost = 0;
@@ -181,13 +212,21 @@ async function stageResearch(d: Deps, run: Run, m: MarketFacts, settings: Settin
   }
 }
 
+/** Taager's measured confirmation×delivery rate is blended 50/50 with the planning rate (sample sizes are not published). */
+export function plannedSuccessBps(o: OfferRow | undefined, base: number): number {
+  const measured = o?.meta["taager_success_rate_bps"];
+  if (typeof measured !== "number" || measured <= 0 || measured > 10000) return base;
+  return Math.round((measured + base) / 2);
+}
+
 async function stageDecide(d: Deps, run: Run, m: MarketFacts, settings: Settings) {
   const rows = await d.db.select<Analysis>("brain_product_analysis", `select=*&run_id=eq.${run.id}&stage=eq.researched&limit=1000`);
-  const offers = await loadOffersByKeys(d.db, run.store_code, rows);
+  const offers = await loadOffersByKeys(d.db, run.store_code, rows, runSource(run));
   const scored = rows.map((a) => {
     const research = (a.research ?? {}) as { listings?: { retailer: string; url: string; price_minor: number; match: "exact" | "similar"; confidence: number }[]; demand_signals?: unknown[]; risks?: string[] };
     const listings = research.listings ?? [];
-    const decision = decidePrice({ inputs: a.economics as { cost_minor: number | null; floor_minor: number | null; suggested_minor: number | null }, competitors: listings, m, deliveryRateBps: settings.delivery_rate_bps });
+    const decision = decidePrice({ inputs: a.economics as { cost_minor: number | null; floor_minor: number | null; suggested_minor: number | null; max_minor?: number | null }, competitors: listings, m,
+      deliveryRateBps: plannedSuccessBps(offers.get(key(a)), settings.delivery_rate_bps ?? m.defaultDeliveryRateBps) });
     const retailers = new Set(listings.filter((l) => l.confidence >= 0.5).map((l) => l.retailer)).size;
     const score = finalScore(decision, { retailers_found: retailers, exact_matches: listings.filter((l) => l.match === "exact").length, demand_signals: (research.demand_signals ?? []).length, risks: research.risks ?? [] }, offers.get(key(a))?.images.length ?? 0);
     return { a, decision, score };
@@ -219,7 +258,7 @@ async function stageContent(d: Deps, run: Run, m: MarketFacts, settings: Setting
     if (!batch.length) { run.stage = "merchandise"; return; }
     const est = estimateMax(settings.content_model, 3500, 2500, 0) * batch.length;
     if (!(await budgetOk(d, run, settings, est))) { run.status = "paused_budget"; return; }
-    const offers = await loadOffersByKeys(d.db, run.store_code, batch);
+    const offers = await loadOffersByKeys(d.db, run.store_code, batch, runSource(run));
     await pool(batch, conc, async (a) => {
       const o = offers.get(key(a));
       let content: Record<string, unknown>, cost = 0;
@@ -245,7 +284,7 @@ async function stageContent(d: Deps, run: Run, m: MarketFacts, settings: Setting
 
 async function stageMerchandise(d: Deps, run: Run) {
   const rows = await d.db.select<Analysis>("brain_product_analysis", `select=*&run_id=eq.${run.id}&stage=eq.selected&limit=500`);
-  const offers = await loadOffersByKeys(d.db, run.store_code, rows);
+  const offers = await loadOffersByKeys(d.db, run.store_code, rows, runSource(run));
   const plan = merchandise(rows.map((a) => ({ key: key(a), category: a.category, score: a.score ?? 0, price_minor: a.decision?.price_minor ?? 0, images: offers.get(key(a))?.images.length ?? 0 })));
   const title = new Map(rows.map((a) => [key(a), (a.content as { title?: string } | null)?.title || a.title]));
   for (const a of rows) {

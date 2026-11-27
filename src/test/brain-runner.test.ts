@@ -1,11 +1,13 @@
 import {describe,expect,it} from "vitest";
 import {step} from "../../supabase/functions/_shared/brain/runner.ts";
+import {decidePrice} from "../../supabase/functions/_shared/brain/economics.ts";
+import {MARKETS} from "../../supabase/functions/_shared/brain/markets.ts";
 import type {Db} from "../../supabase/functions/_shared/brain/db.ts";
 
 // ---- In-memory PostgREST double: supports exactly the filters the runner uses ----
 type Row=Record<string,unknown>;
 function fakeDb(){
- const t:Record<string,Row[]>={brain_settings:[],brain_runs:[],brain_cost_ledger:[],supplier_offers:[],supplier_capability_reports:[],brain_product_analysis:[]};
+ const t:Record<string,Row[]>={brain_settings:[],brain_runs:[],brain_cost_ledger:[],supplier_offers:[],supplier_capability_reports:[],brain_product_analysis:[],taager_catalog:[]};
  const pk:Record<string,string[]>={supplier_offers:["store_code","provider","product_id","variation_id"],brain_product_analysis:["run_id","product_id","variation_id"],supplier_capability_reports:["run_id"],brain_settings:["store_code"]};
  const val=(v:string)=>v==="null"?null:/^-?\d+$/.test(v)?Number(v):v;
  function filter(rows:Row[],q:string){
@@ -136,5 +138,63 @@ describe("Yawmiyati Brain end to end (fake Taager store, fake Claude)",()=>{
   t.brain_runs.push({id:"run-3",store_code:"sa",stage:"ingest",status:"running",cursor:{},progress:{},summary:{},locked_until:null});
   const run=await step({db,market:"sa",woo:null,anthropicKey:null},"run-3") as Record<string,unknown>;
   expect(run.status).toBe("failed");expect(String(run.error)).toContain("missing_woo_credentials");
+ });
+});
+
+// ---- Owner-run Taager sync rows (shape of taager_catalog) ----
+function taagerRow(i:number){
+ const sku=`SA0101${String(i).padStart(4,"0")}99`;
+ const fin:Record<string,unknown>={price:55+i,originalPrice:30+i,profit:25,discounts:[],tieredPricing:[{quantity:1,price:55+i,profit:25},{quantity:2,price:100+2*i,profit:40}]};
+ if(i===5)fin.pricingRange={min:60,max:65};
+ if(i===6)(fin.discounts as unknown[]).push({type:"sale",price:58,profit:25,startsAt:"2020-01-01T00:00:00",expiresAt:"2099-01-01T00:00:00"});
+ const variant={sku,financials:fin,availability:i===4?"not_available":"available",merchantInfo:{orderable:true},analytics:{confirmationRate:i===1?0.8:0,deliveryRate:i===1?0.9:0},
+  images:[`https://media.taager.com/${i}-a.jpg`,`https://media.taager.com/${i}-b.jpg`,`https://media.taager.com/${i}-v.mp4`],videos:[],
+  description:i===2?"1":"وصف المنتج بالتفصيل مع الاستخدامات. ".repeat(12),specifications:"-",howToUse:"",attributes:[],
+  ...(i===3?{bundleItems:[{productId:900,sku:"SA0999000199",quantity:2}]}:{}),faq:i===1?[{question:"هل يناسب المطبخ؟",answer:"نعم"}]:[]};
+ return {market:"sa",sku,product_id:1000+i,variant_id:5000+i,item_type:i===3?"bundle":"product",name:`منتج تاجر ${i}`,
+  listing:{productId:1000+i,variantId:5000+i,sku,name:`منتج تاجر ${i}`,type:i===3?"bundle":"product",financials:{price:55+i,originalPrice:30+i,profit:25}},
+  detail:{productId:1000+i,name:`منتج تاجر ${i}`,country:"SAU",categoryId:553,type:i===3?"bundle":"product",active:true,variant,variant_count:1},alternatives:[],synced_at:"2026-11-27T00:00:00Z",price_changed_at:null};
+}
+
+describe("Yawmiyati Brain on Taager merchant data",()=>{
+ it("reads taager_catalog instead of WooCommerce and prices inside Taager's limits",async()=>{
+  const {db,t}=fakeDb();
+  t.brain_settings.push({store_code:"sa",daily_budget_microusd:10_000_000,research_model:"claude-haiku-5-5",content_model:"claude-sonnet-5-5",shortlist_size:12,selection_size:6,max_searches_per_product:3,delivery_rate_bps:null,field_mapping:{}});
+  t.brain_runs.push({id:"run-t",store_code:"sa",stage:"ingest",status:"running",cursor:{},progress:{},summary:{},locked_until:null});
+  for(let i=1;i<=10;i++)t.taager_catalog.push(taagerRow(i));
+  const calls={research:0,content:0,mapping:0};
+  const deps={db,market:"sa" as const,woo:null,anthropicKey:"sk-test",fetchImpl:fakeFetch(calls),concurrency:4,timeBudgetMs:600_000};
+  let run=await step(deps,"run-t");
+  for(let i=0;i<20&&run.status==="running";i++)run=await step(deps,"run-t");
+  expect(run.error??null).toBeNull();
+  expect(run.status).toBe("awaiting_review");
+  expect((run.summary as Record<string,unknown>).source).toBe("taager_api");
+  expect(calls.mapping).toBe(0); // Taager states its own economics: no AI field mapping
+  expect(t.supplier_offers).toHaveLength(10);
+  const offer=(i:number)=>t.supplier_offers.find(o=>o.product_id===1000+i)! as Record<string,any>;
+  expect(offer(1).provider).toBe("taager_api");
+  expect(offer(1).images).toHaveLength(2);expect(offer(1).videos).toHaveLength(1); // .mp4 moved out of images
+  expect(offer(1).meta.taager_success_rate_bps).toBe(7200);
+  expect(offer(2).description).toBeNull(); // Taager placeholder text is treated as empty
+  expect(offer(3).meta.taager_bundle_items).toEqual([{sku:"SA0999000199",product_id:900,quantity:2}]);
+  expect(offer(6).sale_price_minor).toBe(5800);
+  const a=t.brain_product_analysis;const byId=(i:number)=>a.find(r=>r.product_id===1000+i)! as Record<string,any>;
+  expect(byId(4).reasons).toContain("out_of_stock");
+  expect(byId(3).offer_kind).toBe("verified_bundle");
+  expect(byId(1).economics).toMatchObject({cost_minor:3100,floor_minor:5600});
+  expect(byId(5).economics.max_minor).toBe(6500);
+  if(byId(5).decision?.state==="priced")expect(byId(5).decision.price_minor).toBeLessThanOrEqual(6500);
+  for(const s of a.filter(r=>r.stage==="selected")){
+   const d=s.decision as Record<string,number>;const e=s.economics as Record<string,number>;
+   expect(d.price_minor).toBeGreaterThanOrEqual(e.floor_minor);
+   if(e.max_minor)expect(d.price_minor).toBeLessThanOrEqual(e.max_minor);
+  }
+  expect(a.filter(r=>r.stage==="selected").length).toBeGreaterThan(0);
+ });
+ it("never proposes a price above Taager's maximum",()=>{
+  const capped=decidePrice({inputs:{cost_minor:3500,floor_minor:6000,suggested_minor:null,max_minor:6500},competitors:[{retailer:"amazon.sa",url:"https://amazon.sa/x",price_minor:14900,match:"exact",confidence:0.9}],m:MARKETS.sa});
+  expect(capped.state).toBe("priced");expect(capped.price_minor).toBeLessThanOrEqual(6500);
+  const free=decidePrice({inputs:{cost_minor:3500,floor_minor:6000,suggested_minor:null},competitors:[{retailer:"amazon.sa",url:"https://amazon.sa/x",price_minor:14900,match:"exact",confidence:0.9}],m:MARKETS.sa});
+  expect(free.price_minor!).toBeGreaterThan(6500);
  });
 });
