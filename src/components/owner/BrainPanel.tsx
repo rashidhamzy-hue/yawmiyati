@@ -100,7 +100,7 @@ export function BrainPanel({ market, origin, publicKey, token }: Props) {
     {overview?.capability && <CapabilityReport report={overview.capability} market={market} />}
     {run?.summary?.decision && <DecisionSummary run={run} market={market} />}
     {run?.summary?.cost && <CostSummary cost={run.summary.cost} />}
-    {items.length > 0 && run && <SelectedList items={items} market={market} busy={busy}
+    {items.length > 0 && run && <SelectedList items={items} market={market} busy={busy} fromTaager={(run.summary as { source?: string }).source === "taager_api"}
       decide={(decision, list) => act(() => client.decide(market, run.id, decision, list))} />}
   </section>;
 }
@@ -173,8 +173,19 @@ function CostSummary({ cost }: { cost: any }) {
   </div>;
 }
 
-function SelectedList({ items, market, busy, decide }: { items: BrainItem[]; market: MarketCode; busy: boolean; decide: (d: "approved" | "rejected", list: { product_id: number; variation_id: number }[] | null) => void }) {
+/** Pick list for the Taager add button: approved products (Taager product ids), for one country. */
+export function pickList(items: BrainItem[], market: MarketCode) {
+  const ids = [...new Set(items.filter((i) => i.owner_decision === "approved").map((i) => i.product_id))];
+  return ids.length ? `ym:${market}:${ids.join(",")}` : "";
+}
+
+function SelectedList({ items, market, busy, decide, fromTaager }: { items: BrainItem[]; market: MarketCode; busy: boolean; decide: (d: "approved" | "rejected", list: { product_id: number; variation_id: number }[] | null) => void; fromTaager: boolean }) {
   const pending = items.filter((i) => !i.owner_decision).length;
+  const picks = fromTaager ? pickList(items, market) : "";
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    try { await navigator.clipboard.writeText(picks); setCopied(true); } catch { window.prompt("Copy this pick list:", picks); }
+  }
   return <div className="space-y-3">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <p className="font-extrabold">Selected products ({items.length}) · {pending} waiting for you</p>
@@ -184,6 +195,10 @@ function SelectedList({ items, market, busy, decide }: { items: BrainItem[]; mar
       </div>
     </div>
     <p className="text-xs text-muted-foreground">Approving records your decision for these products. Publishing to the storefront is a separate, later step.</p>
+    {fromTaager && <div className="flex flex-wrap items-center gap-2 text-xs">
+      <button type="button" disabled={!picks} onClick={() => void copy()} className="inline-flex min-h-10 items-center gap-2 rounded-xl border px-3 font-bold disabled:opacity-50">{copied ? "Copied" : `Copy pick list for the Taager add button (${picks ? picks.split(":")[2].split(",").length : 0})`}</button>
+      <span className="text-muted-foreground">On Taager (this country, all products page) run <b>Taager add all</b> and paste it. Only approved products are included.</span>
+    </div>}
     <ul className="space-y-3">{items.map((it) => <ProductCard key={it.product_id + ":" + it.variation_id} it={it} market={market} busy={busy} decide={decide} />)}</ul>
   </div>;
 }

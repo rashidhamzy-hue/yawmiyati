@@ -41,3 +41,13 @@ describe("Brain panel",()=>{
   await waitFor(()=>expect(calls.some(c=>c.includes("brain_decide")&&c.includes('"p_decision":"approved"')&&c.includes('"p_items":null'))).toBe(true));
  });
 });
+
+describe("pick list for the Taager add button",()=>{
+ it("lists approved Taager product ids for the market",async()=>{
+  const {pickList}=await import("@/components/owner/BrainPanel");
+  const base={...item,owner_decision:null};
+  expect(pickList([{...base,product_id:5,owner_decision:"approved"},{...base,product_id:7,owner_decision:"rejected"},{...base,product_id:9,owner_decision:"approved"},{...base,product_id:5,variation_id:2,owner_decision:"approved"}] as never,"sa")).toBe("ym:sa:5,9");
+  expect(pickList([base] as never,"sa")).toBe("");
+ });
+});
+
