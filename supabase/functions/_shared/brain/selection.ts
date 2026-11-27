@@ -31,18 +31,39 @@ export function mapCategory(o: Pick<OfferRow, "title" | "categories">): StoreCat
 // "works with iPhone"), so the broad patterns read only the title and categories; the description
 // is checked only for unambiguous terms.
 const KILL_TITLE: [string, RegExp][] = [
-  ["tobacco_vape", /سجائر|دخان|شيشه|معسل|فيب|vape|cigar|tobacco|hookah/],
-  ["weapons", /سلاح|ذخيره|صاعق(?! (?:ال)?(?:حشرات|ناموس|بعوض|ذباب))|مسدس(?! (?:ال)?(?:غسيل|مساج|تدليك|مسامير|لحام|خياطه|حجامه|براغي|تثبيت|ماء|مياه|فوم|رش|شمع|غراء|حراري|سيليكون|دهان|هواء|بخار))|(?<!قلم )رصاص(?!ي)|weapon|(?<!(?:spray|glue|massage|foam|water|heat|caulk|paint|nail|wash) )\bgun\b|taser|ammo/],
-  ["sexual", /جنسي|تاخير القذف|منشط|انتصاب|sexual|erection|libido/],
-  ["medicine_claims", /علاج|يعالج|دواء|ادويه|تخسيس|حرق الدهون|حبوب (?:تخسيس|طبيه|تكبير)|كبسولات(?! (?:ال)?قهوه)|مكمل غذائي|سكري|ضغط الدم|\bcure|\btreat(s|ment)\b|slimming|weight loss pill|supplement|diabet/],
-  ["counterfeit_brands", /\b(apple|iphone|airpods|samsung|nike|adidas|dior|chanel|gucci|louis vuitton|rolex|dyson|high copy|semi original|master copy)\b|(?:^|\s)(?:ال)?(?:ايفون|ابل|ايربودز|سامسونج|نايك|اديداس|ديور|شانيل|غوتشي|جوتشي|رولكس|دايسون|شبيه|كوبي|ماستر كوبي)(?:\s|$)/],
+  ["tobacco_vape", /سجائر|(?<!(?:بدون|بلا|ولا|لا|عديم|خالي من) (?:ال)?)دخان|شيشه|معسل|(?:^|\s)(?:ال)?فيب(?:\s|$)|\bvape|cigar|tobacco|hookah/],
+  ["weapons", /سلاح|ذخيره|صاعق(?! (?:لل|ال)?(?:حشرات|ناموس|بعوض|ذباب))|مسدس (?:خرز|كرات|هوائي|ضغط|رصاص|خرطوش|تصويب|صوت|ناري|صوتي)|رشاش (?:كرات|خرز|جل|جيل)|(?:^|\s)رصاص(?:\s|$)|weapon|taser|ammo|airsoft|\bbb gun|gel blaster/],
+  ["sexual", /(?:^|\s)(?:ال)?جنسي(?:\s|$|ه\s)|جنسيا|تاخير القذف|منشط(?! (?:ال)?(?:تربه|نمو|شعر|بذور|نبات))|انتصاب|sexual|erection|libido/],
+  ["medicine_claims", /علاج|يعالج|(?<!منظم (?:لل|ال)?|منظم حبوب |علبه (?:لل|ال)?)(?:دواء|ادويه)|تخسيس|حرق الدهون|حبوب (?:تخسيس|طبيه|تكبير)|كبسولات(?! (?:ال)?قهوه)|مكمل غذائي|سكري|ضغط الدم|\bcure|\btreat(s|ment)\b|slimming|weight loss pill|supplement|diabet/],
+  // Copies and branded items we cannot prove genuine. Accessories that only name a phone ("case for iPhone") are fine.
+  ["counterfeit_brands", /\b(airpods|nike|adidas|dior|chanel|gucci|louis vuitton|rolex|high copy|semi original|master copy)\b|(?:^|\s)(?:ال)?(?:ايربودز|نايك|اديداس|ديور|شانيل|غوتشي|جوتشي|رولكس|شبيه|كوبي|ماستر كوبي)(?:\s|$)/],
+  ["counterfeit_brands", /^(?!.*(?:جراب|كفر|كافر|غطاء|شاحن|كابل|متوافق|حامل|ستاند|واقي|سوار|\bcase\b|\bcover\b|charger|cable|compatible|\bfor\b|holder|strap)).*(?:\b(?:apple|iphone|samsung|dyson)\b|(?:^|\s)(?:ال)?(?:ايفون|ابل|سامسونج|دايسون)(?:\s|$))/],
 ];
 const KILL_DESCRIPTION: [string, RegExp][] = [
   ["tobacco_vape", /سجائر الكترونيه|معسل|vape|e-cigarette|hookah/],
   ["weapons", /سلاح ناري|ذخيره|taser|ammo/],
-  ["sexual", /جنسي|تاخير القذف|انتصاب|sexual|erection|libido/],
+  ["sexual", /(?:^|\s)(?:ال)?جنسي(?:\s|$)|جنسيا|تاخير القذف|انتصاب|sexual|erection|libido/],
   ["medicine_claims", /حبوب (?:تخسيس|طبيه|تكبير)|مكمل غذائي|weight loss pill|dietary supplement/],
 ];
+
+// Yawmiyati's audience is women (25-44, Egypt/Iraq/Gulf): the shopper is a woman buying for herself,
+// her home and her children. Products clearly made for men, cars, tools, gaming or hunting are left out.
+// Read from the title only; children's items stay in (mothers buy them).
+const FOR_WOMEN_TOO = /نساء|نسائي|للنساء|النساء|للجنسين|الجنسين|حريمي|بنات|women|unisex|الشعر و ?(?:ال)?لحيه/;
+const HOME_OR_KIDS = /اطفال|للاطفال|طفل|لعبه|العاب|منزل|المنزل|للمنزل|بيت|البيت|للبيت|kids|home/;
+const NOT_FOR_AUDIENCE: [string, RegExp, RegExp | null][] = [
+  ["men", /رجالي|للرجال|(?:^|\s)رجال(?:\s|$)|(?:^|\s)الرجال(?:\s|$)|للرجل|(?:^|\s)الرجل(?:\s|$)|لحيه|ذقن|شنب|\bmen\b|\bmens\b|beard|mustache/, FOR_WOMEN_TOO],
+  ["car", /سياره|سيارات|دراجه ناريه|موتوسيكل|اطارات|كفرات|\bcar\b|automotive|motorcycle|dash ?cam/, HOME_OR_KIDS],
+  ["tools", /(?<!بدون (?:ال)?|بلا )(?:دريل|مثقاب|شنيور)|مفك|مفاتيح ربط|مفتاح ربط|عده (?:صيانه|عمل|ادوات)|طقم عده|صندوق عده|منشار|(?<!اكياس |الاكياس )لحام(?! (?:و ?اغلاق )?(?:ال)?اكياس)|كماشه|زرديه|\bdrill\b|screwdriver|wrench|soldering|toolbox|tool kit/, null],
+  ["gaming", /بلايستيشن|بلاي ستيشن|اكس بوكس|جيمنج|جيمر|قيمنج|قيمرز|ذراع تحكم|يد تحكم|playstation|\bxbox\b|gaming|gamer|joystick|game controller/, null],
+  // Off-brand for a women's lifestyle store: surveillance kits, computers, construction, farm and power gear.
+  ["off_brand", /سيستم كاميرات|كاميرات? مراقبه|كاميرا (?:لاسلكيه )?بالطاقه الشمسيه|\bdvr\b|\bnvr\b|cctv|لاب ?توب|laptop|\bpc\b|كمبيوتر مكتبي|مواشي|اغنام|اسمنت|بلاط|خرسانه|محطه طاقه|مولد كهرباء|كمبروسر|منفاخ (?:\d+ )?بستم|انتركم|intercom|power station/, null],
+  ["hunting_fishing", /(?:^|\s)(?:ال|لل)?صيد(?:\s|$)|صيد (?:ال)?سمك|سناره|شبكه صيد|fishing|hunting/, null],
+];
+export function audienceCheck(o: Pick<OfferRow, "title">): string[] {
+  const head = normalizeTitle(o.title);
+  return NOT_FOR_AUDIENCE.filter(([, re, unless]) => re.test(head) && !(unless && unless.test(head))).map(([k]) => k);
+}
 const FLAGS: [string, RegExp][] = [
   ["cosmetic_claims", /تبييض|تفتيح|تجاعيد|حب الشباب|تساقط الشعر|whiten|anti.?aging|wrinkle|acne|hair loss/],
   ["chemicals", /منظف|مزيل|كلور|مبيد|بالوعه|بالوعات|drain|bleach|pesticide|chemical/],
@@ -77,6 +98,7 @@ export function prefilter(offers: OfferRow[], mapping: FieldMapping, m: MarketFa
     const base = { product_id: o.product_id, variation_id: o.variation_id, title: o.title, family_key: familyKey(o), offer_kind: kind.kind,
       category: mapCategory(o), economics: { ...econ, pieces_claimed: kind.pieces }, flags: risk.flags };
     if (risk.kills.length) { rows.push({ ...base, stage: "killed", prefilter_score: 0, reasons: risk.kills.map((k) => "kill:" + k) }); continue; }
+    for (const a of audienceCheck(o)) reasons.push("not_for_audience:" + a);
     if (o.status && o.status !== "publish") reasons.push("not_published_in_woo");
     if (o.stock_status === "outofstock") reasons.push("out_of_stock");
     if (!o.images.length) reasons.push("no_images");
@@ -90,7 +112,8 @@ export function prefilter(offers: OfferRow[], mapping: FieldMapping, m: MarketFa
     const spreadUsd = zeroMin ? minorToUsd(Math.round(econ.floor_minor! * 0.15), m) * 0.6 : minorToUsd(econ.floor_minor! - econ.cost_minor!, m);
     const media = o.images.length >= 3 ? 1 : o.images.length === 2 ? 0.85 : 0.7;
     const text = (o.description ?? "").replace(/<[^>]+>/g, "").length > 200 ? 1 : 0.85;
-    const cat = base.category ? 1 : 0.7;
+    // Yawmiyati is a women's lifestyle store: products outside its six departments rank well below those inside.
+    const cat = base.category ? 1 : 0.5;
     const kindFactor = kind.kind === "title_claims_multipack" || kind.kind === "bundle_unverified" ? 0.9 : 1;
     const video = o.videos.length ? 1.05 : 1;
     const score = Math.round(Math.min(spreadUsd, 25) * media * text * cat * kindFactor * video * 100) / 100;

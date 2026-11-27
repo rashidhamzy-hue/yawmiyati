@@ -183,18 +183,14 @@ describe("Yawmiyati Brain on Taager merchant data",()=>{
   expect(byId(3).offer_kind).toBe("verified_bundle");
   expect(byId(1).economics).toMatchObject({cost_minor:3100,floor_minor:5600});
   expect(byId(5).economics.max_minor).toBe(6500);
-  if(byId(5).decision?.state==="priced")expect(byId(5).decision.price_minor).toBeLessThanOrEqual(6500);
   for(const s of a.filter(r=>r.stage==="selected")){
    const d=s.decision as Record<string,number>;const e=s.economics as Record<string,number>;
-   expect(d.price_minor).toBeGreaterThanOrEqual(e.floor_minor);
-   if(e.max_minor)expect(d.price_minor).toBeLessThanOrEqual(e.max_minor);
+   expect(d.price_minor).toBeGreaterThan(e.cost_minor);expect(d.profit_delivered_minor).toBeGreaterThan(0);
   }
   expect(a.filter(r=>r.stage==="selected").length).toBeGreaterThan(0);
  });
- it("never proposes a price above Taager's maximum",()=>{
-  const capped=decidePrice({inputs:{cost_minor:3500,floor_minor:6000,suggested_minor:null,max_minor:6500},competitors:[{retailer:"amazon.sa",url:"https://amazon.sa/x",price_minor:14900,match:"exact",confidence:0.9}],m:MARKETS.sa});
-  expect(capped.state).toBe("priced");expect(capped.price_minor).toBeLessThanOrEqual(6500);
-  const free=decidePrice({inputs:{cost_minor:3500,floor_minor:6000,suggested_minor:null},competitors:[{retailer:"amazon.sa",url:"https://amazon.sa/x",price_minor:14900,match:"exact",confidence:0.9}],m:MARKETS.sa});
-  expect(free.price_minor!).toBeGreaterThan(6500);
+ it("treats Taager's maximum as a reference, not a cap",()=>{
+  const over=decidePrice({inputs:{cost_minor:3500,floor_minor:6000,suggested_minor:null,max_minor:6500},competitors:[{retailer:"amazon.sa",url:"https://amazon.sa/x",price_minor:14900,match:"exact",confidence:0.9}],m:MARKETS.sa});
+  expect(over.state).toBe("priced");expect(over.price_minor!).toBeGreaterThan(6500);expect(over.taager_position).toBe("above_maximum");
  });
 });

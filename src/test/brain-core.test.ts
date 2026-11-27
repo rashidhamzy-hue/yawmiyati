@@ -4,7 +4,7 @@ import {MARKETS,decimalToMinor,minorToDecimal} from "../../supabase/functions/_s
 import {normalizeWoo,findVideos,flattenMeta} from "../../supabase/functions/_shared/brain/woo-normalize.ts";
 import {capabilityReport,economicsInputs,familyKey,heuristicMapping,offerKind,titleClaimedPieces} from "../../supabase/functions/_shared/brain/catalog-analysis.ts";
 import {decidePrice,expectedPerOrder,freeDeliveryThreshold,pricePoints,profitDelivered} from "../../supabase/functions/_shared/brain/economics.ts";
-import {mapCategory,prefilter,riskCheck,selectFinal,merchandise} from "../../supabase/functions/_shared/brain/selection.ts";
+import {audienceCheck,mapCategory,prefilter,riskCheck,selectFinal,merchandise} from "../../supabase/functions/_shared/brain/selection.ts";
 import {costOf,extractJson,estimateMax} from "../../supabase/functions/_shared/brain/anthropic.ts";
 import {parseContent,parseResearch,parseMapping} from "../../supabase/functions/_shared/brain/prompts.ts";
 
@@ -89,7 +89,8 @@ describe("Taager economics",()=>{
   expect(profitDelivered(19000,inp,sa)).toBe(7000+2000-300);  // 15% of the 20 SAR added
   expect(profitDelivered(19000,inp,MARKETS.ae)).toBe(9000);    // no VAT rule published for UAE
   expect(profitDelivered(17000,inp,sa,true)).toBe(7000-2800);  // free delivery absorbs 28 SAR
-  expect(()=>profitDelivered(16000,inp,sa)).toThrow("below_taager_floor");
+  expect(profitDelivered(16000,inp,sa)).toBe(6000);           // below Taager's minimum: no added profit, no VAT
+  expect(profitDelivered(9000,inp,sa)).toBe(-1000);           // a loss is reported, never hidden
   expect(expectedPerOrder(7000,7500,sa)).toBe(5250);
   expect(expectedPerOrder(7000,6500,MARKETS.eg)).toBe(Math.floor((7000*6500-500*3500)/10000));
  });
@@ -98,12 +99,12 @@ describe("Taager economics",()=>{
   const om=pricePoints(4200,6000,MARKETS.om);expect(om[0]).toBe(4200);expect(om.slice(1).every(v=>v%1000===500||v%1000===900)).toBe(true);
   expect(pricePoints(25000000,26000000,MARKETS.iq).every(v=>v%500000===0)).toBe(true);
  });
- it("prices against cited competitors and never below the floor or at a loss",()=>{
+ it("prices against cited competitors and never at a loss",()=>{
   const d=decidePrice({inputs:{cost_minor:4500,floor_minor:7900,suggested_minor:null},m:sa,competitors:[
    {retailer:"amazon.sa",url:"https://amazon.sa/x",price_minor:14900,match:"exact",confidence:0.9},
    {retailer:"noon",url:"https://noon.com/x",price_minor:13900,match:"exact",confidence:0.8}]});
   expect(d.state).toBe("priced");
-  expect(d.price_minor!).toBeGreaterThanOrEqual(7900);
+  expect(d.price_minor!).toBeGreaterThan(4500);
   expect(d.customer_total_minor).toBe(d.price_minor!+2800);
   expect(d.competitor_basis).toBe("exact");
   expect(d.profit_delivered_minor!).toBeGreaterThan(0);
@@ -112,6 +113,19 @@ describe("Taager economics",()=>{
   expect(none.price_minor).toBe(7900);expect(none.needs_owner_review).toBe(true);
   const sug=decidePrice({inputs:{cost_minor:4500,floor_minor:7900,suggested_minor:9900},m:sa,competitors:[]});
   expect(sug.price_minor).toBe(9900);
+  // Taager's minimum profit is 0 and no shop found: needs research, never a blind markup.
+  expect(decidePrice({inputs:{cost_minor:4500,floor_minor:4500,suggested_minor:null},m:sa,competitors:[]})).toMatchObject({state:"blocked",blocked_reason:"needs_market_research"});
+ });
+ it("may price below Taager's minimum or above its maximum when the market says so, and marks it",()=>{
+  const market=(price:number)=>[{retailer:"noon",url:"https://noon.com/x",price_minor:price,match:"exact" as const,confidence:0.9},{retailer:"extra",url:"https://extra.com/x",price_minor:price,match:"exact" as const,confidence:0.9}];
+  const low=decidePrice({inputs:{cost_minor:4500,floor_minor:12900,suggested_minor:null},m:sa,competitors:market(9900)});
+  expect(low.state).toBe("priced");expect(low.price_minor!).toBeLessThan(12900);expect(low.price_minor!).toBeGreaterThan(4500);
+  expect(low.taager_position).toBe("below_minimum");expect(low.notes.join(" ")).toMatch(/test order/);
+  const high=decidePrice({inputs:{cost_minor:3500,floor_minor:6000,suggested_minor:null,max_minor:6500},m:sa,competitors:market(14900)});
+  expect(high.price_minor!).toBeGreaterThan(6500);expect(high.taager_position).toBe("above_maximum");
+  // Market below our cost: priced dearer (still profitable) or blocked, never a loss.
+  const under=decidePrice({inputs:{cost_minor:9000,floor_minor:9500,suggested_minor:null},m:sa,competitors:market(5900)});
+  if(under.state==="priced")expect(under.profit_delivered_minor!).toBeGreaterThan(0);
  });
  it("proposes a free-delivery threshold only with enough products",()=>{
   expect(freeDeliveryThreshold([{price_minor:9900,profit_delivered_minor:3000}],sa)).toBeNull();
@@ -128,6 +142,18 @@ describe("selection and safety",()=>{
   expect(riskCheck({title:"سماعات Apple AirPods",categories:[],description:""}).kills).toContain("counterfeit_brands");
   expect(riskCheck({title:"منظف بالوعات",categories:[],description:""}).flags).toContain("chemicals");
   expect(mapCategory({title:"خفاقة حليب للقهوة",categories:[]})).toBe("kitchen");
+  // Real Taager titles that older rules blocked by mistake (27 Nov 2026 Saudi sync).
+  for(const title of ["منشفة تجفيف ميكرو فيبر","شعلة فحم كهربائية للمبخرة والعود بدون ولاعة ولا دخان","حقيبة خصر رياضية للجنسين","منشط تربة الحديقة 200 جرام",
+    "مسدس حرارة","مسدس تعقيم محمول","مضرب صاعق للحشرات قابل للطي","جراب آيفون مضيء في الظلام","زجاجة مياه مع حقيبة منظم حبوب دواء"])
+   expect(riskCheck({title,categories:[],description:""}).kills).toEqual([]);
+  expect(riskCheck({title:"عطر",categories:[],description:"مناسب للجنسين"}).kills).toEqual([]);
+  // Women-only audience: men's, car, tool, gaming and fishing products leave the shortlist; home, kids and unisex stay.
+  for(const [title,why] of [["حذاء رجالي مقاس 44","men"],["زيت نمو اللحية","men"],["حامل هاتف للسياره","car"],["داش كام للسيارة 1080 hd","car"],["مثقاب كهربائي","tools"],["طاولة الجيمنج","gaming"],["شمسية صيد السمك","hunting_fishing"],["سيستم كاميرات كامل 4 كاميرات","off_brand"],["ماكينة قص شعر الحيوانات والمواشي","off_brand"]] as const)
+   expect(audienceCheck({title})).toContain(why);
+  for(const title of ["عطر فالي للنساء و الرجال","المروحة المحمولة للمنزل والسيارة","سيارة كهربائية للاطفال","مصيدة ناموس كهربائية","جهاز لحام وإغلاق الأكياس الحراري","درج ثلاجة معلق بدون دريل","مشط حراري لفرد الشعر واللحية","منقل شواء للرحلات والتخييم"])
+   expect(audienceCheck({title})).toEqual([]);
+  for(const [title,kill] of [["هاتف شبيه ايفون 18","counterfeit_brands"],["ايربودز عالية الجودة","counterfeit_brands"],["سماعة Apple الأصلية","counterfeit_brands"],["لعبة مسدس تصويب الكرات الهوائية","weapons"],["فيب نكهة نعناع","tobacco_vape"]] as const)
+   expect(riskCheck({title,categories:[],description:""}).kills).toContain(kill);
  });
  it("prefilters: excludes out of stock / no images / unknown cost, keeps one per family",async()=>{
   const offers=await Promise.all([
