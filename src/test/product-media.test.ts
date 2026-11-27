@@ -24,6 +24,9 @@ describe("product pictures",()=>{
   expect([...res!.headers.keys()].sort()).toEqual(["cache-control","content-type","vary","x-content-type-options"]);
   expect(res!.headers.get("cache-control")).toContain("immutable");
   expect(upstream.mock.calls[0]![0]).toBe("https://media.taager.com/360x360/"+id);
+  expect((upstream.mock.calls[0] as unknown as [string,RequestInit])[1].redirect).toBe("manual");
+  const moved=vi.fn(async()=>new Response(null,{status:302,headers:{location:"https://elsewhere.example/x"}}));
+  expect((await handleProductMedia(new Request("https://shop.example/media/p/"+id),moved as unknown as typeof fetch))!.status).toBe(404);
  });
  it("refuses other methods, unknown paths and non-pictures",async()=>{
   const never=vi.fn();
