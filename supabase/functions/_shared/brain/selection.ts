@@ -56,6 +56,8 @@ const NOT_FOR_AUDIENCE: [string, RegExp, RegExp | null][] = [
   ["car", /سياره|سيارات|دراجه ناريه|موتوسيكل|اطارات|كفرات|\bcar\b|automotive|motorcycle|dash ?cam/, HOME_OR_KIDS],
   ["tools", /(?<!بدون (?:ال)?|بلا )(?:دريل|مثقاب|شنيور)|مفك|مفاتيح ربط|مفتاح ربط|عده (?:صيانه|عمل|ادوات)|طقم عده|صندوق عده|منشار|(?<!اكياس |الاكياس )لحام(?! (?:و ?اغلاق )?(?:ال)?اكياس)|كماشه|زرديه|\bdrill\b|screwdriver|wrench|soldering|toolbox|tool kit/, null],
   ["gaming", /بلايستيشن|بلاي ستيشن|اكس بوكس|جيمنج|جيمر|قيمنج|قيمرز|ذراع تحكم|يد تحكم|playstation|\bxbox\b|gaming|gamer|joystick|game controller/, null],
+  // Off-brand for a women's lifestyle store: surveillance kits, computers, construction, farm and power gear.
+  ["off_brand", /سيستم كاميرات|كاميرات? مراقبه|كاميرا (?:لاسلكيه )?بالطاقه الشمسيه|\bdvr\b|\bnvr\b|cctv|لاب ?توب|laptop|\bpc\b|كمبيوتر مكتبي|مواشي|اغنام|اسمنت|بلاط|خرسانه|محطه طاقه|مولد كهرباء|كمبروسر|منفاخ (?:\d+ )?بستم|انتركم|intercom|power station/, null],
   ["hunting_fishing", /(?:^|\s)(?:ال|لل)?صيد(?:\s|$)|صيد (?:ال)?سمك|سناره|شبكه صيد|fishing|hunting/, null],
 ];
 export function audienceCheck(o: Pick<OfferRow, "title">): string[] {
@@ -110,7 +112,8 @@ export function prefilter(offers: OfferRow[], mapping: FieldMapping, m: MarketFa
     const spreadUsd = zeroMin ? minorToUsd(Math.round(econ.floor_minor! * 0.15), m) * 0.6 : minorToUsd(econ.floor_minor! - econ.cost_minor!, m);
     const media = o.images.length >= 3 ? 1 : o.images.length === 2 ? 0.85 : 0.7;
     const text = (o.description ?? "").replace(/<[^>]+>/g, "").length > 200 ? 1 : 0.85;
-    const cat = base.category ? 1 : 0.7;
+    // Yawmiyati is a women's lifestyle store: products outside its six departments rank well below those inside.
+    const cat = base.category ? 1 : 0.5;
     const kindFactor = kind.kind === "title_claims_multipack" || kind.kind === "bundle_unverified" ? 0.9 : 1;
     const video = o.videos.length ? 1.05 : 1;
     const score = Math.round(Math.min(spreadUsd, 25) * media * text * cat * kindFactor * video * 100) / 100;

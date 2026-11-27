@@ -148,7 +148,7 @@ describe("selection and safety",()=>{
    expect(riskCheck({title,categories:[],description:""}).kills).toEqual([]);
   expect(riskCheck({title:"عطر",categories:[],description:"مناسب للجنسين"}).kills).toEqual([]);
   // Women-only audience: men's, car, tool, gaming and fishing products leave the shortlist; home, kids and unisex stay.
-  for(const [title,why] of [["حذاء رجالي مقاس 44","men"],["زيت نمو اللحية","men"],["حامل هاتف للسياره","car"],["داش كام للسيارة 1080 hd","car"],["مثقاب كهربائي","tools"],["طاولة الجيمنج","gaming"],["شمسية صيد السمك","hunting_fishing"]] as const)
+  for(const [title,why] of [["حذاء رجالي مقاس 44","men"],["زيت نمو اللحية","men"],["حامل هاتف للسياره","car"],["داش كام للسيارة 1080 hd","car"],["مثقاب كهربائي","tools"],["طاولة الجيمنج","gaming"],["شمسية صيد السمك","hunting_fishing"],["سيستم كاميرات كامل 4 كاميرات","off_brand"],["ماكينة قص شعر الحيوانات والمواشي","off_brand"]] as const)
    expect(audienceCheck({title})).toContain(why);
   for(const title of ["عطر فالي للنساء و الرجال","المروحة المحمولة للمنزل والسيارة","سيارة كهربائية للاطفال","مصيدة ناموس كهربائية","جهاز لحام وإغلاق الأكياس الحراري","درج ثلاجة معلق بدون دريل","مشط حراري لفرد الشعر واللحية","منقل شواء للرحلات والتخييم"])
    expect(audienceCheck({title})).toEqual([]);
