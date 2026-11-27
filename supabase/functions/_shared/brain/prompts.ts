@@ -15,7 +15,11 @@ const arr = (v: unknown) => (Array.isArray(v) ? v : []);
 export function productFacts(o: OfferRow, extra: Record<string, unknown> = {}) {
   return {
     title: o.title, sku: o.sku, categories: o.categories.map((c) => c.name), attributes: o.attributes.map((a) => ({ name: a.name, options: a.options })),
-    description: plain(o.description, 2500), short_description: plain(o.short_description, 600), image_count: o.images.length, has_video: o.videos.length > 0, ...extra,
+    description: plain(o.description, 2500), short_description: plain(o.short_description, 600), image_count: o.images.length, has_video: o.videos.length > 0,
+    // Supplier-declared facts (Taager sync): bundle contents by SKU and quantity, and the seller FAQ.
+    ...(Array.isArray(o.meta["taager_bundle_items"]) ? { bundle_contents: o.meta["taager_bundle_items"] } : {}),
+    ...(Array.isArray(o.meta["taager_faq"]) && (o.meta["taager_faq"] as unknown[]).length ? { supplier_faq: (o.meta["taager_faq"] as unknown[]).slice(0, 8) } : {}),
+    ...extra,
   };
 }
 

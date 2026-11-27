@@ -80,7 +80,7 @@ export type PriceDecision = {
 };
 
 export function decidePrice(args: {
-  inputs: { cost_minor: number | null; floor_minor: number | null; suggested_minor: number | null };
+  inputs: { cost_minor: number | null; floor_minor: number | null; suggested_minor: number | null; max_minor?: number | null };
   competitors: CompetitorEvidence[];
   m: MarketFacts;
   deliveryRateBps?: number | null;
@@ -98,9 +98,12 @@ export function decidePrice(args: {
   // Similar items are a weaker anchor: allow a 10% premium for the exact item being sold.
   const compTotal = ref === null ? null : basis === "similar" ? Math.round(ref * 1.1) : ref;
   // Without market evidence never explore upward: use Taager's suggested price if it is above the floor, else the floor.
-  const top = compTotal === null ? Math.max(floor_minor, suggested_minor ?? floor_minor) : Math.max(floor_minor * 2, suggested_minor ?? 0, compTotal * 1.2);
+  const uncapped = compTotal === null ? Math.max(floor_minor, suggested_minor ?? floor_minor) : Math.max(floor_minor * 2, suggested_minor ?? 0, compTotal * 1.2);
+  // Never propose more than the supplier accepts (Taager pricingRange.max).
+  const ceiling = args.inputs.max_minor && args.inputs.max_minor >= floor_minor ? args.inputs.max_minor : null;
+  const top = ceiling === null ? uncapped : Math.min(uncapped, ceiling);
   let best: { price: number; score: number; profit: number; exp: number; f: number } | null = null;
-  for (const price of pricePoints(floor_minor, top, m)) {
+  for (const price of pricePoints(floor_minor, top, m).filter((p) => ceiling === null || p <= ceiling)) {
     const profit = profitDelivered(price, { cost_minor, floor_minor }, m);
     if (profit <= 0) continue;
     const exp = expectedPerOrder(profit, rate, m);

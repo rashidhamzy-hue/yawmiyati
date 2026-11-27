@@ -65,7 +65,9 @@ Deno.serve(async (req) => {
         return json({ ok: /ok/i.test(res.text), cost_microusd: res.metered.cost_microusd }, 200, origin);
       }
       case "start": {
-        if (!woo) return json({ error: `missing secrets WOO_${store.toUpperCase()}_URL / _KEY / _SECRET` }, 400, origin);
+        // The imported Taager catalogue is the preferred source; WooCommerce is only needed without it.
+        const hasTaager = (await db.select("taager_catalog", `select=sku&market=eq.${store}&limit=1`)).length > 0;
+        if (!woo && !hasTaager) return json({ error: `No Taager catalogue imported for this market and missing secrets WOO_${store.toUpperCase()}_URL / _KEY / _SECRET` }, 400, origin);
         if (!anthropicKey) return json({ error: "missing secret ANTHROPIC_API_KEY" }, 400, origin);
         const active = await db.select("brain_runs", `select=id,stage,status&store_code=eq.${store}&status=in.(running,paused_budget)`);
         if (active.length) return json({ run: active[0], note: "already_running" }, 200, origin);

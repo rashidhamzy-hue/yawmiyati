@@ -1,3 +1,4 @@
+import {riskCheck as riskCheckForTest} from "../../supabase/functions/_shared/brain/selection.ts";
 import {describe,expect,it} from "vitest";
 import {MARKETS,decimalToMinor,minorToDecimal} from "../../supabase/functions/_shared/brain/markets.ts";
 import {normalizeWoo,findVideos,flattenMeta} from "../../supabase/functions/_shared/brain/woo-normalize.ts";
@@ -177,5 +178,25 @@ describe("AI plumbing",()=>{
   const bad=parseContent({title:"الأفضل في السوق من تاجر",description:"بسعر 89 ريال وخصم",seo:{slug:"x"}});
   expect(bad.issues).toEqual(expect.arrayContaining(["banned_wording_present","price_in_text"]));
   expect(parseMapping({cost_key:"taager_price",floor_key:"not_a_key",confidence:0.9},new Set(["taager_price"]))).toMatchObject({cost_key:"taager_price",floor_key:null});
+ });
+});
+
+describe("risk rules on real supplier wording",()=>{
+ const rc=(title:string,description="")=>riskCheckForTest({title,categories:[],description});
+ it("keeps tools and household items that only sound risky",()=>{
+  expect(rc("مسدس غسيل السيارات بالفوم").kills).toEqual([]);
+  expect(rc("مسدس المسامير الحديث").kills).toEqual([]);
+  expect(rc("صاعق الناموس الكهربائي").kills).toEqual([]);
+  expect(rc("ماكينة الخياطة الحديثة","تمكنك من علاج قطع ملابسك بسهولة").kills).toEqual([]);
+  expect(rc("شواية كهربائية","لا يصدر دخان أثناء الشوي").kills).toEqual([]);
+  expect(rc("ترامبولين للكبار","يساعد على حرق الدهون").kills).toEqual([]);
+  expect(rc("كبسولات قهوة").kills).toEqual([]);
+ });
+ it("still kills clear cases from the title or unambiguous description terms",()=>{
+  expect(rc("كريم تخسيس للبطن").kills).toContain("medicine_claims");
+  expect(rc("Airpods Pro 2 Semi original").kills).toContain("counterfeit_brands");
+  expect(rc("شيشة الكترونية").kills).toContain("tobacco_vape");
+  expect(rc("علبة","حبوب تخسيس طبيعية").kills).toContain("medicine_claims");
+  expect(rc("مسدس صوت").kills).toContain("weapons");
  });
 });
