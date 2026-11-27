@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import {
   chunkRows,
   importTaagerSync,
+  parseTaagerFile,
   parseTaagerSync,
   taagerImportClient,
 } from "@/lib/store/taager-import";
@@ -221,9 +222,9 @@ describe("Taager import panel", () => {
       },
     });
     const button = await screen.findByRole("button", { name: "Import 2 products" });
-    expect(screen.getByText("1 read errors in file")).toBeInTheDocument();
+    expect(screen.getByText(/1 read errors in file/)).toBeInTheDocument();
     fireEvent.click(button);
-    expect(await screen.findByText(/Imported\. The brain will use/)).toBeInTheDocument();
+    expect(await screen.findByText(/Imported \(Iraq: 2 products.*The brain will use/)).toBeInTheDocument();
     expect(screen.getByText(/2 products · full read/)).toBeInTheDocument();
   });
   it("explains a wrong-country file", async () => {
@@ -250,3 +251,47 @@ describe("Taager import panel", () => {
     );
   });
 });
+
+const v4 = () => {
+  const iq = JSON.parse(file());
+  const sa = JSON.parse(file("SAU"));
+  for (const r of sa.listing) if (r.sku) r.sku = r.sku.replace(/^IQ/, "SA");
+  sa.details["8307"].variants[0].sku = "SA030401KHAY99";
+  return { source: "taager-merchant-sync", version: 4, created_at: "2026-11-27T09:00:00Z",
+    countries: [{ ...iq, mode: "quick", complete: true }, { ...sa, market: "sa", mode: "full", complete: false }] };
+};
+
+describe("Sync v4 (several countries, live link)", () => {
+  it("parses every country block and keeps mode and completeness", () => {
+    const list = parseTaagerFile(v4());
+    expect(list.map((p) => [p.market, p.mode, p.complete, p.stats.products])).toEqual([["iq", "quick", true, 2], ["sa", "full", false, 2]]);
+    expect(parseTaagerSync(JSON.stringify(v4()), "sa").rows[0].sku).toBe("SA030401KHAY99");
+    expect(() => parseTaagerSync(JSON.stringify(v4()), "eg")).toThrow(/for Iraq, Saudi Arabia, not Egypt/);
+  });
+  it("imports results posted by the Taager tab and answers it; ignores other sites", async () => {
+    const calls: { fn: string; body: Record<string, any> }[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: URL | string, init?: RequestInit) => {
+      const fn = new URL(String(url)).pathname.split("/").pop()!;
+      const body = JSON.parse(String(init?.body ?? "{}"));
+      calls.push({ fn, body });
+      if (fn === "taager_import_begin") return Response.json("b-" + body.p_store);
+      if (fn === "taager_import_rows") return Response.json(body.p_rows.length);
+      return Response.json({ skus: 2, with_detail: 1, bundles: 1, price_changed_7d: 0, missing_from_last_full_sync: null, last_sync: null });
+    }));
+    window.location.hash = "#taager-link";
+    render(<TaagerImport market="iq" origin="https://x.supabase.co" publicKey="pk" token="tok" />);
+    await waitFor(() => expect(calls.some((c) => c.fn === "taager_catalog_summary")).toBe(true));
+    const source = { postMessage: vi.fn() };
+    window.dispatchEvent(new MessageEvent("message", { origin: "https://evil.example", data: { type: "ym-taager-sync", file: v4() } }));
+    window.dispatchEvent(new MessageEvent("message", { origin: "https://taager.com", data: { type: "ym-taager-sync", file: v4() }, source: source as unknown as Window }));
+    await waitFor(() => expect(source.postMessage).toHaveBeenCalled());
+    const [ack, target] = source.postMessage.mock.calls[0];
+    expect(target).toBe("https://taager.com");
+    expect(ack).toMatchObject({ type: "ym-taager-ack", ok: true });
+    const begins = calls.filter((c) => c.fn === "taager_import_begin");
+    expect(begins.map((b) => [b.body.p_store, b.body.p_meta.is_full])).toEqual([["iq", true], ["sa", false]]);
+    expect(await screen.findByText(/Iraq: 2 products/)).toBeInTheDocument();
+    window.location.hash = "";
+  });
+});
+

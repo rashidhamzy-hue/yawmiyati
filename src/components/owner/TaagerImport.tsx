@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
-import { CheckCircle2, FileUp, Loader2, PackageOpen } from "lucide-react";
+import { CheckCircle2, FileUp, Link2, Loader2, PackageOpen } from "lucide-react";
 import {
   importTaagerSync,
-  parseTaagerSync,
+  parseTaagerFile,
   taagerImportClient,
   type ParsedTaagerSync,
   type TaagerCatalogSummary,
@@ -20,9 +20,15 @@ function readText(file: File): Promise<string> {
   });
 }
 
+/** Origins allowed to post sync results (the owner's Taager tab running tools/taager/sync.js). */
+export const TAAGER_ORIGINS = new Set(["https://taager.com", "https://www.taager.com"]);
+const NAMES: Record<MarketCode, string> = { sa: "Saudi Arabia", ae: "UAE", om: "Oman", eg: "Egypt", iq: "Iraq" };
+/** A read that lists every product counts as a full read; v4 marks stopped or broken reads incomplete. */
+const fullRead = (p: ParsedTaagerSync) => p.complete !== false;
+
 type Props = { market: MarketCode; origin: string; publicKey: string; token: string };
 
-/** Owner drops the taager-sync-<country>-<date>.json file here; it is parsed locally and stored privately for the brain. */
+/** Owner imports Taager sync results: a downloaded file, or live from the Taager tab. Stored privately for the brain. */
 export function TaagerImport({ market, origin, publicKey, token }: Props) {
   const client = useMemo(() => {
     try {
@@ -32,13 +38,17 @@ export function TaagerImport({ market, origin, publicKey, token }: Props) {
     }
   }, [origin, publicKey, token]);
   const [summary, setSummary] = useState<TaagerCatalogSummary | null>(null);
-  const [parsed, setParsed] = useState<ParsedTaagerSync | null>(null);
+  const [blocks, setBlocks] = useState<ParsedTaagerSync[]>([]);
   const [fileName, setFileName] = useState("");
   const [isFull, setIsFull] = useState(true);
-  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [progress, setProgress] = useState<{ label: string; done: number; total: number } | null>(null);
   const [error, setError] = useState("");
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState("");
+  const [live, setLive] = useState(() => typeof window !== "undefined" && window.location.hash === "#taager-link");
+  const [liveLog, setLiveLog] = useState<string[]>([]);
   const alive = useRef(true);
+  const busyRef = useRef(false);
+  const seen = useRef(new Set<string>());
   useEffect(
     () => () => {
       alive.current = false;
@@ -57,68 +67,119 @@ export function TaagerImport({ market, origin, publicKey, token }: Props) {
   }, [client, market]);
   useEffect(() => {
     setSummary(null);
-    setParsed(null);
+    setBlocks([]);
     setFileName("");
     setError("");
-    setDone(false);
+    setDone("");
     setProgress(null);
     void load();
   }, [load]);
 
+  /** Import blocks one country at a time; returns a short result line per country. */
+  const importBlocks = useCallback(
+    async (list: ParsedTaagerSync[], full: (p: ParsedTaagerSync) => boolean) => {
+      if (!client) throw Error("Import configuration unavailable");
+      busyRef.current = true;
+      const lines: string[] = [];
+      try {
+        for (const p of list) {
+          if (!p.rows.length) continue;
+          const s = await importTaagerSync(client, p, full(p), (d, t) => {
+            if (alive.current) setProgress({ label: NAMES[p.market], done: d, total: t });
+          });
+          lines.push(`${NAMES[p.market]}: ${p.rows.length} products (${s.skus} stored, ${s.price_changed_7d} price changes this week)`);
+        }
+      } finally {
+        busyRef.current = false;
+        if (alive.current) setProgress(null);
+      }
+      await load();
+      return lines;
+    },
+    [client, load],
+  );
+
+  // Live link: the Taager tab posts its results here; this page (signed in) imports them.
+  useEffect(() => {
+    if (!live || !client) return;
+    const onMessage = async (e: MessageEvent) => {
+      if (!TAAGER_ORIGINS.has(e.origin)) return;
+      const data = e.data as { type?: string; file?: { created_at?: string } } | null;
+      if (!data || data.type !== "ym-taager-sync" || !data.file) return;
+      const reply = (msg: Record<string, unknown>) => {
+        try {
+          (e.source as Window | null)?.postMessage({ type: "ym-taager-ack", ...msg }, e.origin);
+        } catch {
+          /* tab closed */
+        }
+      };
+      const id = String(data.file.created_at ?? "");
+      if (busyRef.current) return; // the tab retries; it gets an answer once the current import ends
+      if (id && seen.current.has(id)) return reply({ ok: true, message: "already imported" });
+      try {
+        const list = parseTaagerFile(data.file);
+        const lines = await importBlocks(list, fullRead);
+        if (id) seen.current.add(id);
+        const at = new Date().toLocaleTimeString("en-GB");
+        if (alive.current) setLiveLog((l) => [`${at} · ${lines.join(" · ") || "no products"}`, ...l].slice(0, 20));
+        reply({ ok: true, message: lines.join("; ") });
+      } catch (err) {
+        const msg = (err as Error).message;
+        if (alive.current) setError(msg);
+        reply({ ok: false, error: msg });
+      }
+    };
+    const handler = (e: MessageEvent) => void onMessage(e);
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [live, client, importBlocks]);
+
   async function pick(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
-    setParsed(null);
+    setBlocks([]);
     setError("");
-    setDone(false);
+    setDone("");
     if (!file) return;
     setFileName(file.name);
     try {
-      const p = parseTaagerSync(await readText(file), market);
-      if (!p.rows.length) throw Error("The file has no products in it.");
-      setParsed(p);
-      setIsFull(p.mode !== "quick");
+      const list = parseTaagerFile(await readText(file));
+      if (!list.some((p) => p.rows.length)) throw Error("The file has no products in it.");
+      if (list.length === 1 && list[0].market !== market)
+        throw Error(`This file is for ${NAMES[list[0].market]}, not ${NAMES[market]}. Switch the market above or pick the right file.`);
+      setBlocks(list);
+      setIsFull(list.every(fullRead));
     } catch (err) {
       setError((err as Error).message);
     }
   }
 
-  async function run() {
-    if (!client || !parsed) return;
+  async function run(list: ParsedTaagerSync[]) {
     setError("");
-    setDone(false);
+    setDone("");
     try {
-      const s = await importTaagerSync(client, parsed, isFull, (d, t) => {
-        if (alive.current) setProgress({ done: d, total: t });
-      });
+      const lines = await importBlocks(list, () => isFull);
       if (!alive.current) return;
-      setSummary(s);
-      setDone(true);
-      setParsed(null);
+      setDone(lines.join(" · "));
+      setBlocks([]);
     } catch (err) {
       if (alive.current) setError((err as Error).message);
-    } finally {
-      if (alive.current) setProgress(null);
     }
   }
 
   if (!client) return null;
   const busy = progress !== null;
   const last = summary?.last_sync;
+  const mine = blocks.find((b) => b.market === market);
   return (
-    <section
-      id="taager-import"
-      aria-label="Taager catalogue import"
-      className="scroll-mt-32 space-y-4 rounded-3xl border bg-card p-5 shadow-soft sm:p-6"
-    >
+    <section id="taager-import" aria-label="Taager catalogue import" className="scroll-mt-32 space-y-4 rounded-3xl border bg-card p-5 shadow-soft sm:p-6">
       <div>
         <h2 className="inline-flex items-center gap-2 text-lg font-extrabold">
           <PackageOpen className="h-5 w-5 text-primary" aria-hidden="true" />
           Taager catalogue
         </h2>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Upload the file the Taager sync button downloaded (taager-sync-{market}-….json). It is
-          read in this browser and stored privately for the brain. Shoppers never see it.
+          Upload the file the Taager sync button downloaded, or turn on Live link and let the Taager tab send it here. It is read in this browser and stored privately for the brain. Shoppers never see it.
         </p>
       </div>
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -138,90 +199,82 @@ export function TaagerImport({ market, origin, publicKey, token }: Props) {
       </dl>
       {last && (
         <p className="text-xs text-muted-foreground">
-          Last import {new Date(last.completed_at).toLocaleString("en-GB")} · {last.rows} products ·{" "}
-          {last.is_full ? "full read" : "partial read"}
-          {summary?.missing_from_last_full_sync
-            ? ` · ${summary.missing_from_last_full_sync} stored products were not in the last full read (possibly removed by Taager)`
-            : ""}
+          Last import {new Date(last.completed_at).toLocaleString("en-GB")} · {last.rows} products · {last.is_full ? "full read" : "partial read"}
+          {summary?.missing_from_last_full_sync ? ` · ${summary.missing_from_last_full_sync} stored products were not in the last full read (possibly removed by Taager)` : ""}
         </p>
       )}
 
-      <label
-        className={
-          "inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-5 text-sm font-semibold " +
-          (busy ? "pointer-events-none opacity-50" : "")
-        }
-      >
-        <FileUp className="h-4 w-4" aria-hidden="true" />
-        Choose Taager file
-        <input
-          type="file"
-          accept=".json,application/json"
-          className="sr-only"
-          onChange={(e) => void pick(e)}
-          disabled={busy}
-        />
-      </label>
-
-      {parsed && (
-        <div className="space-y-3 rounded-2xl border bg-background p-4 text-sm">
-          <p className="font-semibold break-all">{fileName}</p>
-          <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <li>{parsed.stats.products} products</li>
-            <li>{parsed.stats.with_detail} with full detail</li>
-            <li>{parsed.stats.bundles} bundles</li>
-            <li>{parsed.errors.length} read errors in file</li>
-          </ul>
-          {parsed.stats.skipped > 0 && (
-            <p className="text-xs text-muted-foreground">
-              {parsed.stats.skipped} lines without a SKU were skipped.
-            </p>
-          )}
-          <label className="flex items-start gap-2">
-            <input
-              type="checkbox"
-              checked={isFull}
-              onChange={(e) => setIsFull(e.target.checked)}
-              disabled={busy}
-              className="mt-1"
-            />
-            <span>
-              This file read <b>every</b> Taager product for this country (untick if you limited the
-              number).
-            </span>
-          </label>
-          <button
-            type="button"
-            onClick={() => void run()}
-            disabled={busy}
-            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-5 font-semibold text-primary-foreground disabled:opacity-60"
-          >
-            {busy ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <FileUp className="h-4 w-4" aria-hidden="true" />
-            )}
-            {busy
-              ? `Importing ${progress.done} / ${progress.total}`
-              : `Import ${parsed.stats.products} products`}
-          </button>
-          {busy && (
-            <progress
-              className="h-2 w-full"
-              max={progress.total}
-              value={progress.done}
-              aria-label="Import progress"
-            />
+      <div className="flex flex-wrap items-center gap-3">
+        <label className={"inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-5 text-sm font-semibold " + (busy ? "pointer-events-none opacity-50" : "")}>
+          <FileUp className="h-4 w-4" aria-hidden="true" />
+          Choose Taager file
+          <input type="file" accept=".json,application/json" className="sr-only" onChange={(e) => void pick(e)} disabled={busy} />
+        </label>
+        <label className="inline-flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={live} onChange={(e) => setLive(e.target.checked)} />
+          <Link2 className="h-4 w-4" aria-hidden="true" />
+          Live link with the Taager tab (keep this page open and signed in)
+        </label>
+      </div>
+      {live && (
+        <div className="rounded-2xl border border-dashed p-3 text-xs text-muted-foreground" role="status">
+          {liveLog.length ? (
+            <ul className="space-y-1">
+              {liveLog.map((l) => (
+                <li key={l}>{l}</li>
+              ))}
+            </ul>
+          ) : (
+            "Waiting for the Taager tab. Results for every country in the run are imported automatically."
           )}
         </div>
       )}
+
+      {blocks.length > 0 && (
+        <div className="space-y-3 rounded-2xl border bg-background p-4 text-sm">
+          <p className="break-all font-semibold">{fileName}</p>
+          <ul className="space-y-1">
+            {blocks.map((p) => (
+              <li key={p.market}>
+                <b>{NAMES[p.market]}</b>: {p.stats.products} products · {p.stats.with_detail} with full detail · {p.stats.bundles} bundles · {p.errors.length} read errors in file
+                {p.mode ? ` · ${p.mode} read` : ""}
+              </li>
+            ))}
+          </ul>
+          {blocks.some((p) => p.stats.skipped > 0) && <p className="text-xs text-muted-foreground">Lines without a SKU were skipped.</p>}
+          <label className="flex items-start gap-2">
+            <input type="checkbox" checked={isFull} onChange={(e) => setIsFull(e.target.checked)} disabled={busy} className="mt-1" />
+            <span>
+              This file listed <b>every</b> Taager product for these countries (untick if you limited the number or stopped early).
+            </span>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {mine && (
+              <button type="button" onClick={() => void run([mine])} disabled={busy} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-5 font-semibold text-primary-foreground disabled:opacity-60">
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <FileUp className="h-4 w-4" aria-hidden="true" />}
+                {`Import ${mine.stats.products} products`}
+              </button>
+            )}
+            {blocks.length > 1 && (
+              <button type="button" onClick={() => void run(blocks)} disabled={busy} className="inline-flex min-h-11 items-center gap-2 rounded-full border px-5 font-semibold disabled:opacity-60">
+                {`Import all ${blocks.length} countries`}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      {busy && (
+        <div className="space-y-1 text-sm">
+          <p>
+            Importing {progress.label}: {progress.done} / {progress.total}
+          </p>
+          <progress className="h-2 w-full" max={progress.total} value={progress.done} aria-label="Import progress" />
+        </div>
+      )}
       {done && (
-        <p
-          role="status"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700"
-        >
+        <p role="status" className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700">
           <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-          Imported. The brain will use these numbers on its next run.
+          Imported ({done}). The brain will use these numbers on its next run.
         </p>
       )}
       {error && (
