@@ -1,10 +1,13 @@
 import {useEffect,useMemo,useState} from "react";
 import {previewCatalogActive,useOfferVersions} from "@/lib/store/offer-source";
 import {offerListing} from "@/lib/store/offer-version";
-import {ImageOff,SlidersHorizontal} from "lucide-react";
+import {SlidersHorizontal} from "lucide-react";
+import {ProductTile,GridSkeleton,gridClass,listingImage} from "./ProductTile";
+import {byRank} from "@/lib/store/store-catalog";
+import {shopCopy} from "@/lib/store/shop-copy";
 import {publicBrowserConfig} from "@/lib/store/staging-public-config";
 import {parseMinorUnits,type MarketCode} from "@/lib/store/markets";
-import {fetchPublicCatalog,formatListingPrice,type PublicCategorySlug,type PublicListing} from "@/lib/store/public-catalog";
+import {fetchPublicCatalog,type PublicCategorySlug,type PublicListing} from "@/lib/store/public-catalog";
 import {normalizeSearch} from "@/lib/store/smart-search";
 const {origin,key}=publicBrowserConfig(import.meta.env.VITE_YAWMIYATI_SUPABASE_URL,import.meta.env.VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY);
 /**
@@ -13,7 +16,8 @@ const {origin,key}=publicBrowserConfig(import.meta.env.VITE_YAWMIYATI_SUPABASE_U
  * Until that backend contract exists, the editorial category page stays intact.
  */
 export function ApprovedCategoryProductGrid({market,slug,categoryTitle}:{market:MarketCode;slug:PublicCategorySlug;categoryTitle:string}){
- const [catalog,setCatalog]=useState<PublicListing[]>([]);
+ const [catalog,setCatalog]=useState<PublicListing[]|null>(null);
+ const copy=shopCopy(market);
  const [visibleCount,setVisibleCount]=useState(16);
  const [filtersOpen,setFiltersOpen]=useState(false);
  const offers=useOfferVersions(market);
@@ -25,43 +29,33 @@ export function ApprovedCategoryProductGrid({market,slug,categoryTitle}:{market:
  useEffect(()=>setVisibleCount(16),[query,sort,minPrice,maxPrice]);
  useEffect(()=>{
   if(previewCatalogActive()||offers.state!=="off"||!origin||!key){setCatalog([]);return;}
-  let active=true;setCatalog([]);
-  fetchPublicCatalog(origin,key,market).then(rows=>{if(active)setCatalog(rows);}).catch(()=>{if(active)setCatalog([]);});
+  let active=true;setCatalog(null);
+  fetchPublicCatalog(origin,key,market).then(rows=>{if(active)setCatalog(byRank(rows));}).catch(()=>{if(active)setCatalog([]);});
   return ()=>{active=false;};
  },[market,offers.state]);
  const versions=offers.state==="ready"?offers.versions:[];
  const imageByListing=useMemo(()=>new Map(versions.map(v=>[v.listing_id,v.image])),[versions]);
- const approved=(offers.state==="ready"?versions.map(offerListing):catalog).filter(row=>row.approved_category_slugs?.includes(slug));
+ const approved=(offers.state==="ready"?versions.map(offerListing):catalog??[]).filter(row=>row.approved_category_slugs?.includes(slug));
  let minMinor:number|undefined,maxMinor:number|undefined,invalidPrice=false;
  try{minMinor=minPrice?parseMinorUnits(market,minPrice):undefined;maxMinor=maxPrice?parseMinorUnits(market,maxPrice):undefined;}catch{invalidPrice=true;}
  if(minMinor!==undefined&&maxMinor!==undefined&&minMinor>maxMinor)invalidPrice=true;
  const shown=useMemo(()=>{const normalized=normalizeSearch(query);const result=approved.filter(x=>{const price=Number(x.price_minor);return (!normalized||normalizeSearch(x.title).includes(normalized))&&(minMinor===undefined||price>=minMinor)&&(maxMinor===undefined||price<=maxMinor);});if(sort==="popular")result.sort((a,b)=>(a.popularity_rank??Number.MAX_SAFE_INTEGER)-(b.popularity_rank??Number.MAX_SAFE_INTEGER));if(sort==="low"||sort==="high")result.sort((a,b)=>{const x=BigInt(a.price_minor),y=BigInt(b.price_minor);return (x===y?0:x<y?-1:1)*(sort==="low"?1:-1);});return result;},[approved,query,sort,minPrice,maxPrice,market]);
- if(offers.state==="loading")return <section aria-label="منتجات القسم" className="mt-5 grid grid-cols-2 gap-3" aria-busy="true">{Array.from({length:4},(_,i)=><div key={i} className="aspect-[4/5] animate-pulse rounded-xl bg-muted"/>)}</section>;
- if(!approved.length)return <section aria-label="منتجات القسم" className="mt-5 rounded-xl border bg-card p-5 text-center"><h2 className="font-bold">لا توجد منتجات معتمدة معروضة في هذا القسم حالياً</h2><p className="mt-2 text-sm text-muted-foreground">يمكنك استكشاف بقية المنتجات المنشورة والمتاحة في المتجر.</p><a href={"/"+market+"/search"} className="btn-outline mt-4 inline-flex min-h-11 items-center">استكشفي جميع المنتجات</a></section>;
- return <section aria-label="منتجات القسم" className="mt-5 space-y-4">
-  <div className="flex flex-wrap items-end justify-between gap-3">
-   <div><p className="text-xs font-extrabold text-primary">اختيارات يومياتي</p>
-    <h2 className="mt-2 font-display text-2xl font-extrabold">منتجات {categoryTitle}</h2></div>
-   <span className="text-xs text-muted-foreground">{approved.length} منتج</span>
+ if(offers.state==="loading"||(offers.state==="off"&&catalog===null))return <section aria-label="منتجات القسم" className="mt-6" aria-busy="true"><GridSkeleton count={8}/></section>;
+ if(!approved.length)return <section aria-label="منتجات القسم" className="ym-card mt-6 px-5 py-10 text-center"><h2 className="ym-h3">{copy.sectionEmptyTitle}</h2><p className="ym-body mt-2">{copy.sectionEmptyBody}</p><a href={"/"+market+"/search"} className="btn-outline mt-5">{copy.allProducts}</a></section>;
+ return <section aria-label="منتجات القسم" className="mt-6 space-y-4">
+  <div className="flex items-end justify-between gap-3">
+   <h2 className="ym-h2">منتجات {categoryTitle}</h2>
+   <span className="text-xs text-muted-foreground">{copy.productsCount(approved.length)}</span>
   </div>
   {offers.state==="ready"&&<p role="note" className="rounded-xl border border-dashed p-3 text-xs">منتجات للمعاينة فقط، لا يمكن إرسال طلب فعلي.</p>}
-  <div className="rounded-2xl border bg-card p-2 sm:p-3">
-   <div className="flex items-center gap-2"><select aria-label="ترتيب المنتجات" value={sort} onChange={e=>setSort(e.target.value)} className="field min-h-11 min-w-0 flex-1 text-xs"><option value="popular" disabled={!approved.some(row=>row.popularity_rank!==undefined)}>الأكثر رواجاً</option><option value="featured">مختارات يومياتي</option><option value="low">السعر: الأقل أولاً</option><option value="high">السعر: الأعلى أولاً</option></select><button type="button" aria-expanded={filtersOpen} aria-controls="category-filters" onClick={()=>setFiltersOpen(v=>!v)} className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold sm:hidden"><SlidersHorizontal className="h-4 w-4" aria-hidden="true"/>تصفية{(query||minPrice||maxPrice)?" •":""}</button></div>
-   <div id="category-filters" className={(filtersOpen?"grid":"hidden")+" mt-2 gap-2 sm:grid sm:grid-cols-3"}><input type="search" aria-label="البحث في هذا القسم" placeholder="ابحثي في هذا القسم" value={query} onChange={e=>setQuery(e.target.value)} className="field min-h-11 min-w-0 text-sm sm:col-span-2"/><div className="grid grid-cols-2 gap-2"><input inputMode="decimal" aria-label="أقل سعر" placeholder="من السعر" value={minPrice} onChange={e=>setMinPrice(e.target.value)} className="field min-w-0 text-xs"/><input inputMode="decimal" aria-label="أعلى سعر" placeholder="إلى السعر" value={maxPrice} onChange={e=>setMaxPrice(e.target.value)} className="field min-w-0 text-xs"/></div></div>
+  <div>
+   <div className="flex items-center gap-2"><select aria-label={copy.sortLabel} value={sort} onChange={e=>setSort(e.target.value)} className="field min-h-11 min-w-0 flex-1 text-sm sm:max-w-xs">{approved.some(row=>row.popularity_rank!==undefined)&&<option value="popular">الأكثر رواجاً</option>}<option value="featured">{copy.sortFeatured}</option><option value="low">{copy.sortLow}</option><option value="high">{copy.sortHigh}</option></select><button type="button" aria-expanded={filtersOpen} aria-controls="category-filters" onClick={()=>setFiltersOpen(v=>!v)} className="btn-quiet shrink-0"><SlidersHorizontal className="h-4 w-4" aria-hidden="true"/>{copy.filter}{(query||minPrice||maxPrice)?" •":""}</button></div>
+   <div id="category-filters" className={(filtersOpen?"grid":"hidden")+" mt-2 gap-2 sm:grid-cols-3"}><input type="search" aria-label={copy.searchInSection} placeholder={copy.searchInSection} value={query} onChange={e=>setQuery(e.target.value)} className="field min-h-11 min-w-0 text-sm sm:col-span-2"/><div className="grid grid-cols-2 gap-2"><input inputMode="decimal" aria-label="أقل سعر" placeholder={copy.priceFrom} value={minPrice} onChange={e=>setMinPrice(e.target.value)} className="field min-w-0 text-sm"/><input inputMode="decimal" aria-label="أعلى سعر" placeholder={copy.priceTo} value={maxPrice} onChange={e=>setMaxPrice(e.target.value)} className="field min-w-0 text-sm"/></div></div>
   </div>
-  {!approved.some(row=>row.popularity_rank!==undefined)&&<p className="hidden text-xs text-muted-foreground sm:block">سيُتاح ترتيب الأكثر رواجاً عند توفر بيانات طلبات موثّقة لهذا المتجر.</p>}
-  {invalidPrice&&<p role="alert" className="text-sm text-destructive">تحققي من نطاق السعر.</p>}{!invalidPrice&&!shown.length&&<p role="status" className="rounded-xl border p-4 text-sm">لا توجد نتائج مطابقة. جرّبي تعديل البحث أو نطاق السعر.</p>}
-  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-   {shown.slice(0,visibleCount).map(item=><article key={item.listing_id} className="overflow-hidden rounded-2xl border bg-card">
-    <a href={"/"+market+"/p/"+encodeURIComponent(item.slug)} aria-label={item.title} className="flex aspect-square items-center justify-center bg-muted">
-      {imageByListing.get(item.listing_id)?<img src={imageByListing.get(item.listing_id)!.url} alt={imageByListing.get(item.listing_id)!.alt||item.title} width={360} height={360} loading="lazy" decoding="async" className="h-full w-full object-contain"/>:<ImageOff className="h-9 w-9 text-muted-foreground/60" aria-hidden="true"/>}
-    </a>
-    <div className="space-y-2 p-4">
-     <h3 className="line-clamp-2 text-sm font-bold leading-6"><a href={"/"+market+"/p/"+encodeURIComponent(item.slug)}>{item.title}</a></h3>
-     <p className="text-sm font-extrabold text-primary">{formatListingPrice(item,market)}</p>
-    </div>
-   </article>)}
+  {invalidPrice&&<p role="alert" className="text-sm text-destructive">{copy.priceRangeError}</p>}{!invalidPrice&&!shown.length&&<p role="status" className="ym-card p-4 text-sm">{copy.noResults}</p>}
+  <div className={gridClass}>
+   {shown.slice(0,visibleCount).map((item,i)=><ProductTile key={item.listing_id} item={item} market={market} image={imageByListing.get(item.listing_id)??listingImage(item)} eager={i<2}/>)}
   </div>
-  {shown.length>visibleCount&&<div className="text-center"><button className="btn-outline" onClick={()=>setVisibleCount(n=>n+16)}>عرض المزيد من المنتجات</button></div>}
+  {shown.length>visibleCount&&<div className="pt-2 text-center"><button className="btn-outline" onClick={()=>setVisibleCount(n=>n+16)}>{copy.loadMore}</button></div>}
  </section>;
 }

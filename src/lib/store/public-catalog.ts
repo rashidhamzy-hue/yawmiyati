@@ -8,7 +8,13 @@ export type PublicListing={listing_id:string;slug:string;title:string;price_mino
  /** Optional owner-approved ranking derived from verified market activity; never inferred from views. */
  popularity_rank?:number;
  /** Picture id of the first released picture; served from /media/p/. */
- image?:string};
+ image?:string;
+ /** Brain merchandising order inside the market (1 = strongest pick). Never a sales claim. */
+ rank?:number;
+ /** "bundle" only for a supplier-declared bundle whose contents are known. */
+ kind?:"bundle";
+ /** True when an owner-approved quantity offer exists for this listing. */
+ offer?:boolean};
 export function parsePublicListings(data:unknown,market:MarketCode):PublicListing[]{
  if(!Array.isArray(data)||data.length>100)throw Error("Invalid catalog response");
  const seen=new Set<string>();
@@ -26,10 +32,14 @@ export function parsePublicListings(data:unknown,market:MarketCode):PublicListin
    new Set(categories).size!==categories.length
   ))throw Error("Unapproved or invalid category assignments");
   if(r.popularity_rank!==undefined&&(!Number.isSafeInteger(r.popularity_rank)||Number(r.popularity_rank)<1))throw Error("Invalid popularity rank");
+  if(r.rank!==undefined&&r.rank!==null&&(!Number.isSafeInteger(r.rank)||Number(r.rank)<1))throw Error("Invalid merchandising rank");
+  if(r.kind!==undefined&&r.kind!==null&&r.kind!=="bundle")throw Error("Invalid listing kind");
+  if(r.offer!==undefined&&r.offer!==null&&typeof r.offer!=="boolean")throw Error("Invalid offer flag");
   return {listing_id:r.listing_id,slug:r.slug,title:r.title,price_minor:r.price_minor,currency:r.currency,
     ...(declared?{approved_category_slugs:[...(categories as PublicCategorySlug[])]}:{}),
     ...(r.popularity_rank!==undefined?{popularity_rank:r.popularity_rank as number}:{}),
-    ...(typeof r.image==="string"?{image:r.image}:{})};
+    ...(typeof r.image==="string"?{image:r.image}:{}),
+    ...(typeof r.rank==="number"?{rank:r.rank}:{}),...(r.kind==="bundle"?{kind:"bundle" as const}:{}),...(r.offer===true?{offer:true}:{})};
  });
 }
 export const storefrontMode=(origin:unknown,key:unknown,demo:unknown)=>typeof origin==="string"&&origin&&typeof key==="string"&&key?"catalog":!origin&&!key&&demo==="true"?"demo":"unconfigured";
@@ -52,6 +62,13 @@ export function formatListingPrice(row:PublicListing,market:MarketCode){
  pieces.forEach((part,i)=>{if(part.type==="integer"||part.type==="group")lastInteger=i;});
  if(lastInteger<0)throw Error("Currency formatting unavailable");
  return pieces.map((part,i)=>part.value+(i===lastInteger?decimal+fractional:"")).join("");
+}
+/** Compact shopper price: whole amounts drop the empty fraction ("٢٢٥ ر.س."), exact otherwise. */
+export function formatPrice(priceMinor:string|bigint|number,market:MarketCode){
+ const info=markets[market],amount=BigInt(priceMinor),unit=10n**BigInt(info.minorDigits);
+ if(amount<0n)throw Error("Invalid amount");
+ if(amount%unit!==0n)return formatListingPrice({listing_id:"-",slug:"-",title:"-",price_minor:amount.toString(),currency:info.currency},market);
+ return new Intl.NumberFormat(info.locale,{style:"currency",currency:info.currency,minimumFractionDigits:0,maximumFractionDigits:0}).format(amount/unit);
 }
 // Coalesce concurrent reads only. Never cache released inventory across requests.
 const pendingCatalogs=new Map<string,Promise<PublicListing[]>>();
