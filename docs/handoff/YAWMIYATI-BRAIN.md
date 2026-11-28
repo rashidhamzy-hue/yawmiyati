@@ -22,6 +22,9 @@ Owner decisions (26 Nov 2026, voice + chat): build the brain before the TasteWP 
 - **Women-only audience** (`audienceCheck` in `selection.ts`, title only): men's products, car accessories, power tools/welding, gaming, fishing/hunting and off-brand gear (surveillance kits, computers, construction, farm, power stations) are excluded with reason `not_for_audience:<kind>`; products outside the six lifestyle departments rank at half weight. Unisex items, "for home and car" items and children's items stay (mothers buy them). On the 27 Nov sync this removes 388 Saudi and 85 Iraqi products.
 - Kill rules narrowed after the 27 Nov Saudi sync (false positives: "micro fiber" as vape, "unisex" as sexual, soil activator, heat/sterilising guns, insect zappers, phone cases, pill organisers).
 
+## Planning delivery rate (28 Nov 2026)
+Order of precedence: the owner's `brain_settings.delivery_rate_bps` → Taager's market median from the run's catalogue (`run.summary.prefilter.taager_success_median_bps`, confirmed × delivered over products with data, needs ≥ 20 products) → `MARKETS[m].defaultDeliveryRateBps`. A product with its own Taager figures is blended 50/50 with that base (Taager gives no order counts). 27 Nov sync: Saudi 32%, Iraq 33% of placed orders delivered (cautious reading; G1 and the first real weeks of orders replace it).
+
 ## Money model (Taager published policy)
 Customer pays product price + Taager delivery fee (SA 28 SAR, AE 19 AED, OM 3 OMR, EG 95–105 EGP, IQ 7,000 IQD). Delivered profit = price − Taager cost; Saudi: 15 % of profit added above Taager's minimum is deducted (VAT; none below the minimum). Refused order: no profit; Egypt charges 5 EGP. Free delivery = we absorb the fee. Expected profit per submitted order uses a planning delivery rate (SA/AE 75 %, OM/IQ 70 %, EG 65 %) until real orders exist. All money is integer minor units. Code: `supabase/functions/_shared/brain/economics.ts`.
 
