@@ -1,9 +1,9 @@
 import {riskCheck as riskCheckForTest} from "../../supabase/functions/_shared/brain/selection.ts";
 import {describe,expect,it} from "vitest";
-import {MARKETS,decimalToMinor,minorToDecimal} from "../../supabase/functions/_shared/brain/markets.ts";
+import {MARKETS,decimalToMinor,minorToDecimal,usdToMinor} from "../../supabase/functions/_shared/brain/markets.ts";
 import {normalizeWoo,findVideos,flattenMeta} from "../../supabase/functions/_shared/brain/woo-normalize.ts";
 import {capabilityReport,economicsInputs,familyKey,heuristicMapping,offerKind,titleClaimedPieces} from "../../supabase/functions/_shared/brain/catalog-analysis.ts";
-import {decidePrice,expectedPerOrder,freeDeliveryThreshold,pricePoints,profitDelivered,quantityOffers} from "../../supabase/functions/_shared/brain/economics.ts";
+import {decidePrice,expectedPerOrder,floorMinor,freeDeliveryThreshold,marginBps,marketReference,netPerDelivered,pricePoints,profitDelivered,quantityOffers,reprice,undeliveredCostPerDelivered} from "../../supabase/functions/_shared/brain/economics.ts";
 import {audienceCheck,mapCategory,prefilter,riskCheck,selectFinal,merchandise} from "../../supabase/functions/_shared/brain/selection.ts";
 import {costOf,extractJson,estimateMax} from "../../supabase/functions/_shared/brain/anthropic.ts";
 import {parseContent,parseResearch,parseMapping} from "../../supabase/functions/_shared/brain/prompts.ts";
@@ -105,14 +105,15 @@ describe("Taager economics",()=>{
    {retailer:"noon",url:"https://noon.com/x",price_minor:13900,match:"exact",confidence:0.8}]});
   expect(d.state).toBe("priced");
   expect(d.price_minor!).toBeGreaterThan(4500);
-  expect(d.customer_total_minor).toBe(d.price_minor!+2800);
+  expect(d.customer_total_minor).toBe(d.price_minor!+(d.delivery_included?0:2800));
   expect(d.competitor_basis).toBe("exact");
   expect(d.profit_delivered_minor!).toBeGreaterThan(0);
   expect(decidePrice({inputs:{cost_minor:null,floor_minor:7900,suggested_minor:null},m:sa,competitors:[]}).state).toBe("blocked");
   const none=decidePrice({inputs:{cost_minor:4500,floor_minor:7900,suggested_minor:null},m:sa,competitors:[]});
   expect(none.price_minor).toBe(7900);expect(none.needs_owner_review).toBe(true);
   const sug=decidePrice({inputs:{cost_minor:4500,floor_minor:7900,suggested_minor:9900},m:sa,competitors:[]});
-  expect(sug.price_minor).toBe(9900);
+  expect(sug.price_minor).toBe(8900); // Taager's default (99) would be a 51% margin: moved to the top of the band
+  expect(sug.margin_on_price_pct!).toBeLessThanOrEqual(50);
   // Taager's minimum profit is 0 and no shop found: needs research, never a blind markup.
   expect(decidePrice({inputs:{cost_minor:4500,floor_minor:4500,suggested_minor:null},m:sa,competitors:[]})).toMatchObject({state:"blocked",blocked_reason:"needs_market_research"});
  });
@@ -123,10 +124,83 @@ describe("Taager economics",()=>{
   expect(low.taager_position).toBe("below_minimum");expect(low.notes.join(" ")).toMatch(/test order/);
   const high=decidePrice({inputs:{cost_minor:3500,floor_minor:6000,suggested_minor:null,max_minor:6500},m:sa,competitors:market(14900)});
   expect(high.price_minor!).toBeGreaterThan(6500);expect(high.taager_position).toBe("above_maximum");
-  // Market below our cost: priced dearer (still profitable) or blocked, never a loss.
+  // Market below our cost: priced dearer (still earning the floor) and marked, never a loss.
   const under=decidePrice({inputs:{cost_minor:9000,floor_minor:9500,suggested_minor:null},m:sa,competitors:market(5900)});
-  if(under.state==="priced")expect(under.profit_delivered_minor!).toBeGreaterThan(0);
+  expect(under.profit_delivered_minor!).toBeGreaterThanOrEqual(floorMinor(sa));expect(under.price_blocks_sales).toBe(true);expect(under.positioning).toBe("dearer");
  });
+});
+
+describe("margin band (owner rule, 28 Nov 2026)",()=>{
+ const sa=MARKETS.sa;
+ const shops=(...prices:number[])=>prices.map((p,i)=>({retailer:"shop"+i,url:"https://shop"+i+".sa/x",price_minor:p,match:"exact" as const,confidence:0.9}));
+ const inBand=(d:ReturnType<typeof decidePrice>)=>d.margin_on_price_pct!>=15&&d.margin_on_price_pct!<=50;
+ it("counts margin per delivered order after cost, Saudi VAT and undelivered orders",()=>{
+  // Saudi: 15% of what is above Taager's minimum. 109 - 45 - 15% x (109 - 79) = 59.5
+  expect(netPerDelivered(10900,{cost_minor:4500,floor_minor:7900},sa,7500)).toBe(5950);
+  // Egypt: 5 EGP per refusal; at a 50% delivery rate each delivered order carries one refusal.
+  expect(undeliveredCostPerDelivered(5000,MARKETS.eg)).toBe(500);
+  expect(netPerDelivered(40000,{cost_minor:30000,floor_minor:null},MARKETS.eg,5000)).toBe(9500);
+  expect(netPerDelivered(40000,{cost_minor:30000,floor_minor:null},MARKETS.eg,5000,true)).toBe(-500);
+  expect(marginBps(1500,10000)).toBe(1500);
+ });
+ it("lands just under the cheapest credible shop while inside the band",()=>{
+  const d=decidePrice({inputs:{cost_minor:4500,floor_minor:7900,suggested_minor:null},m:sa,competitors:shops(11900,12900,13900)});
+  expect(d.customer_total_minor!).toBeLessThanOrEqual(Math.floor(11900*0.98));
+  expect(d.positioning).toBe("cheaper");expect(inBand(d)).toBe(true);expect(d.band_exception).toBeNull();
+  expect(d.competitor_cheapest_minor).toBe(11900);expect(d.competitor_reference_minor).toBe(12900);
+  // The highest such price, not the lowest: 89 + 28 = 117 would be above 116.62, so 79.
+  expect(d.price_minor).toBe(7900);
+ });
+ it("ignores unreliable sellers and prices far off the rest",()=>{
+  const junk=[...shops(11900,12900,13900),{retailer:"reseller",url:"https://r.sa/x",price_minor:1900,match:"exact" as const,confidence:0.9},
+   {retailer:"nopolicy",url:"https://n.sa/x",price_minor:6900,match:"exact" as const,confidence:0.9,credible:false}];
+  const ref=marketReference(junk);
+  expect(ref).toMatchObject({basis:"exact",count:3,ignored:2,cheapest_minor:11900,median_minor:12900});
+  // A stated delivery charge is part of the shop's door total.
+  expect(marketReference([{...shops(9900)[0],delivery_minor:1500}]).cheapest_minor).toBe(11400);
+  // Similar items are a weaker anchor: 10% allowance, and exact matches win when both exist.
+  expect(marketReference([{...shops(10000)[0],match:"similar"}]).cheapest_minor).toBe(11000);
+ });
+ it("spends room above the band on delivery included, not on a lower headline price",()=>{
+  const d=decidePrice({inputs:{cost_minor:2000,floor_minor:4000,suggested_minor:null},m:sa,competitors:shops(14900,15900)});
+  expect(d.delivery_included).toBe(true);expect(inBand(d)).toBe(true);
+  expect(d.customer_total_minor).toBe(d.price_minor);expect(d.price_minor!).toBeLessThanOrEqual(Math.floor(14900*0.98));
+  expect(d.headroom_minor!).toBeGreaterThan(0);expect(d.notes.join(" ")).toMatch(/delivery included/);
+  // It earns more than the band's top price without delivery would.
+  const plain=netPerDelivered(4900,{cost_minor:2000,floor_minor:4000},sa,7500);
+  expect(d.profit_delivered_minor!).toBeGreaterThan(plain);
+ });
+ it("keeps the US$2 floor on every listing and writes the reason when that breaks the band",()=>{
+  const cheap=decidePrice({inputs:{cost_minor:300,floor_minor:900,suggested_minor:null},m:sa,competitors:shops(3900,4900)});
+  expect(cheap.profit_delivered_minor!).toBeGreaterThanOrEqual(750);
+  expect(cheap.band_exception).toMatchObject({kind:"above_band"});expect(cheap.band_exception!.reason).toMatch(/US\$2 floor/);
+  expect(cheap.needs_owner_review).toBe(true);
+  for(const m of Object.values(MARKETS)){
+   const d=decidePrice({inputs:{cost_minor:usdToMinor(6,m),floor_minor:usdToMinor(8,m),suggested_minor:null},m,competitors:[]});
+   expect(d.state).toBe("priced");expect(d.profit_delivered_minor!).toBeGreaterThanOrEqual(floorMinor(m));expect(inBand(d)).toBe(true);
+  }
+ });
+ it("stays in the band when shops are cheaper, marks it and offers the under-band price as an option",()=>{
+  const d=decidePrice({inputs:{cost_minor:8000,floor_minor:8500,suggested_minor:null},m:sa,competitors:shops(12500,12900)});
+  expect(inBand(d)).toBe(true);expect(d.positioning==="cheaper").toBe(false);
+  expect(d.below_band_option).toMatchObject({price_minor:8900});expect(d.below_band_option!.margin_on_price_pct).toBeLessThan(15);
+  expect(d.below_band_option!.profit_delivered_minor).toBeGreaterThanOrEqual(750);
+ });
+ it("re-prices after a sync: pause under the floor, change on a real move, otherwise keep",()=>{
+  const base={m:sa,competitors:shops(11900,12900)};
+  const pause=reprice({...base,current_price_minor:7900,inputs:{cost_minor:7400,floor_minor:7900,suggested_minor:null}});
+  expect(pause.action).toBe("pause");expect(pause.reason).toMatch(/under the US\$2 floor/);expect(pause.new_price_minor!).toBeGreaterThan(7900);
+  expect(reprice({...base,current_price_minor:7900,inputs:{cost_minor:4500,floor_minor:7900,suggested_minor:null}}).action).toBe("keep");
+  const up=reprice({...base,current_price_minor:5900,inputs:{cost_minor:4500,floor_minor:7900,suggested_minor:null}});
+  expect(up).toMatchObject({action:"change",new_price_minor:7900});
+  const wide=reprice({...base,current_price_minor:19900,inputs:{cost_minor:4500,floor_minor:7900,suggested_minor:null}});
+  expect(wide.action).toBe("change");expect(wide.reason).toMatch(/outside the 15-50% band/);
+  expect(reprice({...base,current_price_minor:7900,inputs:{cost_minor:null,floor_minor:null,suggested_minor:null}}).action).toBe("pause");
+ });
+});
+
+describe("free delivery threshold",()=>{
+ const sa=MARKETS.sa;
  it("proposes a free-delivery threshold only with enough products",()=>{
   expect(freeDeliveryThreshold([{price_minor:9900,profit_delivered_minor:3000}],sa)).toBeNull();
   const t=freeDeliveryThreshold(Array.from({length:10},(_,i)=>({price_minor:8900+i*1000,profit_delivered_minor:3000+i*200})),sa)!;

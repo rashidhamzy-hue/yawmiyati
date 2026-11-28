@@ -267,7 +267,7 @@ async function stageDecide(d: Deps, run: Run, m: MarketFacts, settings: Settings
   const proven = await discountsProven(d, run.store_code);
   const now = (d.now ?? Date.now)();
   const scored = rows.map((a) => {
-    const research = (a.research ?? {}) as { listings?: { retailer: string; url: string; price_minor: number; match: "exact" | "similar"; confidence: number }[]; demand_signals?: unknown[]; risks?: string[] };
+    const research = (a.research ?? {}) as { listings?: { retailer: string; url: string; price_minor: number; match: "exact" | "similar"; confidence: number; delivery_minor?: number | null; credible?: boolean }[]; demand_signals?: unknown[]; risks?: string[] };
     const listings = research.listings ?? [];
     const decision = decidePrice({ inputs: a.economics as { cost_minor: number | null; floor_minor: number | null; suggested_minor: number | null; max_minor?: number | null }, competitors: listings, m,
       deliveryRateBps: plannedSuccessBps(offers.get(key(a)), planningBaseBps(settings, run.summary, m)) });
@@ -296,6 +296,10 @@ async function stageDecide(d: Deps, run: Run, m: MarketFacts, settings: Settings
   run.summary.decision = {
     researched: rows.length, selected: chosen.length, blocked: scored.filter((x) => x.decision.state === "blocked").length,
     needs_owner_review: sel.filter((x) => x.decision.needs_owner_review).length,
+    band_exceptions: sel.filter((x) => x.decision.band_exception).length,
+    delivery_included: sel.filter((x) => x.decision.delivery_included).length,
+    price_blocks_sales: sel.filter((x) => x.decision.price_blocks_sales).length,
+    avg_margin_pct: sel.length ? Math.round((sel.reduce((s, x) => s + (x.decision.margin_on_price_pct ?? 0), 0) / sel.length) * 10) / 10 : null,
     positioning: sel.reduce((acc, x) => ((acc[x.decision.positioning ?? "unknown"] = (acc[x.decision.positioning ?? "unknown"] ?? 0) + 1), acc), {} as Record<string, number>),
     free_delivery: threshold ? { ...threshold, threshold: minorToDecimal(threshold.threshold_minor, m.minorDigits) + " " + m.currency } : null,
     avg_expected_profit_usd: sel.length ? Math.round((sel.reduce((s, x) => s + (x.decision.expected_profit_usd ?? 0), 0) / sel.length) * 100) / 100 : null,

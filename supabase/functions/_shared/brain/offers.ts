@@ -23,6 +23,8 @@ export type OfferListing = {
   sale?: TaagerSale | null;
   /** Where our price sits against other shops, from the brain's research (cheaper / matched / dearer / unknown). */
   positioning?: string | null;
+  /** The brain priced this product with the delivery fee inside the price (the cost left room above the margin band). */
+  priced_with_delivery?: boolean;
 };
 /** Both figures the owner sees: what an offer earns if Taager applies its quantity/add-on/sale price, and what it earns if not. */
 export type TwoFigures = { profit_if_taager_minor: number; profit_if_taager_usd: number; profit_full_minor: number; profit_full_usd: number; basis: "full_cost" | "taager_price" };
@@ -211,8 +213,12 @@ export function freeDeliveryPlan(listings: OfferListing[], _bundles: unknown, m:
  */
 export function deliveryIncludedProposals(listings: OfferListing[], m: MarketFacts, limit = 8): DeliveryIncludedProposal[] {
   const fee = worstDeliveryFee(m), keep = usdToMinor(2, m);
-  return listings.filter((l) => !l.is_bundle).sort((a, b) => a.rank - b.rank).map((l) => ({ l, before: profitDelivered(l.price_minor, l, m) }))
-    .filter((x) => x.before - fee >= keep && x.before - fee >= x.before * 0.35).slice(0, limit)
+  const ok = listings.filter((l) => !l.is_bundle).sort((a, b) => a.rank - b.rank).map((l) => ({ l, before: profitDelivered(l.price_minor, l, m) }))
+    .filter((x) => x.before - fee >= keep && x.before - fee >= x.before * 0.35);
+  // Products the brain priced WITH the fee inside the price always get their offer; the rest fill up to the limit.
+  const priced = ok.filter((x) => x.l.priced_with_delivery);
+  const rest = ok.filter((x) => !x.l.priced_with_delivery).slice(0, Math.max(0, limit - priced.length));
+  return [...priced, ...rest].sort((a, b) => a.l.rank - b.l.rank)
     .map((x) => ({ kind: "delivery_included" as const, listing_id: x.l.listing_id, title: x.l.title, price_minor: x.l.price_minor, profit_minor: x.before - fee, profit_usd: usd(x.before - fee, m), profit_before_minor: x.before }));
 }
 
