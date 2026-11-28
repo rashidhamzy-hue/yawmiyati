@@ -3,6 +3,7 @@
  * call need (name, mobile, city, address). Pure and unit-tested; nothing is stored or sent.
  */
 import type {MarketCode} from "./markets";
+import {chromeCopy} from "./chrome-copy";
 
 export type CodForm={name:string;phone:string;city:string;address:string;notes:string};
 export type CodField=keyof CodForm;
@@ -35,14 +36,14 @@ export function normalizePhone(market:MarketCode,raw:string):string|null{
 }
 
 export function validateCod(market:MarketCode,f:CodForm):CodErrors{
- const e:CodErrors={};
+ const e:CodErrors={},c=chromeCopy(market);
  const name=f.name.trim();
- if(name.length<3)e.name="اكتبي الاسم الكامل";
- else if(/\d/.test(toLatinDigits(name)))e.name="الاسم لا يحتوي على أرقام";
- if(!f.phone.trim())e.phone="رقم الجوال مطلوب لتأكيد الطلب";
- else if(!normalizePhone(market,f.phone))e.phone="رقم الجوال غير صحيح، مثال: "+phoneExample(market);
- if(f.city.trim().length<2)e.city="اختاري أو اكتبي "+cityLabel[market];
- if(f.address.trim().length<8)e.address="اكتبي الحي والشارع ورقم المبنى أو أقرب معلم";
- if(f.notes.length>200)e.notes="الملاحظة طويلة، 200 حرف كحد أقصى";
+ if(name.length<3)e.name=c.errName;
+ else if(/\d/.test(toLatinDigits(name)))e.name=c.errNameDigits;
+ if(!f.phone.trim())e.phone=c.errPhoneRequired;
+ else if(!normalizePhone(market,f.phone))e.phone=c.errPhone(phoneExample(market));
+ if(f.city.trim().length<2)e.city=c.errCity(cityLabel[market]);
+ if(f.address.trim().length<8)e.address=c.errAddress;
+ if(f.notes.length>200)e.notes=c.errNote;
  return e;
 }

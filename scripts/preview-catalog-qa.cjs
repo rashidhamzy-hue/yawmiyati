@@ -41,7 +41,7 @@ async function main(){
   assert.ok(await page.getByRole("button",{name:"إتمام طلب تجريبي"}).isDisabled());
   const sample={sa:"0501234567",ae:"0501234567",om:"91234567",eg:"01012345678",iq:"07701234567"}[market];
   await page.getByLabel("الاسم الكامل").fill("عميلة تجريبية");
-  await page.getByLabel("رقم الجوال").fill(sample);
+  await page.locator('input[name="tel"]').fill(sample);
   await page.locator('input[name="city"]').fill("مدينة اختبار");
   await page.getByLabel("العنوان بالتفصيل").fill("حي الاختبار، شارع ١، مبنى ٢");
   await page.getByRole("button",{name:"إتمام طلب تجريبي"}).click();
