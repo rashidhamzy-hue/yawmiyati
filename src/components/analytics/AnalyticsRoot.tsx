@@ -13,10 +13,14 @@ export function AnalyticsRoot(){
  useEffect(()=>{startErrorMonitoring();try{captureAttribution();}catch{/* never block the page */}},[]);
  useEffect(()=>{
   if(!analyticsEnabled())return;
-  // Start after the page has fully loaded and settled, so analytics never competes
-  // with the hero image or fonts on slow mobile connections.
-  const start=()=>{setTimeout(()=>{void initAnalytics();},2500);};
-  if(document.readyState==="complete")start();else window.addEventListener("load",start,{once:true});
+  // Start on her first interaction, or six seconds after the page has fully loaded, whichever comes first:
+  // the analytics library never competes with the hero picture, fonts or hydration on slow phones.
+  let done=false;
+  const events=["pointerdown","keydown","touchstart","scroll"] as const;
+  const go=()=>{if(done)return;done=true;events.forEach(e=>window.removeEventListener(e,go));void initAnalytics();};
+  events.forEach(e=>window.addEventListener(e,go,{once:true,passive:true}));
+  const later=()=>{window.setTimeout(go,6000);};
+  if(document.readyState==="complete")later();else window.addEventListener("load",later,{once:true});
   setAskConsent(readConsent()==="unknown");
  },[]);
  useEffect(()=>{trackPageview();},[pathname]);

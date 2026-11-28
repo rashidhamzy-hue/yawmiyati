@@ -2,7 +2,8 @@ import type {MarketCode} from "@/lib/store/markets";
 import type {PublicListing} from "@/lib/store/public-catalog";
 import {shopCopy} from "@/lib/store/shop-copy";
 import {ProductRail,ProductTile,gridClass} from "./ProductTile";
-import {ViewedRail} from "./ProductRecommendations";
+import {lazy,Suspense} from "react";
+const ViewedRail=lazy(()=>import("./ProductRecommendations").then(m=>({default:m.ViewedRail})));
 
 /**
  * Home merchandising from the released catalogue only: the first picks as a grid, then one rail per
@@ -15,7 +16,7 @@ export function HomeShelves({market,rows,categories}:{market:MarketCode;rows:rea
  return <>
   <div className={"mt-5 "+gridClass}>{picks.map((item,i)=><ProductTile key={item.listing_id} item={item} market={market} eager={i<2}/>)}</div>
   {rows.length>picks.length&&<div className="mt-8 text-center"><a href={path+"/search"} className="btn-outline">{copy.allProducts}</a></div>}
-  <ViewedRail market={market} rows={rows}/>
+  <Suspense fallback={null}><ViewedRail market={market} rows={rows}/></Suspense>
   <div className="-mx-4 mt-4 sm:-mx-6 lg:-mx-8">{rails.map(({c,items})=>{
    // Prefer products not already shown in the picks so every rail adds something new.
    const fresh=[...items.filter(i=>!picked.has(i.listing_id)),...items.filter(i=>picked.has(i.listing_id))].slice(0,10);

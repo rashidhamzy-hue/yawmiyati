@@ -1,5 +1,5 @@
 import {StoreFrame} from "./StoreChrome";
-import {ShoppingAssistant} from "./ShoppingAssistant";
+import {ShoppingAssistant} from "./ShoppingAssistantDeferred";
 import {ApprovedCategoryProductGrid} from "./ApprovedCategoryProductGrid";
 import {img} from "@/lib/store/images";
 import {editorialSrcSet} from "@/lib/store/editorial-srcset";

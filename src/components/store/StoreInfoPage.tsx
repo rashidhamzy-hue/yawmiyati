@@ -1,6 +1,6 @@
 import {customerServiceCopy} from "@/lib/store/customer-service-copy";
 import {paymentAnswer} from "../../../supabase/functions/_shared/payment-policy";
-import {ShoppingAssistant} from "./ShoppingAssistant";
+import {ShoppingAssistant} from "./ShoppingAssistantDeferred";
 import {StoreFrame} from "./StoreChrome";
 import type {MarketCode} from "@/lib/store/markets";
 import {ChevronDown,HelpCircle,ShieldCheck,Truck,FileText,ArrowLeft,Search,LockKeyhole,MessageCircle} from "lucide-react";
