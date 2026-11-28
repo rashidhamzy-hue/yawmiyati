@@ -8,6 +8,8 @@ import {customerServiceCopy} from "@/lib/store/customer-service-copy";
 import {useOfferVersions} from "@/lib/store/offer-source";
 import {useOfferCart} from "@/lib/store/offer-cart";
 import {OfferCartPage} from "./OfferCartPage";
+import {ShopCartPage} from "./ShopCartPage";
+import {useShopCart} from "@/lib/store/shop-cart";
 const content={
  cart:{eyebrow:"سلة يومياتي",title:"سلتك بانتظار اختياراتك",desc:"تصفّحي الأقسام واختاري المنتجات اللي تناسبك. تظهر خيارات الطلب للمنتجات القابلة للشراء فقط.",image:img["cat-home"],alt:"أفكار منزلية دافئة",icon:ShoppingBag},
  checkout:{eyebrow:"إتمام الطلب",title:"راجعي تفاصيل سلتك",desc:"لا توجد منتجات قابلة لإتمام الطلب في هذه السلة. لا نطلب معلومات الدفع أو العنوان قبل توفر طلب صالح.",image:img["cat-kitchen"],alt:"تفاصيل ركن القهوة",icon:ShieldCheck},
@@ -25,6 +27,9 @@ export function StoreCommerceGuard({market,type}:{market:MarketCode;type:keyof t
  // state when this market's cart holds selections. Orders are never submitted.
  const offers=useOfferVersions(market),offerCart=useOfferCart(market);
  if(type!=="order"&&offers.state==="ready"&&offerCart.lines.length)return <StoreFrame market={market} focused={type==="checkout"}><OfferCartPage market={market} type={type} versions={offers.versions}/></StoreFrame>;
+ // Released products chosen in this browser: the real cart and order form (order submission itself stays off).
+ const shopCart=useShopCart(market);
+ if(type!=="order"&&offers.state==="off"&&shopCart.lines.length)return <StoreFrame market={market} focused={type==="checkout"}><ShopCartPage market={market} type={type}/></StoreFrame>;
  const entry=content[type],Icon=entry.icon,path="/"+market;
  const copy=customerServiceCopy[market];
  return <StoreFrame market={market}>

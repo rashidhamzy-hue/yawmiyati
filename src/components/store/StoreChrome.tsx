@@ -3,6 +3,8 @@ import type {ReactNode} from "react";
 import {ChevronDown,Home,LayoutGrid,Menu,Search,ShoppingBag,X,HelpCircle} from "lucide-react";
 import {useOfferVersions} from "@/lib/store/offer-source";
 import {useOfferCart} from "@/lib/store/offer-cart";
+import {cartCount,useShopCart} from "@/lib/store/shop-cart";
+import {shopCopy} from "@/lib/store/shop-copy";
 import {StoreSearchOverlay} from "./StoreSearchOverlay";
 import {marketIdentity} from "@/lib/store/market-identity";
 import {marketExperience} from "@/lib/store/market-experience";
@@ -16,6 +18,18 @@ function OfferCartLink({market}:{market:MarketCode}){
  const offers=useOfferVersions(market),cart=useOfferCart(market);
  if(offers.state!=="ready"||!cart.lines.length)return null;
  return <a href={"/"+market+"/cart"} aria-label={"السلة، "+cart.lines.length+" منتج"} className="tap relative grid place-items-center rounded-full border border-border bg-card transition-colors hover:border-primary/40 hover:text-primary"><ShoppingBag className="h-[19px] w-[19px]"/><span className="absolute -left-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-extrabold text-primary-foreground" data-offer-cart-count>{cart.lines.length}</span></a>;
+}
+/** Cart shortcut for released products chosen in this browser; hidden while the cart is empty. */
+function ShopCartLink({market}:{market:MarketCode}){
+ const count=cartCount(useShopCart(market));
+ if(!count)return null;
+ return <a href={"/"+market+"/cart"} aria-label={shopCopy(market).cart+"، "+shopCopy(market).itemsCount(count)} className="tap relative grid place-items-center rounded-full border border-border bg-card transition-colors hover:border-primary/40" data-shop-cart-link=""><ShoppingBag className="h-[19px] w-[19px]"/><span className="absolute -left-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-bold text-primary-foreground">{count}</span></a>;
+}
+function MobileCartOrHelp({market}:{market:MarketCode}){
+ const count=cartCount(useShopCart(market)),path="/"+market;
+ const cls="flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-primary";
+ return count?<a href={path+"/cart"} className={cls+" relative"}><span className="relative"><ShoppingBag className="h-5 w-5"/><span className="absolute -left-2 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] text-primary-foreground">{count}</span></span>{shopCopy(market).cart}</a>
+  :<a href={path+"/info/help"} className={cls}><HelpCircle className="h-5 w-5"/>المساعدة</a>;
 }
 export function StoreHeader({market}:{market:MarketCode}){
  const [menu,setMenu]=useState(false);
@@ -62,7 +76,7 @@ export function StoreHeader({market}:{market:MarketCode}){
       <p className="border-t px-3 py-2 text-[11px] leading-5 text-muted-foreground">كل متجر يعرض الأسعار والمنتجات الخاصة ببلده.</p>
      </div>
     </details>
-    <OfferCartLink market={market}/>
+    <OfferCartLink market={market}/><ShopCartLink market={market}/>
     <button type="button" onClick={()=>setSearchOpen(true)} aria-label="افتح بحث يومياتي" aria-haspopup="dialog" className="tap grid place-items-center rounded-full border border-border bg-card transition-colors hover:border-primary/40 hover:text-primary"><Search className="h-[19px] w-[19px]"/></button>
     <button type="button" className="tap grid place-items-center rounded-full border border-border bg-card transition-colors hover:border-primary/40 lg:hidden" onClick={()=>setMenu(v=>!v)} aria-label={menu?"إغلاق القائمة":"فتح القائمة"} aria-expanded={menu} aria-controls="mobile-yawmiyati-menu">{menu?<X className="h-5 w-5"/>:<Menu className="h-5 w-5"/>}</button>
    </div>
@@ -83,7 +97,7 @@ export function StoreFooter({market}:{market:MarketCode}){
   <a href={path} className="flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-bold text-primary"><Home className="h-5 w-5"/>الرئيسية</a>
   <a href={path+"/#discover"} className="flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-primary"><LayoutGrid className="h-5 w-5"/>الأقسام</a>
   <button type="button" onClick={()=>document.dispatchEvent(new CustomEvent("yawmiyati:open-search"))} className="flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-primary"><Search className="h-5 w-5"/>البحث</button>
-  <a href={path+"/info/help"} className="flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-primary"><HelpCircle className="h-5 w-5"/>المساعدة</a>
+  <MobileCartOrHelp market={market}/>
  </nav></>;
 }
 /** `focused` drops the footer and mobile bottom nav so checkout has one job: finishing the order. */
