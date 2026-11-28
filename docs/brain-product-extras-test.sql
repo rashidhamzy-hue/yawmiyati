@@ -1,3 +1,5 @@
+-- NOTE (28 Nov 2026, later): quantity offers now also need the owner to approve that exact offer; see docs/store-offers-test.sql,
+-- which supersedes the quantity-offer assertions below.
 -- Rollback-only fixture test for supabase/migrations/20261128060000_brain_product_extras.sql (staging only).
 -- Proves: supplier-hosted videos only (deduplicated, max 3), quantity offers kept only above full unit cost and
 -- below buying singly, re-checked against Taager's current cost on every read; bundle contents only from

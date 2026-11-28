@@ -11,7 +11,7 @@ import {marketExperience} from "@/lib/store/market-experience";
 import {markets,type MarketCode} from "@/lib/store/markets";
 
 const countryCodes:MarketCode[]=["sa","ae","om","eg","iq"];
-const navLinks=[["الأقسام","#discover"],["كل المنتجات","/search"],["قصتنا","/story"],["الأسئلة الشائعة","#questions"]] as const;
+const navLinks=[["الأقسام","#discover"],["كل المنتجات","/search"],["العروض","/offers"],["قصتنا","/story"],["الأسئلة الشائعة","#questions"]] as const;
 
 /** Cart shortcut appears only while approved offers are active and this market's cart has selections. */
 function OfferCartLink({market}:{market:MarketCode}){
@@ -89,7 +89,7 @@ export function StoreFooter({market}:{market:MarketCode}){
  return <><footer className="bg-foreground pb-16 text-background md:pb-0">
   <div className="mx-auto grid max-w-7xl gap-6 px-4 py-9 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.4fr_1fr_1fr] lg:px-8">
    <div><a href={path} className="font-display text-3xl font-extrabold">يومياتي<span className="text-gold">.</span></a><p className="mt-4 max-w-xs text-sm leading-8 text-white/75">{marketExperience[market].footerDescription}</p><p className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-2 text-xs text-white/80">{identity.fullName} <span className="text-white/40">|</span> {identity.currencyLabel}</p></div>
-   <nav aria-label="روابط المتجر"><h2 className="font-bold">اكتشفي يومياتي</h2><div className="mt-4 grid gap-3 text-sm text-white/75"><a href={path+"#discover"} className="hover:text-white">تسوقي حسب القسم</a><a href={path+"/search"} className="hover:text-white">كل المنتجات</a><a href={path+"/story"} className="hover:text-white">قصتنا</a><a href={path+"/info/help"} className="hover:text-white">مركز المساعدة</a></div></nav>
+   <nav aria-label="روابط المتجر"><h2 className="font-bold">اكتشفي يومياتي</h2><div className="mt-4 grid gap-3 text-sm text-white/75"><a href={path+"#discover"} className="hover:text-white">تسوقي حسب القسم</a><a href={path+"/search"} className="hover:text-white">كل المنتجات</a><a href={path+"/offers"} className="hover:text-white">العروض والأطقم</a><a href={path+"/story"} className="hover:text-white">قصتنا</a><a href={path+"/info/help"} className="hover:text-white">مركز المساعدة</a></div></nav>
    <nav aria-label="السياسات والبلدان"><h2 className="font-bold">معلومات تهمك</h2><div className="mt-4 grid gap-3 text-sm text-white/75"><a href={path+"/info/shipping-returns"} className="hover:text-white">الدفع والتوصيل والاسترجاع</a><a href={path+"/info/privacy"} className="hover:text-white">سياسة الخصوصية</a><a href={path+"/info/terms"} className="hover:text-white">شروط الاستخدام</a></div><div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-0">{countryCodes.map(code=><a key={code} href={"/"+code} aria-label={"متجر "+marketIdentity[code].fullName} aria-current={market===code?"page":undefined} className={"inline-flex min-h-11 items-center text-sm transition-colors hover:text-white focus-visible:outline-offset-2 "+(market===code?"font-bold text-white underline underline-offset-8":"text-white/75")}>{marketIdentity[code].name}</a>)}</div></nav>
   </div>
   <div className="border-t border-white/15 px-4 py-5 text-center text-xs text-white/65">© ٢٠٢٦ يومياتي. جميع الحقوق محفوظة.</div>

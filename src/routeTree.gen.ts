@@ -15,49 +15,59 @@ import { Route as SaRouteImport } from './routes/sa'
 import { Route as AeIndexRouteImport } from './routes/ae.index'
 import { Route as AeCartRouteImport } from './routes/ae.cart'
 import { Route as AeCheckoutRouteImport } from './routes/ae.checkout'
+import { Route as AeOffersRouteImport } from './routes/ae.offers'
 import { Route as AeSearchRouteImport } from './routes/ae.search'
 import { Route as AeStoryRouteImport } from './routes/ae.story'
 import { Route as EgIndexRouteImport } from './routes/eg.index'
 import { Route as EgCartRouteImport } from './routes/eg.cart'
 import { Route as EgCheckoutRouteImport } from './routes/eg.checkout'
+import { Route as EgOffersRouteImport } from './routes/eg.offers'
 import { Route as EgSearchRouteImport } from './routes/eg.search'
 import { Route as EgStoryRouteImport } from './routes/eg.story'
 import { Route as IqIndexRouteImport } from './routes/iq.index'
 import { Route as IqCartRouteImport } from './routes/iq.cart'
 import { Route as IqCheckoutRouteImport } from './routes/iq.checkout'
+import { Route as IqOffersRouteImport } from './routes/iq.offers'
 import { Route as IqSearchRouteImport } from './routes/iq.search'
 import { Route as IqStoryRouteImport } from './routes/iq.story'
 import { Route as OmIndexRouteImport } from './routes/om.index'
 import { Route as OmCartRouteImport } from './routes/om.cart'
 import { Route as OmCheckoutRouteImport } from './routes/om.checkout'
+import { Route as OmOffersRouteImport } from './routes/om.offers'
 import { Route as OmSearchRouteImport } from './routes/om.search'
 import { Route as OmStoryRouteImport } from './routes/om.story'
 import { Route as SaIndexRouteImport } from './routes/sa.index'
 import { Route as SaCartRouteImport } from './routes/sa.cart'
 import { Route as SaCheckoutRouteImport } from './routes/sa.checkout'
 import { Route as SaHelpRouteImport } from './routes/sa.help'
+import { Route as SaOffersRouteImport } from './routes/sa.offers'
 import { Route as SaSearchRouteImport } from './routes/sa.search'
 import { Route as SaStoryRouteImport } from './routes/sa.story'
 import { Route as AeCSlugRouteImport } from './routes/ae.c.$slug'
 import { Route as AeInfoTopicRouteImport } from './routes/ae.info.$topic'
 import { Route as AeOrderIdRouteImport } from './routes/ae.order.$id'
 import { Route as AePSlugRouteImport } from './routes/ae.p.$slug'
+import { Route as AeSetSlugRouteImport } from './routes/ae.set.$slug'
 import { Route as EgCSlugRouteImport } from './routes/eg.c.$slug'
 import { Route as EgInfoTopicRouteImport } from './routes/eg.info.$topic'
 import { Route as EgOrderIdRouteImport } from './routes/eg.order.$id'
 import { Route as EgPSlugRouteImport } from './routes/eg.p.$slug'
+import { Route as EgSetSlugRouteImport } from './routes/eg.set.$slug'
 import { Route as IqCSlugRouteImport } from './routes/iq.c.$slug'
 import { Route as IqInfoTopicRouteImport } from './routes/iq.info.$topic'
 import { Route as IqOrderIdRouteImport } from './routes/iq.order.$id'
 import { Route as IqPSlugRouteImport } from './routes/iq.p.$slug'
+import { Route as IqSetSlugRouteImport } from './routes/iq.set.$slug'
 import { Route as OmCSlugRouteImport } from './routes/om.c.$slug'
 import { Route as OmInfoTopicRouteImport } from './routes/om.info.$topic'
 import { Route as OmOrderIdRouteImport } from './routes/om.order.$id'
 import { Route as OmPSlugRouteImport } from './routes/om.p.$slug'
+import { Route as OmSetSlugRouteImport } from './routes/om.set.$slug'
 import { Route as SaCSlugRouteImport } from './routes/sa.c.$slug'
 import { Route as SaInfoTopicRouteImport } from './routes/sa.info.$topic'
 import { Route as SaOrderIdRouteImport } from './routes/sa.order.$id'
 import { Route as SaPSlugRouteImport } from './routes/sa.p.$slug'
+import { Route as SaSetSlugRouteImport } from './routes/sa.set.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -89,6 +99,11 @@ const AeCheckoutRoute = AeCheckoutRouteImport.update({
   path: '/ae/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AeOffersRoute = AeOffersRouteImport.update({
+  id: '/ae/offers',
+  path: '/ae/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AeSearchRoute = AeSearchRouteImport.update({
   id: '/ae/search',
   path: '/ae/search',
@@ -112,6 +127,11 @@ const EgCartRoute = EgCartRouteImport.update({
 const EgCheckoutRoute = EgCheckoutRouteImport.update({
   id: '/eg/checkout',
   path: '/eg/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EgOffersRoute = EgOffersRouteImport.update({
+  id: '/eg/offers',
+  path: '/eg/offers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EgSearchRoute = EgSearchRouteImport.update({
@@ -139,6 +159,11 @@ const IqCheckoutRoute = IqCheckoutRouteImport.update({
   path: '/iq/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IqOffersRoute = IqOffersRouteImport.update({
+  id: '/iq/offers',
+  path: '/iq/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IqSearchRoute = IqSearchRouteImport.update({
   id: '/iq/search',
   path: '/iq/search',
@@ -162,6 +187,11 @@ const OmCartRoute = OmCartRouteImport.update({
 const OmCheckoutRoute = OmCheckoutRouteImport.update({
   id: '/om/checkout',
   path: '/om/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OmOffersRoute = OmOffersRouteImport.update({
+  id: '/om/offers',
+  path: '/om/offers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OmSearchRoute = OmSearchRouteImport.update({
@@ -194,6 +224,11 @@ const SaHelpRoute = SaHelpRouteImport.update({
   path: '/help',
   getParentRoute: () => SaRoute,
 } as any)
+const SaOffersRoute = SaOffersRouteImport.update({
+  id: '/offers',
+  path: '/offers',
+  getParentRoute: () => SaRoute,
+} as any)
 const SaSearchRoute = SaSearchRouteImport.update({
   id: '/search',
   path: '/search',
@@ -224,6 +259,11 @@ const AePSlugRoute = AePSlugRouteImport.update({
   path: '/ae/p/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AeSetSlugRoute = AeSetSlugRouteImport.update({
+  id: '/ae/set/$slug',
+  path: '/ae/set/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EgCSlugRoute = EgCSlugRouteImport.update({
   id: '/eg/c/$slug',
   path: '/eg/c/$slug',
@@ -242,6 +282,11 @@ const EgOrderIdRoute = EgOrderIdRouteImport.update({
 const EgPSlugRoute = EgPSlugRouteImport.update({
   id: '/eg/p/$slug',
   path: '/eg/p/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EgSetSlugRoute = EgSetSlugRouteImport.update({
+  id: '/eg/set/$slug',
+  path: '/eg/set/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IqCSlugRoute = IqCSlugRouteImport.update({
@@ -264,6 +309,11 @@ const IqPSlugRoute = IqPSlugRouteImport.update({
   path: '/iq/p/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IqSetSlugRoute = IqSetSlugRouteImport.update({
+  id: '/iq/set/$slug',
+  path: '/iq/set/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OmCSlugRoute = OmCSlugRouteImport.update({
   id: '/om/c/$slug',
   path: '/om/c/$slug',
@@ -282,6 +332,11 @@ const OmOrderIdRoute = OmOrderIdRouteImport.update({
 const OmPSlugRoute = OmPSlugRouteImport.update({
   id: '/om/p/$slug',
   path: '/om/p/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OmSetSlugRoute = OmSetSlugRouteImport.update({
+  id: '/om/set/$slug',
+  path: '/om/set/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SaCSlugRoute = SaCSlugRouteImport.update({
@@ -304,6 +359,11 @@ const SaPSlugRoute = SaPSlugRouteImport.update({
   path: '/p/$slug',
   getParentRoute: () => SaRoute,
 } as any)
+const SaSetSlugRoute = SaSetSlugRouteImport.update({
+  id: '/set/$slug',
+  path: '/set/$slug',
+  getParentRoute: () => SaRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -311,23 +371,28 @@ export interface FileRoutesByFullPath {
   '/sa': typeof SaRouteWithChildren
   '/ae/cart': typeof AeCartRoute
   '/ae/checkout': typeof AeCheckoutRoute
+  '/ae/offers': typeof AeOffersRoute
   '/ae/search': typeof AeSearchRoute
   '/ae/story': typeof AeStoryRoute
   '/eg/cart': typeof EgCartRoute
   '/eg/checkout': typeof EgCheckoutRoute
+  '/eg/offers': typeof EgOffersRoute
   '/eg/search': typeof EgSearchRoute
   '/eg/story': typeof EgStoryRoute
   '/iq/cart': typeof IqCartRoute
   '/iq/checkout': typeof IqCheckoutRoute
+  '/iq/offers': typeof IqOffersRoute
   '/iq/search': typeof IqSearchRoute
   '/iq/story': typeof IqStoryRoute
   '/om/cart': typeof OmCartRoute
   '/om/checkout': typeof OmCheckoutRoute
+  '/om/offers': typeof OmOffersRoute
   '/om/search': typeof OmSearchRoute
   '/om/story': typeof OmStoryRoute
   '/sa/cart': typeof SaCartRoute
   '/sa/checkout': typeof SaCheckoutRoute
   '/sa/help': typeof SaHelpRoute
+  '/sa/offers': typeof SaOffersRoute
   '/sa/search': typeof SaSearchRoute
   '/sa/story': typeof SaStoryRoute
   '/ae/': typeof AeIndexRoute
@@ -339,45 +404,55 @@ export interface FileRoutesByFullPath {
   '/ae/info/$topic': typeof AeInfoTopicRoute
   '/ae/order/$id': typeof AeOrderIdRoute
   '/ae/p/$slug': typeof AePSlugRoute
+  '/ae/set/$slug': typeof AeSetSlugRoute
   '/eg/c/$slug': typeof EgCSlugRoute
   '/eg/info/$topic': typeof EgInfoTopicRoute
   '/eg/order/$id': typeof EgOrderIdRoute
   '/eg/p/$slug': typeof EgPSlugRoute
+  '/eg/set/$slug': typeof EgSetSlugRoute
   '/iq/c/$slug': typeof IqCSlugRoute
   '/iq/info/$topic': typeof IqInfoTopicRoute
   '/iq/order/$id': typeof IqOrderIdRoute
   '/iq/p/$slug': typeof IqPSlugRoute
+  '/iq/set/$slug': typeof IqSetSlugRoute
   '/om/c/$slug': typeof OmCSlugRoute
   '/om/info/$topic': typeof OmInfoTopicRoute
   '/om/order/$id': typeof OmOrderIdRoute
   '/om/p/$slug': typeof OmPSlugRoute
+  '/om/set/$slug': typeof OmSetSlugRoute
   '/sa/c/$slug': typeof SaCSlugRoute
   '/sa/info/$topic': typeof SaInfoTopicRoute
   '/sa/order/$id': typeof SaOrderIdRoute
   '/sa/p/$slug': typeof SaPSlugRoute
+  '/sa/set/$slug': typeof SaSetSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/ae/cart': typeof AeCartRoute
   '/ae/checkout': typeof AeCheckoutRoute
+  '/ae/offers': typeof AeOffersRoute
   '/ae/search': typeof AeSearchRoute
   '/ae/story': typeof AeStoryRoute
   '/eg/cart': typeof EgCartRoute
   '/eg/checkout': typeof EgCheckoutRoute
+  '/eg/offers': typeof EgOffersRoute
   '/eg/search': typeof EgSearchRoute
   '/eg/story': typeof EgStoryRoute
   '/iq/cart': typeof IqCartRoute
   '/iq/checkout': typeof IqCheckoutRoute
+  '/iq/offers': typeof IqOffersRoute
   '/iq/search': typeof IqSearchRoute
   '/iq/story': typeof IqStoryRoute
   '/om/cart': typeof OmCartRoute
   '/om/checkout': typeof OmCheckoutRoute
+  '/om/offers': typeof OmOffersRoute
   '/om/search': typeof OmSearchRoute
   '/om/story': typeof OmStoryRoute
   '/sa/cart': typeof SaCartRoute
   '/sa/checkout': typeof SaCheckoutRoute
   '/sa/help': typeof SaHelpRoute
+  '/sa/offers': typeof SaOffersRoute
   '/sa/search': typeof SaSearchRoute
   '/sa/story': typeof SaStoryRoute
   '/ae': typeof AeIndexRoute
@@ -389,22 +464,27 @@ export interface FileRoutesByTo {
   '/ae/info/$topic': typeof AeInfoTopicRoute
   '/ae/order/$id': typeof AeOrderIdRoute
   '/ae/p/$slug': typeof AePSlugRoute
+  '/ae/set/$slug': typeof AeSetSlugRoute
   '/eg/c/$slug': typeof EgCSlugRoute
   '/eg/info/$topic': typeof EgInfoTopicRoute
   '/eg/order/$id': typeof EgOrderIdRoute
   '/eg/p/$slug': typeof EgPSlugRoute
+  '/eg/set/$slug': typeof EgSetSlugRoute
   '/iq/c/$slug': typeof IqCSlugRoute
   '/iq/info/$topic': typeof IqInfoTopicRoute
   '/iq/order/$id': typeof IqOrderIdRoute
   '/iq/p/$slug': typeof IqPSlugRoute
+  '/iq/set/$slug': typeof IqSetSlugRoute
   '/om/c/$slug': typeof OmCSlugRoute
   '/om/info/$topic': typeof OmInfoTopicRoute
   '/om/order/$id': typeof OmOrderIdRoute
   '/om/p/$slug': typeof OmPSlugRoute
+  '/om/set/$slug': typeof OmSetSlugRoute
   '/sa/c/$slug': typeof SaCSlugRoute
   '/sa/info/$topic': typeof SaInfoTopicRoute
   '/sa/order/$id': typeof SaOrderIdRoute
   '/sa/p/$slug': typeof SaPSlugRoute
+  '/sa/set/$slug': typeof SaSetSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -413,23 +493,28 @@ export interface FileRoutesById {
   '/sa': typeof SaRouteWithChildren
   '/ae/cart': typeof AeCartRoute
   '/ae/checkout': typeof AeCheckoutRoute
+  '/ae/offers': typeof AeOffersRoute
   '/ae/search': typeof AeSearchRoute
   '/ae/story': typeof AeStoryRoute
   '/eg/cart': typeof EgCartRoute
   '/eg/checkout': typeof EgCheckoutRoute
+  '/eg/offers': typeof EgOffersRoute
   '/eg/search': typeof EgSearchRoute
   '/eg/story': typeof EgStoryRoute
   '/iq/cart': typeof IqCartRoute
   '/iq/checkout': typeof IqCheckoutRoute
+  '/iq/offers': typeof IqOffersRoute
   '/iq/search': typeof IqSearchRoute
   '/iq/story': typeof IqStoryRoute
   '/om/cart': typeof OmCartRoute
   '/om/checkout': typeof OmCheckoutRoute
+  '/om/offers': typeof OmOffersRoute
   '/om/search': typeof OmSearchRoute
   '/om/story': typeof OmStoryRoute
   '/sa/cart': typeof SaCartRoute
   '/sa/checkout': typeof SaCheckoutRoute
   '/sa/help': typeof SaHelpRoute
+  '/sa/offers': typeof SaOffersRoute
   '/sa/search': typeof SaSearchRoute
   '/sa/story': typeof SaStoryRoute
   '/ae/': typeof AeIndexRoute
@@ -441,22 +526,27 @@ export interface FileRoutesById {
   '/ae/info/$topic': typeof AeInfoTopicRoute
   '/ae/order/$id': typeof AeOrderIdRoute
   '/ae/p/$slug': typeof AePSlugRoute
+  '/ae/set/$slug': typeof AeSetSlugRoute
   '/eg/c/$slug': typeof EgCSlugRoute
   '/eg/info/$topic': typeof EgInfoTopicRoute
   '/eg/order/$id': typeof EgOrderIdRoute
   '/eg/p/$slug': typeof EgPSlugRoute
+  '/eg/set/$slug': typeof EgSetSlugRoute
   '/iq/c/$slug': typeof IqCSlugRoute
   '/iq/info/$topic': typeof IqInfoTopicRoute
   '/iq/order/$id': typeof IqOrderIdRoute
   '/iq/p/$slug': typeof IqPSlugRoute
+  '/iq/set/$slug': typeof IqSetSlugRoute
   '/om/c/$slug': typeof OmCSlugRoute
   '/om/info/$topic': typeof OmInfoTopicRoute
   '/om/order/$id': typeof OmOrderIdRoute
   '/om/p/$slug': typeof OmPSlugRoute
+  '/om/set/$slug': typeof OmSetSlugRoute
   '/sa/c/$slug': typeof SaCSlugRoute
   '/sa/info/$topic': typeof SaInfoTopicRoute
   '/sa/order/$id': typeof SaOrderIdRoute
   '/sa/p/$slug': typeof SaPSlugRoute
+  '/sa/set/$slug': typeof SaSetSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -466,23 +556,28 @@ export interface FileRouteTypes {
     | '/sa'
     | '/ae/cart'
     | '/ae/checkout'
+    | '/ae/offers'
     | '/ae/search'
     | '/ae/story'
     | '/eg/cart'
     | '/eg/checkout'
+    | '/eg/offers'
     | '/eg/search'
     | '/eg/story'
     | '/iq/cart'
     | '/iq/checkout'
+    | '/iq/offers'
     | '/iq/search'
     | '/iq/story'
     | '/om/cart'
     | '/om/checkout'
+    | '/om/offers'
     | '/om/search'
     | '/om/story'
     | '/sa/cart'
     | '/sa/checkout'
     | '/sa/help'
+    | '/sa/offers'
     | '/sa/search'
     | '/sa/story'
     | '/ae/'
@@ -494,45 +589,55 @@ export interface FileRouteTypes {
     | '/ae/info/$topic'
     | '/ae/order/$id'
     | '/ae/p/$slug'
+    | '/ae/set/$slug'
     | '/eg/c/$slug'
     | '/eg/info/$topic'
     | '/eg/order/$id'
     | '/eg/p/$slug'
+    | '/eg/set/$slug'
     | '/iq/c/$slug'
     | '/iq/info/$topic'
     | '/iq/order/$id'
     | '/iq/p/$slug'
+    | '/iq/set/$slug'
     | '/om/c/$slug'
     | '/om/info/$topic'
     | '/om/order/$id'
     | '/om/p/$slug'
+    | '/om/set/$slug'
     | '/sa/c/$slug'
     | '/sa/info/$topic'
     | '/sa/order/$id'
     | '/sa/p/$slug'
+    | '/sa/set/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
     | '/ae/cart'
     | '/ae/checkout'
+    | '/ae/offers'
     | '/ae/search'
     | '/ae/story'
     | '/eg/cart'
     | '/eg/checkout'
+    | '/eg/offers'
     | '/eg/search'
     | '/eg/story'
     | '/iq/cart'
     | '/iq/checkout'
+    | '/iq/offers'
     | '/iq/search'
     | '/iq/story'
     | '/om/cart'
     | '/om/checkout'
+    | '/om/offers'
     | '/om/search'
     | '/om/story'
     | '/sa/cart'
     | '/sa/checkout'
     | '/sa/help'
+    | '/sa/offers'
     | '/sa/search'
     | '/sa/story'
     | '/ae'
@@ -544,22 +649,27 @@ export interface FileRouteTypes {
     | '/ae/info/$topic'
     | '/ae/order/$id'
     | '/ae/p/$slug'
+    | '/ae/set/$slug'
     | '/eg/c/$slug'
     | '/eg/info/$topic'
     | '/eg/order/$id'
     | '/eg/p/$slug'
+    | '/eg/set/$slug'
     | '/iq/c/$slug'
     | '/iq/info/$topic'
     | '/iq/order/$id'
     | '/iq/p/$slug'
+    | '/iq/set/$slug'
     | '/om/c/$slug'
     | '/om/info/$topic'
     | '/om/order/$id'
     | '/om/p/$slug'
+    | '/om/set/$slug'
     | '/sa/c/$slug'
     | '/sa/info/$topic'
     | '/sa/order/$id'
     | '/sa/p/$slug'
+    | '/sa/set/$slug'
   id:
     | '__root__'
     | '/'
@@ -567,23 +677,28 @@ export interface FileRouteTypes {
     | '/sa'
     | '/ae/cart'
     | '/ae/checkout'
+    | '/ae/offers'
     | '/ae/search'
     | '/ae/story'
     | '/eg/cart'
     | '/eg/checkout'
+    | '/eg/offers'
     | '/eg/search'
     | '/eg/story'
     | '/iq/cart'
     | '/iq/checkout'
+    | '/iq/offers'
     | '/iq/search'
     | '/iq/story'
     | '/om/cart'
     | '/om/checkout'
+    | '/om/offers'
     | '/om/search'
     | '/om/story'
     | '/sa/cart'
     | '/sa/checkout'
     | '/sa/help'
+    | '/sa/offers'
     | '/sa/search'
     | '/sa/story'
     | '/ae/'
@@ -595,22 +710,27 @@ export interface FileRouteTypes {
     | '/ae/info/$topic'
     | '/ae/order/$id'
     | '/ae/p/$slug'
+    | '/ae/set/$slug'
     | '/eg/c/$slug'
     | '/eg/info/$topic'
     | '/eg/order/$id'
     | '/eg/p/$slug'
+    | '/eg/set/$slug'
     | '/iq/c/$slug'
     | '/iq/info/$topic'
     | '/iq/order/$id'
     | '/iq/p/$slug'
+    | '/iq/set/$slug'
     | '/om/c/$slug'
     | '/om/info/$topic'
     | '/om/order/$id'
     | '/om/p/$slug'
+    | '/om/set/$slug'
     | '/sa/c/$slug'
     | '/sa/info/$topic'
     | '/sa/order/$id'
     | '/sa/p/$slug'
+    | '/sa/set/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -619,18 +739,22 @@ export interface RootRouteChildren {
   SaRoute: typeof SaRouteWithChildren
   AeCartRoute: typeof AeCartRoute
   AeCheckoutRoute: typeof AeCheckoutRoute
+  AeOffersRoute: typeof AeOffersRoute
   AeSearchRoute: typeof AeSearchRoute
   AeStoryRoute: typeof AeStoryRoute
   EgCartRoute: typeof EgCartRoute
   EgCheckoutRoute: typeof EgCheckoutRoute
+  EgOffersRoute: typeof EgOffersRoute
   EgSearchRoute: typeof EgSearchRoute
   EgStoryRoute: typeof EgStoryRoute
   IqCartRoute: typeof IqCartRoute
   IqCheckoutRoute: typeof IqCheckoutRoute
+  IqOffersRoute: typeof IqOffersRoute
   IqSearchRoute: typeof IqSearchRoute
   IqStoryRoute: typeof IqStoryRoute
   OmCartRoute: typeof OmCartRoute
   OmCheckoutRoute: typeof OmCheckoutRoute
+  OmOffersRoute: typeof OmOffersRoute
   OmSearchRoute: typeof OmSearchRoute
   OmStoryRoute: typeof OmStoryRoute
   AeIndexRoute: typeof AeIndexRoute
@@ -641,18 +765,22 @@ export interface RootRouteChildren {
   AeInfoTopicRoute: typeof AeInfoTopicRoute
   AeOrderIdRoute: typeof AeOrderIdRoute
   AePSlugRoute: typeof AePSlugRoute
+  AeSetSlugRoute: typeof AeSetSlugRoute
   EgCSlugRoute: typeof EgCSlugRoute
   EgInfoTopicRoute: typeof EgInfoTopicRoute
   EgOrderIdRoute: typeof EgOrderIdRoute
   EgPSlugRoute: typeof EgPSlugRoute
+  EgSetSlugRoute: typeof EgSetSlugRoute
   IqCSlugRoute: typeof IqCSlugRoute
   IqInfoTopicRoute: typeof IqInfoTopicRoute
   IqOrderIdRoute: typeof IqOrderIdRoute
   IqPSlugRoute: typeof IqPSlugRoute
+  IqSetSlugRoute: typeof IqSetSlugRoute
   OmCSlugRoute: typeof OmCSlugRoute
   OmInfoTopicRoute: typeof OmInfoTopicRoute
   OmOrderIdRoute: typeof OmOrderIdRoute
   OmPSlugRoute: typeof OmPSlugRoute
+  OmSetSlugRoute: typeof OmSetSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -699,6 +827,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AeCheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ae/offers': {
+      id: '/ae/offers'
+      path: '/ae/offers'
+      fullPath: '/ae/offers'
+      preLoaderRoute: typeof AeOffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ae/search': {
       id: '/ae/search'
       path: '/ae/search'
@@ -732,6 +867,13 @@ declare module '@tanstack/react-router' {
       path: '/eg/checkout'
       fullPath: '/eg/checkout'
       preLoaderRoute: typeof EgCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/eg/offers': {
+      id: '/eg/offers'
+      path: '/eg/offers'
+      fullPath: '/eg/offers'
+      preLoaderRoute: typeof EgOffersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/eg/search': {
@@ -769,6 +911,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IqCheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/iq/offers': {
+      id: '/iq/offers'
+      path: '/iq/offers'
+      fullPath: '/iq/offers'
+      preLoaderRoute: typeof IqOffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/iq/search': {
       id: '/iq/search'
       path: '/iq/search'
@@ -802,6 +951,13 @@ declare module '@tanstack/react-router' {
       path: '/om/checkout'
       fullPath: '/om/checkout'
       preLoaderRoute: typeof OmCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/om/offers': {
+      id: '/om/offers'
+      path: '/om/offers'
+      fullPath: '/om/offers'
+      preLoaderRoute: typeof OmOffersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/om/search': {
@@ -846,6 +1002,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SaHelpRouteImport
       parentRoute: typeof SaRoute
     }
+    '/sa/offers': {
+      id: '/sa/offers'
+      path: '/offers'
+      fullPath: '/sa/offers'
+      preLoaderRoute: typeof SaOffersRouteImport
+      parentRoute: typeof SaRoute
+    }
     '/sa/search': {
       id: '/sa/search'
       path: '/search'
@@ -888,6 +1051,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AePSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ae/set/$slug': {
+      id: '/ae/set/$slug'
+      path: '/ae/set/$slug'
+      fullPath: '/ae/set/$slug'
+      preLoaderRoute: typeof AeSetSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/eg/c/$slug': {
       id: '/eg/c/$slug'
       path: '/eg/c/$slug'
@@ -914,6 +1084,13 @@ declare module '@tanstack/react-router' {
       path: '/eg/p/$slug'
       fullPath: '/eg/p/$slug'
       preLoaderRoute: typeof EgPSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/eg/set/$slug': {
+      id: '/eg/set/$slug'
+      path: '/eg/set/$slug'
+      fullPath: '/eg/set/$slug'
+      preLoaderRoute: typeof EgSetSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/iq/c/$slug': {
@@ -944,6 +1121,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IqPSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/iq/set/$slug': {
+      id: '/iq/set/$slug'
+      path: '/iq/set/$slug'
+      fullPath: '/iq/set/$slug'
+      preLoaderRoute: typeof IqSetSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/om/c/$slug': {
       id: '/om/c/$slug'
       path: '/om/c/$slug'
@@ -970,6 +1154,13 @@ declare module '@tanstack/react-router' {
       path: '/om/p/$slug'
       fullPath: '/om/p/$slug'
       preLoaderRoute: typeof OmPSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/om/set/$slug': {
+      id: '/om/set/$slug'
+      path: '/om/set/$slug'
+      fullPath: '/om/set/$slug'
+      preLoaderRoute: typeof OmSetSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sa/c/$slug': {
@@ -1000,6 +1191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SaPSlugRouteImport
       parentRoute: typeof SaRoute
     }
+    '/sa/set/$slug': {
+      id: '/sa/set/$slug'
+      path: '/set/$slug'
+      fullPath: '/sa/set/$slug'
+      preLoaderRoute: typeof SaSetSlugRouteImport
+      parentRoute: typeof SaRoute
+    }
   }
 }
 
@@ -1007,6 +1205,7 @@ interface SaRouteChildren {
   SaCartRoute: typeof SaCartRoute
   SaCheckoutRoute: typeof SaCheckoutRoute
   SaHelpRoute: typeof SaHelpRoute
+  SaOffersRoute: typeof SaOffersRoute
   SaSearchRoute: typeof SaSearchRoute
   SaStoryRoute: typeof SaStoryRoute
   SaIndexRoute: typeof SaIndexRoute
@@ -1014,12 +1213,14 @@ interface SaRouteChildren {
   SaInfoTopicRoute: typeof SaInfoTopicRoute
   SaOrderIdRoute: typeof SaOrderIdRoute
   SaPSlugRoute: typeof SaPSlugRoute
+  SaSetSlugRoute: typeof SaSetSlugRoute
 }
 
 const SaRouteChildren: SaRouteChildren = {
   SaCartRoute: SaCartRoute,
   SaCheckoutRoute: SaCheckoutRoute,
   SaHelpRoute: SaHelpRoute,
+  SaOffersRoute: SaOffersRoute,
   SaSearchRoute: SaSearchRoute,
   SaStoryRoute: SaStoryRoute,
   SaIndexRoute: SaIndexRoute,
@@ -1027,6 +1228,7 @@ const SaRouteChildren: SaRouteChildren = {
   SaInfoTopicRoute: SaInfoTopicRoute,
   SaOrderIdRoute: SaOrderIdRoute,
   SaPSlugRoute: SaPSlugRoute,
+  SaSetSlugRoute: SaSetSlugRoute,
 }
 
 const SaRouteWithChildren = SaRoute._addFileChildren(SaRouteChildren)
@@ -1037,18 +1239,22 @@ const rootRouteChildren: RootRouteChildren = {
   SaRoute: SaRouteWithChildren,
   AeCartRoute: AeCartRoute,
   AeCheckoutRoute: AeCheckoutRoute,
+  AeOffersRoute: AeOffersRoute,
   AeSearchRoute: AeSearchRoute,
   AeStoryRoute: AeStoryRoute,
   EgCartRoute: EgCartRoute,
   EgCheckoutRoute: EgCheckoutRoute,
+  EgOffersRoute: EgOffersRoute,
   EgSearchRoute: EgSearchRoute,
   EgStoryRoute: EgStoryRoute,
   IqCartRoute: IqCartRoute,
   IqCheckoutRoute: IqCheckoutRoute,
+  IqOffersRoute: IqOffersRoute,
   IqSearchRoute: IqSearchRoute,
   IqStoryRoute: IqStoryRoute,
   OmCartRoute: OmCartRoute,
   OmCheckoutRoute: OmCheckoutRoute,
+  OmOffersRoute: OmOffersRoute,
   OmSearchRoute: OmSearchRoute,
   OmStoryRoute: OmStoryRoute,
   AeIndexRoute: AeIndexRoute,
@@ -1059,18 +1265,22 @@ const rootRouteChildren: RootRouteChildren = {
   AeInfoTopicRoute: AeInfoTopicRoute,
   AeOrderIdRoute: AeOrderIdRoute,
   AePSlugRoute: AePSlugRoute,
+  AeSetSlugRoute: AeSetSlugRoute,
   EgCSlugRoute: EgCSlugRoute,
   EgInfoTopicRoute: EgInfoTopicRoute,
   EgOrderIdRoute: EgOrderIdRoute,
   EgPSlugRoute: EgPSlugRoute,
+  EgSetSlugRoute: EgSetSlugRoute,
   IqCSlugRoute: IqCSlugRoute,
   IqInfoTopicRoute: IqInfoTopicRoute,
   IqOrderIdRoute: IqOrderIdRoute,
   IqPSlugRoute: IqPSlugRoute,
+  IqSetSlugRoute: IqSetSlugRoute,
   OmCSlugRoute: OmCSlugRoute,
   OmInfoTopicRoute: OmInfoTopicRoute,
   OmOrderIdRoute: OmOrderIdRoute,
   OmPSlugRoute: OmPSlugRoute,
+  OmSetSlugRoute: OmSetSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

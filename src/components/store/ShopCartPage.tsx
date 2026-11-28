@@ -99,7 +99,7 @@ export function ShopCartPage({market,type}:{market:MarketCode;type:"cart"|"check
  </section>;
 
  const list=<ul className="space-y-3" data-cart-lines="">{priced.lines.map(p=>{const id=lineId(p.line),img=picture(p);return <li key={id} className={"ym-card flex gap-3 p-3 "+(p.available?"":"opacity-70")} data-cart-line="">
-   <a href={p.line.kind==="item"?productHref(market,p.line.slug):path+"/offers"} className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-surface" tabIndex={-1} aria-hidden="true">{img&&<img src={productMediaPath(img,360)} alt="" width={80} height={80} loading="lazy" decoding="async" className="h-full w-full object-cover"/>}</a>
+   <a href={p.line.kind==="item"?productHref(market,p.line.slug):path+"/set/"+encodeURIComponent(p.line.slug)} className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-surface" tabIndex={-1} aria-hidden="true">{img&&<img src={productMediaPath(img,360)} alt="" width={80} height={80} loading="lazy" decoding="async" className="h-full w-full object-cover"/>}</a>
    <div className="min-w-0 flex-1">
     {p.line.kind==="bundle"&&<span className="ym-chip ym-chip-ink mb-1">{copy.setChip}</span>}
     <p className="line-clamp-2 text-sm font-medium leading-6">{title(p)}</p>

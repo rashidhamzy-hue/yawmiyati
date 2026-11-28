@@ -80,7 +80,7 @@ export function normalizeTaager(store: string, m: MarketFacts, row: TaagerCatalo
   const faq = Array.isArray(variant.faq) ? variant.faq.filter(isRec).map((f) => ({ q: cleanTaagerText(f.question, 500), a: cleanTaagerText(f.answer, 1000) ?? (typeof f.answer === "string" ? f.answer.trim().slice(0, 1000) : null) })).filter((f) => f.q && f.a) : [];
   const bundle = Array.isArray(variant.bundleItems) ? variant.bundleItems.filter(isRec).map((b) => ({ sku: typeof b.sku === "string" ? b.sku : null, product_id: num(b.productId), quantity: num(b.quantity) })).filter((b) => b.sku && b.quantity) : [];
   const orderable = !isRec(variant.merchantInfo) || variant.merchantInfo.orderable !== false;
-  const available = typeof variant.availability === "string" ? variant.availability === "available" || variant.availability === "limited" : true;
+  const available = typeof variant.availability === "string" ? variant.availability === "available" || variant.availability === "limited" || variant.availability === "available_with_low_qty" : true;
   const success = taagerSuccessBps(variant.analytics);
   const attrs = (Array.isArray(variant.attributes) ? variant.attributes : []).filter(isRec).map((a) => ({
     name: String(a.name ?? a.type ?? "").slice(0, 200), options: [String(a.value ?? a.label ?? "").slice(0, 200)].filter(Boolean), variation: true,
