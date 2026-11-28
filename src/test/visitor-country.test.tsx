@@ -5,6 +5,7 @@ import {countryFromRequest,handleVisitorCountry,isBot,phoneFromOtherMarket,rootR
 import {validateCod} from "../lib/store/cod-checkout";
 import {sharedPageLinks} from "../lib/seo/site";
 import {StoreChooser} from "../components/store/StoreChooser";
+import {rememberedStore,storesInOrder} from "../lib/store/chosen-store";
 import {CodCheckoutForm} from "../components/store/CodCheckoutForm";
 
 const UA="Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1";
@@ -37,10 +38,30 @@ describe("root: visitors from our countries go to their store, everyone else and
  it("the chooser links every store with its own hreflang, and home pages point x-default at it",()=>{
   const {container}=render(<StoreChooser/>);
   expect([...container.querySelectorAll("[data-store-link]")].map(a=>[a.getAttribute("href"),a.getAttribute("hreflang")])).toEqual([["/sa","ar-SA"],["/ae","ar-AE"],["/om","ar-OM"],["/eg","ar-EG"],["/iq","ar-IQ"]]);
-  expect(screen.getByRole("heading",{level:1}).textContent).toBe("اختاري بلد التوصيل");
+  expect(screen.getByRole("heading",{level:1}).textContent).toBe("تفاصيل صغيرة تجمّل يومك");
+  expect(screen.getByRole("heading",{level:2}).textContent).toBe("اختاري بلد التوصيل");
+  // Each store says what it offers in its own words, with the currency by name and no flag emoji.
+  expect(container.querySelector('[data-store-link="eg"]')!.textContent).toContain("جنيه مصري");
+  expect(container.querySelector('[data-store-link="eg"]')!.textContent).toContain("الدفع كاش عند الاستلام · التوصيل جوه مصر");
+  expect(container.textContent).not.toMatch(/[\u{1F1E6}-\u{1F1FF}]/u);
+  expect(container.querySelector("img")!.getAttribute("src")).toMatch(/^\/media\/photo-/);
   expect(sharedPageLinks("eg").find(l=>l.hrefLang==="x-default")!.href).toBe("https://yawmiyati.shop/");
   expect(sharedPageLinks("eg","/info/help").find(l=>l.hrefLang==="x-default")!.href).toBe("https://yawmiyati.shop/sa/info/help");
   expect(sharedPageLinks("eg").filter(l=>l.rel==="alternate")).toHaveLength(6);
+ });
+ it("remembers the store picked on the chooser in this browser and shows it first next time, without redirecting",async()=>{
+  window.localStorage.clear();
+  const first=render(<StoreChooser/>);
+  const eg=first.container.querySelector('[data-store-link="eg"]')!;
+  eg.addEventListener("click",e=>e.preventDefault());fireEvent.click(eg);
+  expect(window.localStorage.getItem("yawmiyati.store")).toBe("eg");
+  first.unmount();
+  const {container}=render(<StoreChooser/>);
+  await waitFor(()=>expect([...container.querySelectorAll("[data-store-link]")].map(a=>a.getAttribute("data-store-link"))).toEqual(["eg","sa","ae","om","iq"]));
+  expect(container.querySelector("[data-remembered]")!.getAttribute("data-store-link")).toBe("eg");
+  expect(storesInOrder(["sa","ae"],"iq")).toEqual(["sa","ae"]);
+  window.localStorage.setItem("yawmiyati.store","xx");expect(rememberedStore()).toBeNull();
+  window.localStorage.clear();
  });
 });
 
