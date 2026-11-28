@@ -43,7 +43,7 @@ async function main(){
    assert.equal(await addOn.count(),market==="ae"?0:1,label+": add-on eligibility");
    if(await addOn.count())await addOn.check();
    if(width===390){
-    const launcher=page.getByRole("button",{name:"افتح مساعد يومياتي الذكي"});
+    const launcher=page.getByRole("button",{name:"اسألي مساعدة يومياتي"});
     assert.equal(await launcher.evaluate(el=>getComputedStyle(el.parentElement).position),"static",label+": chat overlaps the mobile product page");
    }
    const door=await page.locator("[data-door-total]").innerText();
