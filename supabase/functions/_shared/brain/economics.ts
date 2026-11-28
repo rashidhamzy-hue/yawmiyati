@@ -150,8 +150,8 @@ export function decidePrice(args: {
 export type QuantityOffer = { quantity: number; price_minor: number; saving_minor: number; profit_delivered_minor: number };
 
 /**
- * "2 for X" / "3 for X" offers built from our own single price (Taager's tier data is not trusted: it is
- * inconsistent in the 27 Nov sync). Each offer is a rounded price about 10% (2 pieces) or 15% (3 pieces)
+ * "2 for X" / "3 for X" offers built from our own single price at FULL unit cost. Taager's own quantity prices are
+ * real (taager-economics.ts reads them and reports both figures); this function is the full-cost baseline. Each offer is a rounded price about 10% (2 pieces) or 15% (3 pieces)
  * under buying singly, and must earn at least as much as one single sale while counting the FULL unit cost
  * for every piece, so it stays profitable whatever Taager charges for multi-piece orders. One delivery fee.
  */

@@ -58,10 +58,13 @@ Every paid call → `brain_cost_ledger` (tokens, web searches, exact micro-USD a
 
 ## Product page extras (28 Nov 2026)
 **Status:** migration `20261128060000_brain_product_extras.sql` APPLIED to staging; `docs/brain-product-extras-test.sql` passed on staging (rolled back).
-- **Quantity offers:** `quantityOffers()` in `economics.ts` builds "2 for X" (~10% off) and "3 for X" (~15% off) from our single price. Each must earn at least one single sale's profit while counting the FULL unit cost for every piece (Taager's own tier data is inconsistent and not used). The publish step keeps only offers above quantity × cost and below quantity × price; `public_product_page` re-checks them against Taager's current cost on every read. **Checkout must support quantities before these can be ordered (G3).**
+- **Quantity offers:** `quantityOffers()` in `economics.ts` builds "2 for X" (~10% off) and "3 for X" (~15% off) from our single price. Each must earn at least one single sale's profit while counting the FULL unit cost for every piece. (Taager's tier data is real and since 29 Nov is read too: `docs/handoff/TAAGER-DISCOUNTS.md`.) The publish step keeps only offers above quantity × cost and below quantity × price; `public_product_page` re-checks them against Taager's current cost on every read. **Checkout must support quantities before these can be ordered (G3).**
 - **Videos:** up to 3 per product, supplier media host only, served from `/media/v/<uuid>.mp4` (range requests pass through; full responses edge-cached). YouTube and Google Drive links are skipped.
 - **Bundle contents:** from Taager's declared `bundleItems` only, resolved by SKU to a catalogue name and picture (M11-safe); unresolved items are left out.
 - **SEO:** the product route's server render now reads the approved page: SEO title/description, `og:*` tags and the first picture (as `https://yawmiyati.shop/media/p/<id>`) in Product JSON-LD.
+
+## Brain commerce v2 (29 Nov 2026)
+Read `docs/handoff/TAAGER-DISCOUNTS.md`: Taager's quantity / add-on / sale prices with two profit figures and the per-market "Taager discounts proven" switch, sale handling, the call-centre upsell write-up, demand signals, themed bundles, the picture rule and shortlist dedup. Free delivery: `docs/handoff/M13-ORDER-VALUE-OFFERS.md`.
 
 ## Not built yet (next)
 1. Product videos, Taager quantity offers (tiers) and bundle contents on the product page; SEO head (title/description/image) from the approved page on the server render; R2 copies of published pictures.

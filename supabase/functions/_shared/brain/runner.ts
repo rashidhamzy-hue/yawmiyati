@@ -8,6 +8,8 @@ import { normalizeTaager, TAAGER_MAPPING, type TaagerCatalogRow } from "./taager
 import { capabilityReport, offerKind, type FieldMapping } from "./catalog-analysis.ts";
 import { prefilter, finalScore, selectFinal, merchandise, type StoreCategory } from "./selection.ts";
 import { decidePrice, freeDeliveryThreshold, type PriceDecision } from "./economics.ts";
+import { quantityOffersDual, salePlan, taagerFacts, type StockPoint } from "./taager-economics.ts";
+import { orderPictures, parsePictureVerdicts, picturePrompt } from "./bundles.ts";
 import { callClaude, estimateMax, extractJson, type Metered } from "./anthropic.ts";
 import { contentPrompt, mappingPrompt, parseContent, parseMapping, parseResearch, researchPrompt } from "./prompts.ts";
 import type { Db } from "./db.ts";
@@ -58,7 +60,7 @@ async function loadOffersByKeys(db: Db, store: string, keys: { product_id: numbe
 }
 async function spentToday(db: Db, store: string) { return Number(await db.rpc<number>("brain_spent_today", { p_store: store })) || 0; }
 
-async function recordCost(db: Db, run: Run, step: "field_mapping" | "research" | "content", item: string | null, m: Metered) {
+async function recordCost(db: Db, run: Run, step: "field_mapping" | "research" | "content" | "pictures", item: string | null, m: Metered) {
   await db.insert("brain_cost_ledger", { run_id: run.id, store_code: run.store_code, step, item_ref: item, model: m.model,
     input_tokens: m.input_tokens, output_tokens: m.output_tokens, cache_read_tokens: m.cache_read_tokens, cache_write_tokens: m.cache_write_tokens,
     web_searches: m.web_searches, cost_microusd: m.cost_microusd });
@@ -170,7 +172,7 @@ async function stageAudit(d: Deps, run: Run, m: MarketFacts, settings: Settings)
 async function stagePrefilter(d: Deps, run: Run, m: MarketFacts, settings: Settings) {
   const offers = await loadOffers(d.db, run.store_code, run.id);
   const mapping = (run.summary.capability as { mapping?: FieldMapping } | undefined)?.mapping ?? settings.field_mapping;
-  const rows = prefilter(offers, mapping, m, settings.shortlist_size);
+  const rows = prefilter(offers, mapping, m, settings.shortlist_size, { stockHistory: await loadStockHistory(d, run.store_code), now: (d.now ?? Date.now)() });
   for (let i = 0; i < rows.length; i += 500) {
     await d.db.upsert("brain_product_analysis", rows.slice(i, i + 500).map((r) => ({ run_id: run.id, store_code: run.store_code, ...r, updated_at: new Date().toISOString() })), "run_id,product_id,variation_id");
   }
@@ -180,6 +182,25 @@ async function stagePrefilter(d: Deps, run: Run, m: MarketFacts, settings: Setti
     top_exclusion_reasons: Object.entries(rows.flatMap((r) => r.stage === "excluded" ? r.reasons.filter((x) => !x.startsWith("spread")) : []).reduce((a, x) => ((a[x] = (a[x] ?? 0) + 1), a), {} as Record<string, number>)).sort((a, b) => b[1] - a[1]).slice(0, 8) };
   run.stage = by("shortlisted") ? "research" : "review";
   if (!by("shortlisted")) run.status = "awaiting_review";
+}
+
+/** Stock readings of the last 14 days per SKU (written by every Taager import). Missing table or rows = no signal. */
+async function loadStockHistory(d: Deps, store: string): Promise<Map<string, StockPoint[]>> {
+  const out = new Map<string, StockPoint[]>();
+  try {
+    const since = new Date((d.now ?? Date.now)() - 14 * 86_400_000).toISOString();
+    for (let offset = 0; offset < 60000; offset += 1000) {
+      const rows = await d.db.select<{ sku: string; observed_at: string; stock_low: number }>("taager_stock_history", `select=sku,observed_at,stock_low&market=eq.${store}&observed_at=gte.${since}&order=sku.asc,observed_at.asc&limit=1000&offset=${offset}`);
+      for (const r of rows) out.set(r.sku, [...(out.get(r.sku) ?? []), { at: r.observed_at, low: r.stock_low }]);
+      if (rows.length < 1000) break;
+    }
+  } catch { /* demand signals are optional */ }
+  return out;
+}
+/** The owner's per-market switch: true only after G1 proved Taager applies its quantity / add-on prices to our orders. */
+async function discountsProven(d: Deps, store: string): Promise<boolean> {
+  try { return (await d.db.select<{ taager_discounts_proven: boolean }>("store_commerce_facts", `select=taager_discounts_proven&store_code=eq.${store}&limit=1`))[0]?.taager_discounts_proven === true; }
+  catch { return false; }
 }
 
 async function budgetOk(d: Deps, run: Run, settings: Settings, estimate: number) {
@@ -243,13 +264,25 @@ export function plannedSuccessBps(o: OfferRow | undefined, base: number): number
 async function stageDecide(d: Deps, run: Run, m: MarketFacts, settings: Settings) {
   const rows = await d.db.select<Analysis>("brain_product_analysis", `select=*&run_id=eq.${run.id}&stage=eq.researched&limit=1000`);
   const offers = await loadOffersByKeys(d.db, run.store_code, rows, runSource(run));
+  const proven = await discountsProven(d, run.store_code);
+  const now = (d.now ?? Date.now)();
   const scored = rows.map((a) => {
     const research = (a.research ?? {}) as { listings?: { retailer: string; url: string; price_minor: number; match: "exact" | "similar"; confidence: number }[]; demand_signals?: unknown[]; risks?: string[] };
     const listings = research.listings ?? [];
     const decision = decidePrice({ inputs: a.economics as { cost_minor: number | null; floor_minor: number | null; suggested_minor: number | null; max_minor?: number | null }, competitors: listings, m,
       deliveryRateBps: plannedSuccessBps(offers.get(key(a)), planningBaseBps(settings, run.summary, m)) });
+    // Taager's own quantity prices and sale: both figures on every offer; full cost rules until the market is proven.
+    if (decision.state === "priced" && decision.price_minor) {
+      const econ = a.economics as { cost_minor: number; floor_minor: number | null };
+      const facts = taagerFacts(offers.get(key(a))?.meta);
+      const dual = quantityOffersDual(decision.price_minor, { cost_minor: econ.cost_minor, floor_minor: econ.floor_minor }, facts, m, proven);
+      if (dual.length) decision.quantity_offers = dual;
+      const sale = salePlan({ price_minor: decision.price_minor, inputs: { cost_minor: econ.cost_minor, floor_minor: econ.floor_minor }, sale: facts.sale, positioning: decision.positioning, m, now, proven });
+      if (sale) { (decision as PriceDecision & { taager_sale?: unknown }).taager_sale = sale; decision.notes.push("Taager sale running: " + sale.reason); }
+    }
     const retailers = new Set(listings.filter((l) => l.confidence >= 0.5).map((l) => l.retailer)).size;
-    const score = finalScore(decision, { retailers_found: retailers, exact_matches: listings.filter((l) => l.match === "exact").length, demand_signals: (research.demand_signals ?? []).length, risks: research.risks ?? [] }, offers.get(key(a))?.images.length ?? 0);
+    const demand = (a.economics as { demand?: { factor?: number } }).demand?.factor;
+    const score = finalScore(decision, { retailers_found: retailers, exact_matches: listings.filter((l) => l.match === "exact").length, demand_signals: (research.demand_signals ?? []).length, risks: research.risks ?? [] }, offers.get(key(a))?.images.length ?? 0, typeof demand === "number" ? demand : 1);
     return { a, decision, score };
   });
   const chosen = selectFinal(scored.map((x) => ({ product_id: x.a.product_id, variation_id: x.a.variation_id, family_key: x.a.family_key ?? key(x.a), category: x.a.category, score: x.score, blocked: x.decision.state !== "priced" })), settings.selection_size);
@@ -295,6 +328,18 @@ async function stageContent(d: Deps, run: Run, m: MarketFacts, settings: Setting
         await recordCost(d.db, run, "content", key(a), res.metered);
         cost = res.metered.cost_microusd;
         content = { ...parseContent(extractJson(res.text)), model: settings.content_model, cost_microusd: cost };
+        // Picture rule (M11): clean pictures first, promo artwork never the face of the product. One small vision call.
+        const pics = o.images.map((i) => /^https:\/\/media\.taager\.com\/([0-9a-f-]{36}\.(?:jpe?g|png|webp))$/.exec(i.src)?.[1]).filter((x): x is string => !!x).slice(0, 12);
+        if (pics.length > 1) {
+          try {
+            const seen = await callClaude({ apiKey: d.anthropicKey!, model: settings.research_model, maxTokens: 600, temperature: 0, fetchImpl: d.fetchImpl,
+              images: pics.map((id) => `https://media.taager.com/360x360/${id}`), ...picturePrompt(pics) });
+            await recordCost(d.db, run, "pictures", key(a), seen.metered);
+            cost += seen.metered.cost_microusd;
+            const verdicts = parsePictureVerdicts(extractJson(seen.text), pics);
+            if (verdicts) content.pictures = { ...orderPictures(verdicts), verdicts };
+          } catch (e) { content.pictures = { error: String(e).slice(0, 200) }; }
+        }
       } catch (e) { content = { error: String(e).slice(0, 300), issues: ["generation_failed"] }; }
       await d.db.patch("brain_product_analysis", `run_id=eq.${run.id}&product_id=eq.${a.product_id}&variation_id=eq.${a.variation_id}`,
         { content, category: (content.category as string | undefined) ?? a.category, cost_microusd: Number(a.cost_microusd ?? 0) + cost, updated_at: new Date().toISOString() });

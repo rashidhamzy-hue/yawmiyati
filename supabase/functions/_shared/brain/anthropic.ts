@@ -54,11 +54,15 @@ export type CallResult = { text: string; blocks: Block[]; metered: Metered; stop
 export async function callClaude(opts: {
   apiKey: string; model: string; system: string; user: string; maxTokens: number;
   webSearch?: { maxUses: number; country: string }; temperature?: number; fetchImpl?: typeof fetch; timeoutMs?: number;
+  /** Pictures (https URLs) placed before the text, for classification only. */
+  images?: string[];
 }): Promise<CallResult> {
   const f = opts.fetchImpl ?? fetch;
   const tools = opts.webSearch ? [{ type: "web_search_20250305", name: "web_search", max_uses: opts.webSearch.maxUses,
     user_location: { type: "approximate", country: opts.webSearch.country } }] : undefined;
-  let messages: { role: string; content: unknown }[] = [{ role: "user", content: opts.user }];
+  const first: unknown = opts.images?.length
+    ? [...opts.images.map((url) => ({ type: "image", source: { type: "url", url } })), { type: "text", text: opts.user }] : opts.user;
+  let messages: { role: string; content: unknown }[] = [{ role: "user", content: first }];
   let metered: Metered = costOf(opts.model, {});
   const blocks: Block[] = [];
   let stop = "";

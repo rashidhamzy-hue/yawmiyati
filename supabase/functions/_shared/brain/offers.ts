@@ -7,29 +7,58 @@
 import { SECTION_AFFINITY } from "./affinity.ts";
 import { pricePoints, profitDelivered } from "./economics.ts";
 import { minorToUsd, usdToMinor, type MarketFacts } from "./markets.ts";
+import { themedBundles, type ThemedBundle } from "./bundles.ts";
+import { quantityOffersDual, salePlan, setProfitDual, type TaagerSale } from "./taager-economics.ts";
 
 export type OfferListing = {
   listing_id: string; slug: string; title: string; category: string | null;
   price_minor: number; cost_minor: number; floor_minor: number | null;
   rank: number; image?: string | null; is_bundle?: boolean;
   quantity_offers?: { quantity: number; price_minor: number }[];
+  /** Taager's own quantity prices: total minimum price and total cost for N pieces (unproven for our orders until G1). */
+  tiers?: { quantity: number; price_minor: number; cost_minor: number }[];
+  /** Taager's cost when the product is another product in the same cart (second_placement), if it states one. */
+  addon_cost_minor?: number | null;
+  /** Taager's sale running now, if any. */
+  sale?: TaagerSale | null;
+  /** Where our price sits against other shops, from the brain's research (cheaper / matched / dearer / unknown). */
+  positioning?: string | null;
 };
-export type QuantityProposal = { kind: "quantity"; listing_id: string; title: string; quantity: number; price_minor: number; saving_minor: number; profit_minor: number; profit_usd: number; single_profit_minor: number };
+/** Both figures the owner sees: what an offer earns if Taager applies its quantity/add-on/sale price, and what it earns if not. */
+export type TwoFigures = { profit_if_taager_minor: number; profit_if_taager_usd: number; profit_full_minor: number; profit_full_usd: number; basis: "full_cost" | "taager_price" };
+export type QuantityProposal = TwoFigures & { kind: "quantity"; listing_id: string; title: string; quantity: number; price_minor: number; saving_minor: number; profit_minor: number; profit_usd: number; single_profit_minor: number };
+export type SaleProposal = TwoFigures & { kind: "sale"; listing_id: string; title: string; price_minor: number; saving_minor: number; ends_at: string; reason: string };
+export type SaleNote = { listing_id: string; title: string; reason: string; banked_profit_minor: number; banked_profit_usd: number; normal_profit_minor: number; normal_profit_usd: number };
 export type BundleProposal = {
   kind: "bundle"; slug: string; title: string; items: { listing_id: string; title: string; quantity: number }[];
   price_minor: number; separate_minor: number; saving_minor: number;
   profit_minor: number; profit_usd: number;
   /** Profit if the supplier ships the pieces as two parcels and we pay the second delivery fee (unproven until G1). */
   profit_if_split_minor: number; profit_if_split_usd: number;
-};
+  theme?: string; tagline?: string;
+} & Partial<TwoFigures>;
 export type FreeDeliveryProposal = {
   kind: "free_delivery"; threshold_minor: number;
-  /** Lowest margin among everything a shopper can buy: the basket that earns least at the threshold. */
+  /** A product counts toward the threshold only while its own margin is at least this (checked on every read). */
+  min_margin_bps: number;
+  eligible: number;
+  /** Products left out because a basket made of them would lose money after we pay the delivery fee. */
+  excluded: { listing_id: string; title: string; margin_bps: number }[];
+  /** Lowest margin among the eligible products: the basket that earns least at the threshold. */
   worst_margin_bps: number; worst_title: string;
   worst_case_profit_minor: number; worst_case_profit_usd: number;
   typical_profit_minor: number; typical_profit_usd: number;
 };
-export type OfferProposals = { quantity: QuantityProposal[]; bundles: BundleProposal[]; free_delivery: FreeDeliveryProposal | null; free_delivery_reason: string | null };
+export type DeliveryIncludedProposal = { kind: "delivery_included"; listing_id: string; title: string; price_minor: number; profit_minor: number; profit_usd: number; profit_before_minor: number };
+export type OfferProposals = {
+  quantity: QuantityProposal[]; bundles: BundleProposal[]; free_delivery: FreeDeliveryProposal | null; free_delivery_reason: string | null;
+  /** Time-limited offers tied to a Taager sale's real end date, and the sales where the brain keeps our price instead. */
+  sales: SaleProposal[]; sale_notes: SaleNote[];
+  /** Single products whose price can carry the delivery fee. */
+  delivery_included: DeliveryIncludedProposal[];
+  /** True when the owner switched on "Taager discounts proven" for this market: Taager's prices were used for safety. */
+  taager_discounts_proven: boolean;
+};
 
 /** The highest delivery fee we could have to pay in this market (Egypt's dearest band is 105 EGP). */
 export const worstDeliveryFee = (m: MarketFacts) => (m.currency === "EGP" ? Math.max(m.shippingMinor, 10500) : m.shippingMinor);
@@ -50,19 +79,51 @@ export function comboProfit(items: { cost_minor: number; quantity: number }[], p
   return profitDelivered(price, { cost_minor: cost, floor_minor: null }, m, weAbsorbDelivery);
 }
 
-/** Every "N for X" offer the brain attached to a published listing, with its profit; loss-makers are dropped. */
-export function quantityProposals(listings: OfferListing[], m: MarketFacts): QuantityProposal[] {
+/**
+ * Every "N for X" offer for a published listing with both profit figures; loss-makers are dropped.
+ * Sources: the offers the brain attached at decision time, plus offers worked out now from Taager's quantity prices.
+ * Not proven: an offer must earn at least one single sale at the FULL cost of every piece.
+ */
+export function quantityProposals(listings: OfferListing[], m: MarketFacts, proven = false): QuantityProposal[] {
   const out: QuantityProposal[] = [];
   for (const l of listings) {
     const single = profitDelivered(l.price_minor, l, m);
-    for (const q of l.quantity_offers ?? []) {
-      if (!Number.isInteger(q.quantity) || q.quantity < 2 || q.quantity > 5 || q.price_minor >= q.quantity * l.price_minor) continue;
-      const profit = comboProfit([{ ...l, quantity: q.quantity }], q.price_minor, m);
+    const tiers = l.tiers ?? [];
+    const fresh = l.tiers ? quantityOffersDual(l.price_minor, l, { tiers }, m, proven) : [];
+    const byQty = new Map<number, number>();
+    for (const q of l.quantity_offers ?? []) byQty.set(q.quantity, q.price_minor);
+    for (const q of fresh) if (proven || !byQty.has(q.quantity)) byQty.set(q.quantity, q.price_minor);
+    for (const [quantity, price] of [...byQty].sort((x, y) => x[0] - y[0])) {
+      if (!Number.isInteger(quantity) || quantity < 2 || quantity > 5 || price >= quantity * l.price_minor) continue;
+      const full = comboProfit([{ ...l, quantity }], price, m);
+      const tier = tiers.find((t) => t.quantity === quantity && t.cost_minor < quantity * l.cost_minor);
+      const taager = tier ? profitDelivered(price, { cost_minor: tier.cost_minor, floor_minor: tier.price_minor }, m) : full;
+      const profit = proven && tier ? taager : full;
       if (profit <= 0 || profit < single) continue;
-      out.push({ kind: "quantity", listing_id: l.listing_id, title: l.title, quantity: q.quantity, price_minor: q.price_minor, saving_minor: q.quantity * l.price_minor - q.price_minor, profit_minor: profit, profit_usd: usd(profit, m), single_profit_minor: single });
+      out.push({ kind: "quantity", listing_id: l.listing_id, title: l.title, quantity, price_minor: price, saving_minor: quantity * l.price_minor - price,
+        profit_minor: profit, profit_usd: usd(profit, m), single_profit_minor: single,
+        profit_full_minor: full, profit_full_usd: usd(full, m), profit_if_taager_minor: taager, profit_if_taager_usd: usd(taager, m), basis: proven && tier ? "taager_price" : "full_cost" });
     }
   }
   return out;
+}
+
+/** Taager sales running now: a time-limited offer where passing the saving on makes sense, a note where we keep the price. */
+export function saleProposals(listings: OfferListing[], m: MarketFacts, now: number, proven = false): { sales: SaleProposal[]; notes: SaleNote[] } {
+  const sales: SaleProposal[] = [], notes: SaleNote[] = [];
+  for (const l of listings) {
+    const plan = salePlan({ price_minor: l.price_minor, inputs: l, sale: l.sale ?? null, positioning: l.positioning ?? undefined, m, now, proven });
+    if (!plan) continue;
+    if (plan.action === "time_limited_offer" && plan.offer) {
+      const o = plan.offer;
+      sales.push({ kind: "sale", listing_id: l.listing_id, title: l.title, price_minor: o.price_minor, saving_minor: o.saving_minor, ends_at: o.ends_at, reason: plan.reason,
+        profit_full_minor: o.profit_full_minor, profit_full_usd: usd(o.profit_full_minor, m), profit_if_taager_minor: o.profit_if_taager_minor, profit_if_taager_usd: usd(o.profit_if_taager_minor, m), basis: o.basis });
+    } else {
+      notes.push({ listing_id: l.listing_id, title: l.title, reason: plan.reason, banked_profit_minor: plan.banked_profit_minor, banked_profit_usd: usd(plan.banked_profit_minor, m),
+        normal_profit_minor: plan.normal_profit_minor, normal_profit_usd: usd(plan.normal_profit_minor, m) });
+    }
+  }
+  return { sales, notes };
 }
 
 /**
@@ -90,7 +151,9 @@ export function bundleProposals(listings: OfferListing[], m: MarketFacts, limit 
       if (price === null) continue;
       const profit = comboProfit(items, price, m), split = profit - worstDeliveryFee(m);
       if (profit < Math.max(profitA, profitB) || split <= 0) continue;
+      const dual = setProfitDual(items.map((i) => ({ cost_minor: i.cost_minor, quantity: 1, addon_cost_minor: i.addon_cost_minor ?? null })), price, m);
       out.push({
+        profit_full_minor: dual.profit_full_minor, profit_full_usd: usd(dual.profit_full_minor, m), profit_if_taager_minor: dual.profit_if_taager_minor, profit_if_taager_usd: usd(dual.profit_if_taager_minor, m), basis: "full_cost",
         kind: "bundle", slug: `set-${a.slug}-${b.slug}`.slice(0, 120), title: `${shortTitle(a.title)} + ${shortTitle(b.title)}`,
         items: [{ listing_id: a.listing_id, title: a.title, quantity: 1 }, { listing_id: b.listing_id, title: b.title, quantity: 1 }],
         price_minor: price, separate_minor: separate, saving_minor: separate - price,
@@ -105,43 +168,68 @@ export function bundleProposals(listings: OfferListing[], m: MarketFacts, limit 
 const shortTitle = (t: string) => { const w = t.split(/\s+/).slice(0, 5).join(" "); return w.length > 46 ? w.slice(0, 44).trim() + "…" : w; };
 
 /**
- * Free delivery above a basket value, sized so that even the least profitable basket still earns money after
- * we pay the delivery fee (not the median basket: the worst one). Returns null with a reason when the numbers
- * do not allow an offer a shopper could realistically reach.
+ * Free delivery above a basket of ELIGIBLE products. A product is eligible while its own margin is at least
+ * `min_margin_bps`; the threshold is the smallest shopper-friendly basket where even a basket made only of the
+ * thinnest eligible product still pays the delivery fee and keeps about US$1. Thin products are excluded and marked
+ * instead of dragging the threshold out of reach. The brain picks the rule that leaves the fewest products out while
+ * staying reachable (at most 3 typical products) and above a typical single purchase (so it lifts order value).
  */
-export function freeDeliveryPlan(listings: OfferListing[], bundles: Pick<BundleProposal, "price_minor" | "profit_minor" | "title">[], m: MarketFacts, keepUsd = 1): { plan: FreeDeliveryProposal | null; reason: string | null } {
+export function freeDeliveryPlan(listings: OfferListing[], _bundles: unknown, m: MarketFacts, keepUsd = 1): { plan: FreeDeliveryProposal | null; reason: string | null } {
   if (listings.length < 5) return { plan: null, reason: "Fewer than 5 published products: not enough to size a threshold." };
-  const points: { title: string; price: number; profit: number }[] = [];
-  for (const l of listings) {
-    points.push({ title: l.title, price: l.price_minor, profit: profitDelivered(l.price_minor, l, m) });
-    for (const q of l.quantity_offers ?? []) points.push({ title: `${q.quantity} × ${l.title}`, price: q.price_minor, profit: comboProfit([{ ...l, quantity: q.quantity }], q.price_minor, m) });
-  }
-  for (const b of bundles) points.push({ title: b.title, price: b.price_minor, profit: b.profit_minor });
-  const worst = points.reduce((w, p) => (p.profit / p.price < w.profit / w.price ? p : w));
-  const worstMargin = worst.profit / worst.price;
-  if (worstMargin <= 0) return { plan: null, reason: `"${worst.title}" earns nothing at its price, so no basket is safe.` };
+  const rows = listings.map((l) => ({ l, margin: profitDelivered(l.price_minor, l, m) / l.price_minor })).sort((a, b) => a.margin - b.margin || a.l.rank - b.l.rank);
   const prices = listings.map((l) => l.price_minor).sort((a, b) => a - b);
   const medPrice = prices[Math.floor(prices.length / 2)];
-  const margins = listings.map((l) => profitDelivered(l.price_minor, l, m) / l.price_minor).sort((a, b) => a - b);
-  const medMargin = margins[Math.floor(margins.length / 2)];
-  const keep = usdToMinor(keepUsd, m);
-  const fee = worstDeliveryFee(m);
-  const raw = Math.max((fee + keep) / worstMargin, medPrice * 1.5);
+  const keep = usdToMinor(keepUsd, m), fee = worstDeliveryFee(m);
   const unit = 10 ** m.minorDigits;
   const step = m.currency === "IQD" ? 5000 * unit : m.currency === "OMR" ? unit : 50 * unit;
-  const threshold = Math.ceil(raw / step) * step;
-  if (threshold > medPrice * 4) return { plan: null, reason: `The thinnest margin (${Math.round(worstMargin * 100)}% on "${worst.title}") would need a basket of ${threshold / unit} ${m.currency}, more than 4 typical products. Raise that price or leave free delivery off.` };
-  const worstProfit = Math.floor(threshold * worstMargin) - fee;
-  const typical = Math.floor(threshold * medMargin) - fee;
-  return { plan: { kind: "free_delivery", threshold_minor: threshold, worst_margin_bps: Math.floor(worstMargin * 10000), worst_title: worst.title,
-    worst_case_profit_minor: worstProfit, worst_case_profit_usd: usd(worstProfit, m), typical_profit_minor: typical, typical_profit_usd: usd(typical, m) }, reason: null };
+  let thinnestTried = 0;
+  // Leave out the thinnest 0%, 10% ... 40% of products, in that order of preference.
+  for (const share of [0, 0.1, 0.2, 0.3, 0.4]) {
+    const cut = Math.floor(rows.length * share);
+    const eligible = rows.slice(cut).filter((r) => r.margin > 0);
+    if (eligible.length < 3) break;
+    const minBps = Math.floor(eligible[0].margin * 10000);
+    if (minBps <= 0) continue;
+    thinnestTried = thinnestTried || minBps;
+    const threshold = Math.ceil(Math.max(((fee + keep) * 10000) / minBps, medPrice * 1.5) / step) * step;
+    if (threshold > medPrice * 3) continue;
+    const worstProfit = Math.floor((threshold * minBps) / 10000) - fee;
+    if (worstProfit < keep) continue;
+    const medMargin = eligible[Math.floor(eligible.length / 2)].margin;
+    const typical = Math.floor(threshold * medMargin) - fee;
+    const excluded = rows.filter((r) => Math.floor(r.margin * 10000) < minBps).map((r) => ({ listing_id: r.l.listing_id, title: r.l.title, margin_bps: Math.floor(r.margin * 10000) }));
+    return { plan: { kind: "free_delivery", threshold_minor: threshold, min_margin_bps: minBps, eligible: rows.length - excluded.length, excluded,
+      worst_margin_bps: minBps, worst_title: eligible[0].l.title, worst_case_profit_minor: worstProfit, worst_case_profit_usd: usd(worstProfit, m),
+      typical_profit_minor: typical, typical_profit_usd: usd(typical, m) }, reason: null };
+  }
+  return { plan: null, reason: `Margins are too thin for a reachable threshold: even after leaving out the thinnest 40% of products, the basket needed is more than 3 typical products${thinnestTried ? ` (thinnest margin ${Math.round(thinnestTried / 100)}%)` : ""}. Leave free delivery off in this market for now.` };
 }
 
-export function proposeOffers(args: { market: MarketFacts; listings: OfferListing[] }): OfferProposals {
+/**
+ * Single products whose price can carry the delivery fee: after paying it we still keep at least US$2 and at least
+ * 35% of the product's profit. Best-ranked first, at most `limit`.
+ */
+export function deliveryIncludedProposals(listings: OfferListing[], m: MarketFacts, limit = 8): DeliveryIncludedProposal[] {
+  const fee = worstDeliveryFee(m), keep = usdToMinor(2, m);
+  return listings.filter((l) => !l.is_bundle).sort((a, b) => a.rank - b.rank).map((l) => ({ l, before: profitDelivered(l.price_minor, l, m) }))
+    .filter((x) => x.before - fee >= keep && x.before - fee >= x.before * 0.35).slice(0, limit)
+    .map((x) => ({ kind: "delivery_included" as const, listing_id: x.l.listing_id, title: x.l.title, price_minor: x.l.price_minor, profit_minor: x.before - fee, profit_usd: usd(x.before - fee, m), profit_before_minor: x.before }));
+}
+
+const withUsd = (b: ThemedBundle, m: MarketFacts): BundleProposal => ({ ...b, items: b.items.map((i) => ({ listing_id: i.listing_id, title: i.title, quantity: i.quantity })),
+  profit_full_usd: usd(b.profit_full_minor, m), profit_if_taager_usd: usd(b.profit_if_taager_minor, m) });
+
+export function proposeOffers(args: { market: MarketFacts; listings: OfferListing[]; proven?: boolean; now?: number }): OfferProposals {
   const { market: m, listings } = args;
-  const quantity = quantityProposals(listings, m);
-  const safe = listings.map((l) => ({ ...l, quantity_offers: (l.quantity_offers ?? []).filter((q) => quantity.some((p) => p.listing_id === l.listing_id && p.quantity === q.quantity)) }));
-  const bundles = bundleProposals(safe, m);
+  const proven = args.proven === true;
+  const quantity = quantityProposals(listings, m, proven);
+  const safe = listings.map((l) => ({ ...l, quantity_offers: quantity.filter((p) => p.listing_id === l.listing_id).map((p) => ({ quantity: p.quantity, price_minor: p.price_minor })) }));
+  // Themed routines first (they read better than a plain pair), then pairs from what is left.
+  const themed = themedBundles(safe, m, { proven, splitFeeMinor: worstDeliveryFee(m), limit: 6 });
+  const taken = new Set(themed.flatMap((t) => t.items.map((i) => i.listing_id)));
+  const pairs = bundleProposals(safe.filter((l) => !taken.has(l.listing_id)), m, Math.max(0, 8 - themed.length));
+  const bundles = [...themed.map((t) => withUsd(t, m)), ...pairs];
   const { plan, reason } = freeDeliveryPlan(safe, bundles, m);
-  return { quantity, bundles, free_delivery: plan, free_delivery_reason: reason };
+  const { sales, notes } = saleProposals(listings, m, args.now ?? Date.now(), proven);
+  return { quantity, bundles, free_delivery: plan, free_delivery_reason: reason, sales, sale_notes: notes, delivery_included: deliveryIncludedProposals(safe, m), taager_discounts_proven: proven };
 }

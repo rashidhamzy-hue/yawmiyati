@@ -1,4 +1,6 @@
 -- NOTE (28 Nov 2026, later): quantity offers now also need the owner to approve that exact offer; see docs/store-offers-test.sql,
+-- NOTE (29 Nov 2026): the quantity-offer assertions here predate owner approval of offers (20261128120000_store_offers.sql)
+-- and no longer hold; quantity offers are covered by docs/store-offers-test.sql and docs/brain-commerce-v2-test.sql.
 -- which supersedes the quantity-offer assertions below.
 -- Rollback-only fixture test for supabase/migrations/20261128060000_brain_product_extras.sql (staging only).
 -- Proves: supplier-hosted videos only (deduplicated, max 3), quantity offers kept only above full unit cost and
