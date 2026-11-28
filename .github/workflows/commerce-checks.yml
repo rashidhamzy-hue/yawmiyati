@@ -20,6 +20,7 @@ jobs:
       # The Yawmiyati Brain edge function runs on Deno: type-check it as Deno sees it.
       - run: deno check --no-lock supabase/functions/yawmiyati-brain/index.ts
       - run: deno check --no-lock supabase/functions/yawmiyati-shopping-assistant/index.ts
+      - run: deno check --no-lock supabase/functions/yawmiyati-daily/index.ts
       # TanStack Router generates routeTree.gen.ts during build.
       - run: node scripts/check-simulation-boundary.mjs
       - run: node scripts/check-storefront-truth.mjs

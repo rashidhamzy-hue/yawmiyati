@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405, origin);
   const url = Deno.env.get("SUPABASE_URL"), service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), anon = Deno.env.get("SUPABASE_ANON_KEY");
   if (!url || !service || !anon) return json({ error: "server_not_configured" }, 500, origin);
-  let body: { action?: string; store?: string; run_id?: string; count?: number };
+  let body: { action?: string; store?: string; run_id?: string; count?: number; product_ids?: number[] };
   try { body = await req.json(); } catch { return json({ error: "invalid_json" }, 400, origin); }
   const store = body.store;
   if (!isMarket(store)) return json({ error: "invalid_store" }, 400, origin);
@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
         // a later build reuses fresh research (14 days) and pages that are still valid, so nothing is paid for twice.
         const count = body.action === "build_store" ? Number(body.count ?? 100) : null;
         if (count !== null && !(Number.isInteger(count) && count >= 1 && count <= 200)) return json({ error: "count must be a whole number from 1 to 200" }, 400, origin);
-        const created = await db.insert("brain_runs", { store_code: store, started_by: claims.sub ?? null, ...(count ? { summary: { build: { target: count } } } : {}) }, true);
+        const created = await db.insert("brain_runs", { store_code: store, started_by: claims.sub ?? null, ...(count ? { summary: { build: { target: count, ...(Array.isArray(body.product_ids) && body.product_ids.length ? { product_ids: body.product_ids.filter((x) => Number.isSafeInteger(x) && x > 0).slice(0, 50) } : {}) } } } : {}) }, true);
         return json({ run: created[0] }, 200, origin);
       }
       case "step": {

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['supabase/functions/yawmiyati-brain/**', 'supabase/functions/_shared/brain/**', 'supabase/functions/yawmiyati-shopping-assistant/**', 'supabase/functions/_shared/assistant/**', '.github/workflows/deploy-brain.yml']
+    paths: ['supabase/functions/yawmiyati-brain/**', 'supabase/functions/_shared/brain/**', 'supabase/functions/yawmiyati-daily/**', 'supabase/functions/_shared/learn/**', 'supabase/functions/yawmiyati-shopping-assistant/**', 'supabase/functions/_shared/assistant/**', '.github/workflows/deploy-brain.yml']
 permissions:
   contents: read
 concurrency:
@@ -35,7 +35,7 @@ jobs:
         with: { deno-version: v2.x }
       - name: Type-check
         if: steps.token.outputs.ok == 'true'
-        run: deno check --no-lock supabase/functions/yawmiyati-brain/index.ts supabase/functions/yawmiyati-shopping-assistant/index.ts
+        run: deno check --no-lock supabase/functions/yawmiyati-brain/index.ts supabase/functions/yawmiyati-shopping-assistant/index.ts supabase/functions/yawmiyati-daily/index.ts
       - uses: supabase/setup-cli@v1
         if: steps.token.outputs.ok == 'true'
         with: { version: latest }
@@ -47,3 +47,8 @@ jobs:
       - name: Deploy shopping assistant
         if: steps.token.outputs.ok == 'true'
         run: supabase functions deploy yawmiyati-shopping-assistant --project-ref skhtunkknshvolturqlm --use-api --yes
+      # The daily loop is called by the database scheduler (no user): JWT verification is off and the function checks
+      # the scheduler's secret or the owner's session itself. It does nothing until its secrets exist.
+      - name: Deploy daily loop
+        if: steps.token.outputs.ok == 'true'
+        run: supabase functions deploy yawmiyati-daily --project-ref skhtunkknshvolturqlm --use-api --no-verify-jwt --yes

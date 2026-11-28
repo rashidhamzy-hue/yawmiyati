@@ -29,7 +29,12 @@ export type PublicationStatus = {
 /** A price change (or a pause) the brain proposes after a Taager sync or new shop prices. Money in minor units; per_usd for dollar display. */
 export type RepriceProposal = { id: string; listing_id: string; title: string | null; slug: string | null; action: "change" | "pause"; old_price_minor: number; new_price_minor: number | null;
   reason: string; created_at: string; hidden_now: boolean; profit_now_minor: number | null; profit_new_minor: number | null; per_usd: number; pricing: Record<string, unknown> };
+/** What brain_brief returns: the latest morning brief and everything waiting for a decision. */
+export type DailyBrief = { day: string | null; brief: any | null; created_at: string | null; days: string[];
+  proposals: { id: string; kind: "add_product" | "retire_product"; ref: string; title: string; why: string; data: Record<string, any>; status: string; day: string }[];
+  price_changes_waiting: number; offers_waiting: number; paused: { listing_id: string; title: string; reason: string; by: string; at: string }[]; autopilot_enabled: boolean; daily_loop_enabled: boolean };
 export const PUBLISH_REASONS: Record<string, string> = {
+  paused: "paused (by the brain for refusals, or by you); resume it in the morning brief",
   margin_below_floor: "earns under the $2 floor per delivered order at Taager's current cost (paused automatically)",
   not_in_taager_catalogue: "not in the latest Taager sync", missing_from_catalogue: "gone from the Taager sync",
   no_price: "the brain could not price it", no_page_content: "no Arabic page written", page_content_needs_fix: "the Arabic page has wording to fix",
@@ -54,6 +59,13 @@ export function brainClient(origin: string, publicKey: string, token: string, re
     if (!res.ok) throw Error(typeof data?.error === "string" ? data.error : "Brain request failed");
     return data as T;
   }
+  async function daily<T>(market: MarketCode, act = "run", extra: Record<string, unknown> = {}): Promise<T> {
+    assertMarket(market);
+    const res = await request(new URL("/functions/v1/yawmiyati-daily", base), { method: "POST", headers, body: JSON.stringify({ store: market, action: act, ...extra }), cache: "no-store", redirect: "error", signal: AbortSignal.timeout(170000) });
+    const data = await res.json().catch(() => ({ error: "Invalid brain response" }));
+    if (!res.ok) throw Error(typeof data?.error === "string" ? data.error : "Brain request failed");
+    return data as T;
+  }
   return {
     overview: (m: MarketCode) => { assertMarket(m); return rpc<BrainOverview>("brain_dashboard", { p_store: m }); },
     items: (m: MarketCode, run: string, stage: string | null, offset = 0) => { assertMarket(m); return rpc<BrainItem[] | null>("brain_analysis_page", { p_store: m, p_run: run, p_stage: stage, p_offset: offset }).then((x) => x ?? []); },
@@ -70,6 +82,13 @@ export function brainClient(origin: string, publicKey: string, token: string, re
     start: (m: MarketCode) => action<{ run: BrainRun; note?: string }>(m, "start"),
     /** Build store: pick, research, price and write `count` products (1-200) in one resumable run. */
     buildStore: (m: MarketCode, count: number) => { if (!Number.isInteger(count) || count < 1 || count > 200) throw Error("Choose 1 to 200 products"); return action<{ run: BrainRun; note?: string }>(m, "build_store", { count }); },
+    /** Build only the given Taager products (the day's approved additions): research, price, page, then the owner's review. */
+    buildProducts: (m: MarketCode, productIds: number[]) => { const ids = productIds.filter((x) => Number.isSafeInteger(x) && x > 0).slice(0, 50); if (!ids.length) throw Error("No products to build"); return action<{ run: BrainRun; note?: string }>(m, "build_store", { count: ids.length, product_ids: ids }); },
+    brief: (m: MarketCode, day: string | null = null) => { assertMarket(m); return rpc<DailyBrief>("brain_brief", { p_store: m, p_day: day }); },
+    dailyDecide: (m: MarketCode, ids: string[] | null, decision: "approved" | "rejected") => { assertMarket(m); return rpc<{ decided: number; retired: number; add_product_ids: number[] }>("brain_daily_decide", { p_store: m, p_ids: ids, p_decision: decision }); },
+    setPaused: (m: MarketCode, listing: string, paused: boolean, reason: string | null = null) => { assertMarket(m); return rpc<boolean>("brain_set_paused", { p_store: m, p_listing: listing, p_paused: paused, p_reason: reason }); },
+    setDailyLoop: (m: MarketCode, enabled: boolean) => { assertMarket(m); return rpc<boolean>("brain_set_daily_loop", { p_store: m, p_enabled: enabled }); },
+    runDailyNow: (m: MarketCode) => { assertMarket(m); return daily<{ day: string; proposals: number; steps: Record<string, string>; headline: string }>(m); },
     step: (m: MarketCode, run: string) => action<{ run: BrainRun; spent_today_microusd: number }>(m, "step", { run_id: run }),
     resume: (m: MarketCode, run: string) => action<{ run: BrainRun | null }>(m, "resume", { run_id: run }),
     cancel: (m: MarketCode, run: string) => action<{ run: BrainRun | null }>(m, "cancel", { run_id: run }),
