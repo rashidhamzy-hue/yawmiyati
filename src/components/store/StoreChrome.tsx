@@ -1,4 +1,6 @@
-import {useEffect,useRef,useState} from "react";
+import {lazy,Suspense,useEffect,useRef,useState} from "react";
+// Shown only to visitors outside this store's country, after the page is interactive.
+const CountryNotice=lazy(()=>import("./CountryNotice"));
 import type {ReactNode} from "react";
 import {ChevronDown,Home,LayoutGrid,Menu,Search,ShoppingBag,X,HelpCircle} from "lucide-react";
 import {useOfferVersions} from "@/lib/store/offer-source";
@@ -106,6 +108,6 @@ export function StoreFrame({market,children,focused=false}:{market:MarketCode;ch
  return <div dir="rtl" data-yawmiyati-market={market} className="min-h-screen overflow-x-clip bg-background text-foreground">
   <a href="#main-content" className="skip-link">{chromeCopy(market).skip}</a>
   <div className="bg-primary px-4 py-2 text-center text-[11px] font-semibold tracking-wide text-primary-foreground sm:text-xs">{marketExperience[market].announcement}</div>
-  <StoreHeader market={market}/><main id="main-content">{children}</main>{focused?<p className="border-t border-border px-4 py-6 text-center text-xs text-muted-foreground">{chromeCopy(market).focusedNote}</p>:<StoreFooter market={market}/>}
+  <StoreHeader market={market}/><Suspense fallback={null}><CountryNotice market={market}/></Suspense><main id="main-content">{children}</main>{focused?<p className="border-t border-border px-4 py-6 text-center text-xs text-muted-foreground">{chromeCopy(market).focusedNote}</p>:<StoreFooter market={market}/>}
  </div>;
 }

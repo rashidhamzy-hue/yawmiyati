@@ -4,6 +4,8 @@
  */
 import type {MarketCode} from "./markets";
 import {chromeCopy} from "./chrome-copy";
+import {marketExperience} from "./market-experience";
+import {phoneFromOtherMarket} from "./visitor-country";
 
 export type CodForm={name:string;phone:string;city:string;address:string;notes:string};
 export type CodField=keyof CodForm;
@@ -41,7 +43,11 @@ export function validateCod(market:MarketCode,f:CodForm):CodErrors{
  if(name.length<3)e.name=c.errName;
  else if(/\d/.test(toLatinDigits(name)))e.name=c.errNameDigits;
  if(!f.phone.trim())e.phone=c.errPhoneRequired;
- else if(!normalizePhone(market,f.phone))e.phone=c.errPhone(phoneExample(market));
+ else if(!normalizePhone(market,f.phone)){
+  // A number from another of our countries gets a clear way out instead of a format error.
+  const other=phoneFromOtherMarket(market,f.phone);
+  e.phone=other?c.errPhoneOtherCountry(marketExperience[market].regionName,marketExperience[other].regionName):c.errPhone(phoneExample(market));
+ }
  if(f.city.trim().length<2)e.city=c.errCity(cityLabel[market]);
  if(f.address.trim().length<8)e.address=c.errAddress;
  if(f.notes.length>200)e.notes=c.errNote;
