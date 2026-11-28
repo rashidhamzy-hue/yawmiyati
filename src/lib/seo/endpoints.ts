@@ -12,6 +12,7 @@ import {marketIdentity} from "@/lib/store/market-identity";
 import {customerServiceCopy} from "@/lib/store/customer-service-copy";
 import {SEO_EDITORIAL_SLUGS,planCategorySeo} from "@/lib/store/seo-planning";
 import {fetchPublicCatalog,type PublicListing} from "@/lib/store/public-catalog";
+import {fetchStoreOffers} from "@/lib/store/store-offers";
 import {publicBrowserConfig} from "@/lib/store/staging-public-config";
 import {productMediaPath} from "@/lib/store/product-media";
 import {shopCopy} from "@/lib/store/shop-copy";
@@ -53,9 +54,19 @@ export function sharedSuffixes():string[]{
  return ["",...SEO_EDITORIAL_SLUGS.map(s=>"/c/"+s),"/story",...SHARED_INFO_TOPICS.map(t=>"/info/"+t)];
 }
 
+/** Same rule as the page head (sharedPageLinks): the store chooser at "/" is x-default for home pages, the default market otherwise. */
 function alternates(suffix:string):string{
  return MARKET_CODES.map(m=>`<xhtml:link rel="alternate" hreflang="${markets[m].locale}" href="${xmlEscape(marketUrl(m,suffix))}"/>`).join("")+
-  `<xhtml:link rel="alternate" hreflang="x-default" href="${xmlEscape(marketUrl(DEFAULT_MARKET,suffix))}"/>`;
+  `<xhtml:link rel="alternate" hreflang="x-default" href="${xmlEscape(suffix?marketUrl(DEFAULT_MARKET,suffix):SITE_ORIGIN+"/")}"/>`;
+}
+
+/** Slugs of the owner-approved sets on sale in a market (the offers page lists them). */
+export type SetReader=(market:MarketCode)=>Promise<string[]>;
+const SET_SLUG=/^[a-z0-9][a-z0-9_-]{0,139}$/;
+const defaultSets:SetReader=async market=>(await fetchStoreOffers(market)).bundles.map(b=>b.slug);
+async function releasedSets(read:SetReader,market:MarketCode):Promise<string[]>{
+ try{return [...new Set(await read(market))].filter(slug=>SET_SLUG.test(slug)&&!slug.startsWith("sim-")&&!slug.includes("demo"));}
+ catch{return [];}
 }
 
 export function sitemapIndexXml():string{
@@ -63,11 +74,20 @@ export function sitemapIndexXml():string{
   MARKET_CODES.map(m=>`<sitemap><loc>${SITE_ORIGIN}/sitemaps/${m}.xml</loc></sitemap>`).join("")+`</sitemapindex>\n`;
 }
 
-export async function marketSitemapXml(market:MarketCode,read:CatalogReader=defaultCatalog):Promise<string>{
- const shared=sharedSuffixes().map(suffix=>`<url><loc>${xmlEscape(marketUrl(market,suffix))}</loc>${alternates(suffix)}</url>`);
- const products=(await released(read,market)).map(row=>`<url><loc>${xmlEscape(marketUrl(market,productSuffix(row.slug)!))}</loc></url>`);
+/**
+ * One sitemap per market: the pages every store has (with hreflang alternates), then what only this store sells —
+ * its products, its offers page and its sets. Sets and the offers page are listed only while the store has a set on
+ * sale, so a search engine is never sent to an empty page. The store chooser at "/" rides in the default market's file.
+ */
+export async function marketSitemapXml(market:MarketCode,read:CatalogReader=defaultCatalog,readSets:SetReader=defaultSets):Promise<string>{
+ const url=(loc:string,extra="")=>`<url><loc>${xmlEscape(loc)}</loc>${extra}</url>`;
+ const root=market===DEFAULT_MARKET?[url(SITE_ORIGIN+"/",alternates(""))]:[];
+ const shared=sharedSuffixes().map(suffix=>url(marketUrl(market,suffix),alternates(suffix)));
+ const [rows,sets]=await Promise.all([released(read,market),releasedSets(readSets,market)]);
+ const products=rows.map(row=>url(marketUrl(market,productSuffix(row.slug)!)));
+ const offers=sets.length?[url(marketUrl(market,"/offers")),...sets.map(slug=>url(marketUrl(market,"/set/"+slug)))]:[];
  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">`+
-  shared.join("")+products.join("")+`</urlset>\n`;
+  root.join("")+shared.join("")+products.join("")+offers.join("")+`</urlset>\n`;
 }
 
 function displayPrice(row:PublicListing,market:MarketCode){
