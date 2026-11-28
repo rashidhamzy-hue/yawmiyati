@@ -171,7 +171,12 @@ export function storeFacts(market:MarketCode){
   dialect:BRAIN_MARKETS[market].dialect,payment:copy.payment,shipping:copy.shipping,delivery:copy.delivery,returns:copy.returns,
   confirmation_call:assistantCopy(market).callAnswer,tracking:copy.tracking,human:humanLink(market),
   sections:SEO_EDITORIAL_SLUGS.map(slug=>({slug,name:planCategorySeo(market,slug)?.title.split(" | ")[0]??slug})),
-  help:marketUrl(market,"/info/help"),policies:marketUrl(market,"/info/shipping-returns")};
+  help:marketUrl(market,"/info/help"),policies:marketUrl(market,"/info/shipping-returns"),
+  // The assistant's own words for WhatsApp, from the same market dictionary (the WhatsApp adapter reads them here).
+  assistant:(a=>({greeting:a.waGreeting,which_country:a.waWhichCountry,order_ask:a.waOrderAsk,order_not_found:a.waOrderNotFound,
+   status:{placed:a.waStatusPlaced,confirmed:a.waStatusConfirmed,shipped:a.waStatusShipped,delivered:a.waStatusDelivered,closed:a.waStatusClosed},
+   confirm_done:a.waConfirmDone,confirm_unknown:a.waConfirmUnknown,handover:a.waHandover,human_word:a.waHumanWord,confirm_word:a.waConfirmWord,text_only:a.waTextOnly,
+   dont_know:a.dontKnow,nothing_fits:a.nothingFits,found:a.found(2),sections_lead:a.sectionsLead}))(assistantCopy(market))};
 }
 export async function handleSeoRequest(request:Request,read:CatalogReader=defaultCatalog):Promise<Response|null>{
  if(request.method!=="GET"&&request.method!=="HEAD")return null;
