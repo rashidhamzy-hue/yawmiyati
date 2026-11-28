@@ -34,7 +34,9 @@ describe("Morning brief panel",()=>{
   expect(await screen.findByText(/12 orders, 4 delivered, \$52\.3 profit/)).toBeInTheDocument();
   expect(screen.getByText(/\$21\.07/)).toBeInTheDocument();expect(screen.getByText("YM SA · added to cart · 14d")).toBeInTheDocument();
   expect(screen.getByText(/Ramadan · 2027-02-08 \(astronomical forecast\) · in 29 days/)).toBeInTheDocument();
-  expect((screen.getByLabelText(/Autopilot/) as HTMLInputElement).checked).toBe(false);expect(screen.getByLabelText(/Autopilot/)).toBeDisabled();
+  expect((screen.getByLabelText(/Autopilot/) as HTMLInputElement).checked).toBe(false);// The switch is the owner's: off until she turns it on, and turning it on asks first.
+  const confirm=vi.spyOn(window,"confirm").mockReturnValue(false);fireEvent.click(screen.getByLabelText(/Autopilot/));
+  expect(confirm).toHaveBeenCalledOnce();expect(calls.some(c=>/brain_set_autopilot/.test(c))).toBe(false);confirm.mockRestore();
   fireEvent.click(screen.getByRole("button",{name:/Approve all \(5\)/}));
   await waitFor(()=>expect(screen.getByRole("status").textContent).toMatch(/1 price changes, 1 products retired, 1 products to add, 1 offers/));
   expect(calls.some(c=>c.includes("brain_reprice_decide")&&c.includes('"p_ids":null'))).toBe(true);

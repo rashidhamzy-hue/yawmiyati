@@ -35,6 +35,8 @@ export type Brief = {
   health: { sync_age_hours: number | null; sync_ok: boolean; orders_connected: boolean; analytics_connected: boolean; unknown_order_statuses: number; spend_today_usd: number; daily_cap_usd: number; notes: string[] };
   to_approve: { products_to_add: number; products_to_retire: number; price_changes: number; offers: number };
   taager_rules: RulesBrief | null;
+  /** What autopilot approved by itself today (only when the owner switched it on). */
+  autopilot?: { price_changes: number; retired: number; offers: number; left_for_owner: number; new_products_waiting: number };
 };
 const usd = (minor: number, m: MarketFacts) => Math.round(minorToUsd(minor, m) * 100) / 100;
 const HIDDEN: Record<string, string> = { out_of_stock: "out of stock at Taager", margin_below_floor: "earns under the $2 floor", stale_sync: "Taager sync older than the limit", paused: "paused",
