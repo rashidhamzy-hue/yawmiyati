@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['supabase/functions/yawmiyati-brain/**', 'supabase/functions/_shared/brain/**', '.github/workflows/deploy-brain.yml']
+    paths: ['supabase/functions/yawmiyati-brain/**', 'supabase/functions/_shared/brain/**', 'supabase/functions/yawmiyati-shopping-assistant/**', 'supabase/functions/_shared/assistant/**', '.github/workflows/deploy-brain.yml']
 permissions:
   contents: read
 concurrency:
@@ -35,10 +35,15 @@ jobs:
         with: { deno-version: v2.x }
       - name: Type-check
         if: steps.token.outputs.ok == 'true'
-        run: deno check --no-lock supabase/functions/yawmiyati-brain/index.ts
+        run: deno check --no-lock supabase/functions/yawmiyati-brain/index.ts supabase/functions/yawmiyati-shopping-assistant/index.ts
       - uses: supabase/setup-cli@v1
         if: steps.token.outputs.ok == 'true'
         with: { version: latest }
       - name: Deploy
         if: steps.token.outputs.ok == 'true'
         run: supabase functions deploy yawmiyati-brain --project-ref skhtunkknshvolturqlm --use-api --yes
+      # The shopping assistant's paid answers stay off after a deploy: they need the server secret, the market's
+      # budget row and the public flag, all owner decisions.
+      - name: Deploy shopping assistant
+        if: steps.token.outputs.ok == 'true'
+        run: supabase functions deploy yawmiyati-shopping-assistant --project-ref skhtunkknshvolturqlm --use-api --yes
