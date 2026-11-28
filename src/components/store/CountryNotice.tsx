@@ -37,7 +37,7 @@ export default function CountryNotice({market}:{market:MarketCode}){
  const close=(why:"dismiss"|"stay")=>{try{window.localStorage.setItem(KEY(market,place),"1");}catch{/* ignore */}track("country_notice_closed",{market,kind:place.kind,why});setPlace(null);};
  const there=place.kind==="other_store"?marketExperience[place.market].regionName:"";
  // Laid over the top of the page (zero-height holder) so it never pushes the content down when it appears.
- return <div className="relative z-40 h-0"><aside role="region" aria-label={copy.placeLabel} lang={markets[market].locale} className="absolute inset-x-0 top-0 border-b border-border bg-primary-soft shadow-md" data-country-notice={place.kind}>
+ return <div className="relative z-40 h-0"><aside role="region" aria-label={copy.placeLabel} lang={markets[market].locale} className="ym-fade-in absolute inset-x-0 top-0 border-b border-border bg-primary-soft shadow-md" data-country-notice={place.kind}>
   <div className="mx-auto flex max-w-7xl items-start gap-3 px-4 py-2.5 text-sm sm:items-center sm:px-6 lg:px-8">
    <p className="min-w-0 flex-1 leading-6">{place.kind==="other_store"?copy.placeOtherStore(here,there):copy.placeElsewhere(here)}
     <span className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 sm:ms-3 sm:mt-0 sm:inline-flex">

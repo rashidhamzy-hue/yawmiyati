@@ -19,11 +19,11 @@ jobs:
         run: |
           set -u
           mkdir -p lh
-          # Home, a section page and the cart in every market, plus search, a policy page and the story once.
-          pages="sa/search sa/info/shipping-returns sa/story"
+          # The store chooser, then home, a section page and the cart in every market, plus search, a policy page and the story once.
+          pages="?choose=1 sa/search sa/info/shipping-returns sa/story"
           for m in sa ae om eg iq; do pages="$pages $m $m/c/kitchen $m/cart"; done
           for p in $pages; do
-            name=$(echo "$p" | tr '/' '_')
+            name=$(echo "$p" | tr '/?=' '___')
             npx -y lighthouse@12 "$BASE/$p" --quiet --chrome-flags="--headless=new --no-sandbox" \
               --only-categories=performance,accessibility,best-practices,seo \
               --output=json --output=html --output-path="lh/$name" || echo "FAILED $p"

@@ -4,16 +4,23 @@
 @source not "./components/ui";
 @source "./components/ui/button.tsx";
 @import "tw-animate-css";
-/* Self-hosted variable fonts (one file per family covers every weight; arabic + latin via unicode-range).
+/* Self-hosted variable fonts (one file per family and script covers every weight).
    Display: El Messiri (warm, calligraphic headings). Body: Readex Pro (calm, highly legible UI text). */
-@import "@fontsource-variable/el-messiri/wght.css";
-@import "@fontsource-variable/readex-pro/wght.css";
+/* Three files only (the store is Arabic): El Messiri Arabic for headings, Readex Pro Arabic and Latin for text, prices and
+   currency codes. Latin characters inside a heading use Readex Pro. The two Arabic files are preloaded in the page head
+   (src/routes/__root.tsx), so headings settle with the first paint instead of a second later. */
+@font-face { font-family: "El Messiri Variable"; font-style: normal; font-display: swap; font-weight: 400 700;
+  src: url("../node_modules/@fontsource-variable/el-messiri/files/el-messiri-arabic-wght-normal.woff2") format("woff2-variations"); unicode-range: U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC; }
+@font-face { font-family: "Readex Pro Variable"; font-style: normal; font-display: swap; font-weight: 160 700;
+  src: url("../node_modules/@fontsource-variable/readex-pro/files/readex-pro-arabic-wght-normal.woff2") format("woff2-variations"); unicode-range: U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC; }
+@font-face { font-family: "Readex Pro Variable"; font-style: normal; font-display: swap; font-weight: 160 700;
+  src: url("../node_modules/@fontsource-variable/readex-pro/files/readex-pro-latin-wght-normal.woff2") format("woff2-variations"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --font-sans: "Readex Pro Variable", "Yawmiyati Fallback", "Noto Sans Arabic", "Geeza Pro", "Segoe UI", Tahoma, system-ui, sans-serif;
-  --font-display: "El Messiri Variable", "Yawmiyati Fallback", "Noto Naskh Arabic", "Geeza Pro", "Segoe UI", Tahoma, serif;
+  --font-display: "El Messiri Variable", "Readex Pro Variable", "Yawmiyati Fallback", "Noto Naskh Arabic", "Geeza Pro", "Segoe UI", Tahoma, serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -238,3 +245,10 @@ summary::-webkit-details-marker { display: none; }
   body.yawmiyati-product-page nav.store-mobile-nav { display: none; }
   body.yawmiyati-product-page { --mobile-nav-height: 0px; }
 }
+
+/* The country bar arrives after the page (it waits for the visitor's country): it fades in instead of popping. */
+@keyframes ym-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.ym-fade-in { animation: ym-fade-in .25s ease-out both; }
+
+/* Far-below-the-fold blocks are laid out when the shopper gets near them, not before the first paint. */
+#main-content > section:nth-of-type(n+4), #main-content ~ footer { content-visibility: auto; contain-intrinsic-size: auto 640px; }
