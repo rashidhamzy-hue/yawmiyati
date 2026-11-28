@@ -248,6 +248,13 @@ describe("selection and safety",()=>{
   const c=(i:number,fam:string,cat:"kitchen"|"home",score:number)=>({product_id:i,variation_id:0,family_key:fam,category:cat,score,blocked:false});
   const pick=selectFinal([c(1,"a","kitchen",9),c(2,"a","kitchen",8),c(3,"b","kitchen",7),c(4,"c","home",6),{...c(5,"d","home",10),blocked:true}],3);
   expect(pick.map(x=>x.product_id)).toEqual([1,3,4]);
+  // Every section keeps a reserved share (mother & kids included), then the best of the rest under the 35% cap.
+  const pool=[...Array.from({length:40},(_,i)=>c(100+i,"k"+i,"kitchen",90-i)),{product_id:900,variation_id:0,family_key:"kid1",category:"kids" as const,score:1,blocked:false},
+   {product_id:901,variation_id:0,family_key:"w1",category:"wellness" as const,score:2,blocked:false}];
+  const spread=selectFinal(pool as never,20);
+  expect(spread).toHaveLength(9); // 7 kitchen (35% cap) + the only kids and wellness products
+  expect(spread.map(x=>x.product_id)).toEqual(expect.arrayContaining([900,901]));
+  expect(spread.filter(x=>x.category==="kitchen")).toHaveLength(7);
   const plan=merchandise([{key:"1:0",category:"kitchen",score:9,price_minor:9900,images:3},{key:"4:0",category:"organize",score:5,price_minor:4900,images:1}]);
   expect(plan.hero).toBe("1:0");expect(plan.cross_sell["1:0"]).toEqual(["4:0"]);
  });

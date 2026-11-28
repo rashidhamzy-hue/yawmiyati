@@ -1,5 +1,5 @@
 import {describe,expect,it} from "vitest";
-import {step,taagerMarketSuccessBps,planningBaseBps,plannedSuccessBps} from "../../supabase/functions/_shared/brain/runner.ts";
+import {buildShortlist,buildTarget,step,taagerMarketSuccessBps,planningBaseBps,plannedSuccessBps} from "../../supabase/functions/_shared/brain/runner.ts";
 import {decidePrice} from "../../supabase/functions/_shared/brain/economics.ts";
 import {MARKETS} from "../../supabase/functions/_shared/brain/markets.ts";
 import type {Db} from "../../supabase/functions/_shared/brain/db.ts";
@@ -129,6 +129,20 @@ describe("Yawmiyati Brain end to end (fake Taager store, fake Claude)",()=>{
   expect(calls.research).toBe(11);
   expect((again.progress as Record<string,number>).research_from_cache).toBe(11);
   expect(a.filter(r=>r.run_id==="run-2"&&r.stage==="selected")).toHaveLength(6);
+  // Pages written before and still valid are reused too: the whole second run cost nothing.
+  expect(calls.content).toBe(6);
+  expect((again.progress as Record<string,number>).content_reused).toBe(6);
+  expect(a.filter(r=>r.run_id==="run-2"&&r.stage==="selected").every(r=>(r.content as Record<string,unknown>).reused===true)).toBe(true);
+  // "Build store → 3 products": the run carries its own target, whatever the store's default selection size is.
+  t.brain_runs.push({id:"run-3",store_code:"sa",stage:"ingest",status:"running",cursor:{},progress:{},summary:{build:{target:3}},locked_until:null});
+  let build=await step(deps,"run-3");
+  for(let i=0;i<20&&build.status==="running";i++)build=await step(deps,"run-3");
+  expect(build.status).toBe("awaiting_review");
+  expect(a.filter(r=>r.run_id==="run-3"&&r.stage==="selected")).toHaveLength(3);
+  expect(build.progress).toMatchObject({target:3,content_written:3});
+  expect(Number((build.progress as Record<string,number>).cost_microusd)).toBeGreaterThanOrEqual(0);
+  expect(buildTarget({build:{target:100}})).toBe(100);expect(buildTarget({build:{target:500}})).toBeNull();expect(buildTarget({})).toBeNull();
+  expect(buildShortlist(100)).toBe(150);expect(buildShortlist(3)).toBe(13);expect(buildShortlist(200)).toBe(300);
  });
 
  it("pauses instead of overspending when the daily budget is reached",async()=>{

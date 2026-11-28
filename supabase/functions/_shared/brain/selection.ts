@@ -144,15 +144,27 @@ export function prefilter(offers: OfferRow[], mapping: FieldMapping, m: MarketFa
   const seenFamily = new Set<string>();
   const perCat: Record<string, number> = {};
   const capPerCat = Math.ceil(shortlistSize * 0.35);
-  let kept = 0;
+  // A sensible spread: every store section (mother & kids included) keeps a reserved share of the shortlist when the
+  // catalogue has candidates for it, so a strong section cannot crowd the others out before research.
+  const reserve = sectionReserve(shortlistSize);
+  const reserved = new Set<PrefilterRow>();
+  const familyOf = new Set<string>(), got: Record<string, number> = {};
+  for (const r of shortlisted) {
+    if (!r.category || (got[r.category] ?? 0) >= reserve || familyOf.has(r.family_key) || twins.get(`${r.product_id}:${r.variation_id}`)) continue;
+    familyOf.add(r.family_key); got[r.category] = (got[r.category] ?? 0) + 1; reserved.add(r);
+  }
+  let free = Math.max(0, shortlistSize - reserved.size);
   for (const r of shortlisted) {
     const cat = r.category ?? "other";
-    if (seenFamily.has(r.family_key)) { r.stage = "excluded"; r.reasons.push("same_family_as_a_stronger_offer"); continue; }
-    const twin = twins.get(`${r.product_id}:${r.variation_id}`);
-    if (twin) { r.stage = "excluded"; r.reasons.push("near_duplicate_of:" + twin); continue; }
-    if ((perCat[cat] ?? 0) >= capPerCat) { r.stage = "excluded"; r.reasons.push("category_cap"); continue; }
-    if (kept >= shortlistSize) { r.stage = "excluded"; r.reasons.push("below_shortlist_cut"); continue; }
-    seenFamily.add(r.family_key); perCat[cat] = (perCat[cat] ?? 0) + 1; kept++;
+    if (!reserved.has(r)) {
+      if (seenFamily.has(r.family_key) || familyOf.has(r.family_key)) { r.stage = "excluded"; r.reasons.push("same_family_as_a_stronger_offer"); continue; }
+      const twin = twins.get(`${r.product_id}:${r.variation_id}`);
+      if (twin) { r.stage = "excluded"; r.reasons.push("near_duplicate_of:" + twin); continue; }
+      if ((perCat[cat] ?? 0) >= capPerCat) { r.stage = "excluded"; r.reasons.push("category_cap"); continue; }
+      if (free <= 0) { r.stage = "excluded"; r.reasons.push("below_shortlist_cut"); continue; }
+      free--;
+    }
+    seenFamily.add(r.family_key); perCat[cat] = (perCat[cat] ?? 0) + 1;
   }
   return rows;
 }
@@ -171,18 +183,29 @@ export function finalScore(d: PriceDecision, research: ResearchSummary | null, i
 
 export type Candidate = { product_id: number; variation_id: number; family_key: string; category: StoreCategory | null; score: number; blocked: boolean };
 
+/** Share of a selection every store section keeps when it has candidates: about 7% each, at least one product. */
+export const sectionReserve = (size: number) => Math.max(1, Math.floor(size * 0.07));
+
 export function selectFinal(cands: Candidate[], size: number) {
   const sorted = cands.filter((c) => !c.blocked && c.score > 0).sort((a, b) => b.score - a.score);
   const cap = Math.max(3, Math.ceil(size * 0.35));
   const fam = new Set<string>(), perCat: Record<string, number> = {};
   const chosen: Candidate[] = [];
+  const take = (c: Candidate) => { fam.add(c.family_key); const cat = c.category ?? "other"; perCat[cat] = (perCat[cat] ?? 0) + 1; chosen.push(c); };
+  // First the reserved share of every section (best of each), then the best of what is left under the 35% cap.
+  const reserve = Math.min(sectionReserve(size), Math.max(1, Math.floor(size / STORE_CATEGORIES.length)));
+  for (const c of sorted) {
+    if (chosen.length >= size) break;
+    if (!c.category || fam.has(c.family_key) || (perCat[c.category] ?? 0) >= reserve) continue;
+    take(c);
+  }
   for (const c of sorted) {
     if (chosen.length >= size) break;
     const cat = c.category ?? "other";
-    if (fam.has(c.family_key) || (perCat[cat] ?? 0) >= cap) continue;
-    fam.add(c.family_key); perCat[cat] = (perCat[cat] ?? 0) + 1; chosen.push(c);
+    if (chosen.includes(c) || fam.has(c.family_key) || (perCat[cat] ?? 0) >= cap) continue;
+    take(c);
   }
-  return chosen;
+  return chosen.sort((a, b) => b.score - a.score);
 }
 
 const AFFINITY: Record<StoreCategory, readonly StoreCategory[]> = SECTION_AFFINITY;

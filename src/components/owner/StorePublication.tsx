@@ -12,7 +12,8 @@ const reason = (code: string) => PUBLISH_REASONS[code] ?? code.replace(/_/g, " "
  * show or hide the whole market, and see why any published product is currently hidden.
  * Every action is an owner-only database call; checkout is not touched from here.
  */
-export function StorePublication({ client, market, runId, approved }: { client: Client; market: MarketCode; runId: string | null; approved: number }) {
+export function StorePublication({ client, market, runId, approved, afterPublish }: { client: Client; market: MarketCode; runId: string | null; approved: number; /** Runs after a successful publish: works out offers, sets and free delivery for the approval queue. */ afterPublish?: () => Promise<string | null> }) {
+  const [next, setNext] = useState<string | null>(null);
   const [status, setStatus] = useState<PublicationStatus | null>(null);
   const [result, setResult] = useState<PublishResult | null>(null);
   const [busy, setBusy] = useState(false);
@@ -44,7 +45,7 @@ export function StorePublication({ client, market, runId, approved }: { client: 
     {status && syncAge !== null && syncAge > status.stock_max_age_hours / 2 && <p className="text-sm text-amber-800">Products hide themselves when the Taager sync is older than {status.stock_max_age_hours} hours. Run Taager sync (quick) to keep them visible.</p>}
     {hidden.length > 0 && <ul className="space-y-1 text-sm">{hidden.map(([code, n]) => <li key={code}><b>{n}</b> hidden: {reason(code)}</li>)}</ul>}
     <div className="flex flex-wrap gap-2">
-      <button type="button" disabled={busy || !runId || !approved} onClick={() => act(async () => setResult(await client.publish(market, runId!)))}
+      <button type="button" disabled={busy || !runId || !approved} onClick={() => act(async () => { const r = await client.publish(market, runId!); setResult(r); if (afterPublish && r.published + r.updated > 0) setNext(await afterPublish().catch(() => null)); })}
         className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"><Upload className="h-4 w-4" aria-hidden="true" />Publish approved products ({approved})</button>
       {status && !status.release_enabled && <button type="button" disabled={busy || !status.ready} onClick={() => act(() => client.setRelease(market, true))}
         className="inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-bold disabled:opacity-50"><Eye className="h-4 w-4" aria-hidden="true" />Show store to visitors</button>}
@@ -75,6 +76,7 @@ export function StorePublication({ client, market, runId, approved }: { client: 
             <button type="button" disabled={busy} onClick={() => act(async () => { await client.repriceDecide(market, [p.id], "rejected"); await loadReprices(); })} className="min-h-9 rounded-lg border px-2 text-xs disabled:opacity-50">Keep price</button>
           </span></li>; })}</ul>
     </section>}
+    {next && <p role="status" className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{next} <a href="#offers" className="font-bold underline">Review and approve them</a>.</p>}
     {status && status.sample.length > 0 && <details><summary className="cursor-pointer text-sm font-semibold">Published products ({status.listings})</summary>
       <ul className="mt-2 divide-y text-sm">{status.sample.map((p) => <li key={p.listing_id} className="flex flex-wrap items-center justify-between gap-2 py-2">
         <span dir="rtl" className="min-w-0 flex-1 truncate">{p.title}</span><span className="tabular-nums">{money(p.price_minor, market)}</span>

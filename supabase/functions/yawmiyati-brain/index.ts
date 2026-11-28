@@ -1,5 +1,5 @@
 // Yawmiyati Brain — owner-only control endpoint (verify_jwt = true).
-// Actions: test_woo, test_ai, start, step, resume, cancel.
+// Actions: test_woo, test_ai, start, build_store, step, resume, cancel.
 // Secrets (Supabase Edge Function secrets, never in the browser):
 //   ANTHROPIC_API_KEY, WOO_<MARKET>_URL, WOO_<MARKET>_KEY, WOO_<MARKET>_SECRET (e.g. WOO_SA_URL).
 import { createDb } from "../_shared/brain/db.ts";
@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405, origin);
   const url = Deno.env.get("SUPABASE_URL"), service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), anon = Deno.env.get("SUPABASE_ANON_KEY");
   if (!url || !service || !anon) return json({ error: "server_not_configured" }, 500, origin);
-  let body: { action?: string; store?: string; run_id?: string };
+  let body: { action?: string; store?: string; run_id?: string; count?: number };
   try { body = await req.json(); } catch { return json({ error: "invalid_json" }, 400, origin); }
   const store = body.store;
   if (!isMarket(store)) return json({ error: "invalid_store" }, 400, origin);
@@ -64,6 +64,7 @@ Deno.serve(async (req) => {
         const res = await callClaude({ apiKey: anthropicKey, model: "claude-haiku-5-5", system: "Reply with the single word OK.", user: "ping", maxTokens: 5 });
         return json({ ok: /ok/i.test(res.text), cost_microusd: res.metered.cost_microusd }, 200, origin);
       }
+      case "build_store":
       case "start": {
         // The imported Taager catalogue is the preferred source; WooCommerce is only needed without it.
         const hasTaager = (await db.select("taager_catalog", `select=sku&market=eq.${store}&limit=1`)).length > 0;
@@ -73,7 +74,11 @@ Deno.serve(async (req) => {
         if (active.length) return json({ run: active[0], note: "already_running" }, 200, origin);
         const b64 = (jwt.replace(/^Bearer\s+/i, "").split(".")[1] ?? "e30").replace(/-/g, "+").replace(/_/g, "/");
         const claims = JSON.parse(atob(b64 + "=".repeat((4 - (b64.length % 4)) % 4)));
-        const created = await db.insert("brain_runs", { store_code: store, started_by: claims.sub ?? null }, true);
+        // "Build store → N products": one resumable, idempotent run. Pressing it again while a build is open returns that build;
+        // a later build reuses fresh research (14 days) and pages that are still valid, so nothing is paid for twice.
+        const count = body.action === "build_store" ? Number(body.count ?? 100) : null;
+        if (count !== null && !(Number.isInteger(count) && count >= 1 && count <= 200)) return json({ error: "count must be a whole number from 1 to 200" }, 400, origin);
+        const created = await db.insert("brain_runs", { store_code: store, started_by: claims.sub ?? null, ...(count ? { summary: { build: { target: count } } } : {}) }, true);
         return json({ run: created[0] }, 200, origin);
       }
       case "step": {
