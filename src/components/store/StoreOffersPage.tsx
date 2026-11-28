@@ -37,7 +37,7 @@ function Pieces({set,size}:{set:Resolved;size:"card"|"page"}){
 function SetCard({market,set}:{market:MarketCode;set:Resolved}){
  const copy=shopCopy(market);
  return <article className="ym-card flex min-w-0 flex-col gap-2.5 p-2 sm:p-3" data-set-card="">
-  <a href={setHref(market,set.bundle.slug)} aria-label={set.bundle.title} className="block"><Pieces set={set} size="card"/></a>
+  <a href={setHref(market,set.bundle.slug)} className="block" tabIndex={-1} aria-hidden="true"><Pieces set={set} size="card"/></a>
   <div className="flex flex-1 flex-col gap-2 px-1 pb-1">
    <span className="ym-chip ym-chip-ink self-start"><Layers className="h-3 w-3" aria-hidden="true"/>{copy.setChip}</span>
    <h3 className="line-clamp-2 font-sans text-sm font-medium leading-6"><a href={setHref(market,set.bundle.slug)} className="hover:underline">{set.bundle.title}</a></h3>

@@ -69,7 +69,9 @@ export function initAnalytics():Promise<PostHog|null>{
 export function track(event:string,props:Record<string,unknown>={}){
  if(!analyticsEnabled())return;
  const payload={...baseProps(),...props};
- if(client)client.capture(event,payload);else{queue.push([event,payload]);void initAnalytics();}
+ // Before the library has started, events wait in a small queue; AnalyticsRoot starts it on the first
+ // interaction or a few seconds after load, so analytics never competes with the page's first paint.
+ if(client)client.capture(event,payload);else if(queue.length<60)queue.push([event,payload]);
 }
 
 export function trackPageview(){

@@ -1,14 +1,16 @@
 import {ArrowLeft,ArrowRight,ShoppingBag,PackageSearch,ShieldCheck,Search} from "lucide-react";
 import {StoreFrame} from "./StoreChrome";
-import {ShoppingAssistant} from "./ShoppingAssistant";
+import {ShoppingAssistant} from "./ShoppingAssistantDeferred";
 import {img} from "@/lib/store/images";
 import type {MarketCode} from "@/lib/store/markets";
 import {marketExperience} from "@/lib/store/market-experience";
 import {customerServiceCopy} from "@/lib/store/customer-service-copy";
 import {useOfferVersions} from "@/lib/store/offer-source";
 import {useOfferCart} from "@/lib/store/offer-cart";
-import {OfferCartPage} from "./OfferCartPage";
-import {ShopCartPage} from "./ShopCartPage";
+import {lazy,Suspense} from "react";
+const OfferCartPage=lazy(()=>import("./OfferCartPage").then(m=>({default:m.OfferCartPage})));
+const ShopCartPage=lazy(()=>import("./ShopCartPage").then(m=>({default:m.ShopCartPage})));
+const cartFallback=<div className="mx-auto max-w-3xl px-4 py-8" aria-busy="true"><div className="ym-skeleton h-8 w-32"/><div className="ym-skeleton mt-6 h-24"/></div>;
 import {useShopCart} from "@/lib/store/shop-cart";
 const content={
  cart:{eyebrow:"سلة يومياتي",title:"سلتك بانتظار اختياراتك",desc:"تصفّحي الأقسام واختاري المنتجات اللي تناسبك. تظهر خيارات الطلب للمنتجات القابلة للشراء فقط.",image:img["cat-home"],alt:"أفكار منزلية دافئة",icon:ShoppingBag},
@@ -28,8 +30,8 @@ export function StoreCommerceGuard({market,type}:{market:MarketCode;type:keyof t
  const offers=useOfferVersions(market),offerCart=useOfferCart(market);
  // Released products chosen in this browser: the real cart and order form (order submission itself stays off).
  const shopCart=useShopCart(market);
- if(type!=="order"&&offers.state==="ready"&&offerCart.lines.length)return <StoreFrame market={market} focused={type==="checkout"}><OfferCartPage market={market} type={type} versions={offers.versions}/></StoreFrame>;
- if(type!=="order"&&offers.state==="off"&&shopCart.lines.length)return <StoreFrame market={market} focused={type==="checkout"}><ShopCartPage market={market} type={type}/></StoreFrame>;
+ if(type!=="order"&&offers.state==="ready"&&offerCart.lines.length)return <StoreFrame market={market} focused={type==="checkout"}><Suspense fallback={cartFallback}><OfferCartPage market={market} type={type} versions={offers.versions}/></Suspense></StoreFrame>;
+ if(type!=="order"&&offers.state==="off"&&shopCart.lines.length)return <StoreFrame market={market} focused={type==="checkout"}><Suspense fallback={cartFallback}><ShopCartPage market={market} type={type}/></Suspense></StoreFrame>;
  const entry=content[type],Icon=entry.icon,path="/"+market;
  const copy=customerServiceCopy[market];
  return <StoreFrame market={market}>

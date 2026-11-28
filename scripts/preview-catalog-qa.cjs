@@ -18,7 +18,7 @@ async function main(){
   await page.getByRole("button",{name:"عرض المزيد من المنتجات"}).click();
   assert.equal(await cards.count(),32);
   const first=cards.first().locator("a");
-  const title=await first.getAttribute("aria-label");
+  const title=(await cards.first().locator("h3").innerText()).trim();
   assert.ok(title);
   await page.evaluate(()=>document.dispatchEvent(new CustomEvent("yawmiyati:open-search")));
   const search=page.getByRole("dialog",{name:"بحث يومياتي الذكي"});
