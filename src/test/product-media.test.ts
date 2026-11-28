@@ -60,3 +60,41 @@ describe("product videos",()=>{
   expect((await handleProductMedia(new Request("https://shop.example/media/v/"+vid),html as unknown as typeof fetch))!.status).toBe(502);
  });
 });
+describe("product videos kept on our own storage (R2)",()=>{
+ const vid="aaaaaaaa-1111-2222-3333-444444444444.mp4";
+ const bytes=new Uint8Array(Array.from({length:10},(_,i)=>i));
+ function bucket(){
+  const held=new Map<string,{data:Uint8Array;type:string}>();
+  return {held,
+   get:async(key:string,o?:{range?:{offset:number;length?:number}})=>{const h=held.get(key);if(!h)return null;const off=o?.range?.offset??0,len=o?.range?.length??h.data.length-off;
+    return {body:new Response(h.data.slice(off,off+len)).body,size:h.data.length,httpMetadata:{contentType:h.type}};},
+   put:async(key:string,value:ArrayBuffer|ReadableStream,o?:{httpMetadata?:{contentType?:string}})=>{held.set(key,{data:new Uint8Array(await new Response(value as BodyInit).arrayBuffer()),type:o?.httpMetadata?.contentType??""});}};
+ }
+ const source=(calls:{n:number})=>(async()=>{calls.n++;return new Response(bytes,{status:200,headers:{"content-type":"video/mp4","content-length":"10"}});}) as unknown as typeof fetch;
+ it("copies a video on first play and then serves ranges without touching the source",async()=>{
+  const b=bucket(),calls={n:0},pending:Promise<unknown>[]=[];
+  const first=await handleProductMedia(new Request("https://shop.example/media/v/"+vid),source(calls),{bucket:b,ctx:{waitUntil:p=>{pending.push(p);}}});
+  expect(first!.status).toBe(200);expect(first!.headers.get("x-media-source")).toBe("source");
+  await Promise.all(pending);
+  expect(b.held.get("video/"+vid)?.data.length).toBe(10);
+  const before=calls.n;
+  const never=(async()=>{throw Error("source must not be called");}) as unknown as typeof fetch;
+  const part=await handleProductMedia(new Request("https://shop.example/media/v/"+vid,{headers:{range:"bytes=2-5"}}),never,{bucket:b});
+  expect(part!.status).toBe(206);expect(part!.headers.get("content-range")).toBe("bytes 2-5/10");expect(part!.headers.get("x-media-source")).toBe("own-copy");
+  expect([...new Uint8Array(await part!.arrayBuffer())]).toEqual([2,3,4,5]);
+  const tail=await handleProductMedia(new Request("https://shop.example/media/v/"+vid,{headers:{range:"bytes=-3"}}),never,{bucket:b});
+  expect([...new Uint8Array(await tail!.arrayBuffer())]).toEqual([7,8,9]);
+  const whole=await handleProductMedia(new Request("https://shop.example/media/v/"+vid),never,{bucket:b});
+  expect(whole!.status).toBe(200);expect(whole!.headers.get("content-length")).toBe("10");
+  expect((await handleProductMedia(new Request("https://shop.example/media/v/"+vid,{headers:{range:"bytes=50-60"}}),never,{bucket:b}))!.status).toBe(416);
+  expect(calls.n).toBe(before);
+ });
+ it("does not copy a video without a stated length or over the size limit",async()=>{
+  const b=bucket(),pending:Promise<unknown>[]=[];
+  const big=(async()=>new Response(bytes,{status:200,headers:{"content-type":"video/mp4","content-length":String(65*1024*1024)}})) as unknown as typeof fetch;
+  await handleProductMedia(new Request("https://shop.example/media/v/"+vid),big,{bucket:b,ctx:{waitUntil:p=>{pending.push(p);}}});
+  await Promise.all(pending);
+  expect(b.held.size).toBe(0);
+ });
+});
+

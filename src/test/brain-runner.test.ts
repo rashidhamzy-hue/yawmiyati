@@ -63,7 +63,7 @@ function fakeFetch(calls:{research:number;content:number;mapping:number}){
     {type:"text",text:JSON.stringify({listings:[{retailer:"amazon.sa",url:`https://www.amazon.sa/dp/${n}`,price:String(120+n),currency:"SAR",match:"exact",confidence:0.85}],demand_signals:[{source:"amazon",signal:"500 ratings"}],summary:"Sold on Amazon"})}],
     usage:{input_tokens:8000,output_tokens:600,server_tool_use:{web_search_requests:2}},stop_reason:"end_turn"});}
   if(sys.includes("product pages")){calls.content++;
-   return Response.json({content:[{type:"text",text:JSON.stringify({title:"منتج مميز",description:"وصف عربي واضح.",bullets:["فائدة"],seo:{title:"منتج مميز",meta_description:"وصف",keywords:["منتج"],slug:"product"},category:"kitchen",faq:[{q:"س",a:"ج"}]})}],
+   return Response.json({content:[{type:"text",text:JSON.stringify({title:"منتج مميز",benefit_line:"يرتّب يومك بخطوة بسيطة.",description:"وصف عربي واضح.",bullets:["فائدة أولى","فائدة ثانية","فائدة ثالثة"],seo:{title:"منتج مميز",meta_description:"وصف",keywords:["منتج"],slug:"product"},category:"kitchen",faq:[{q:"س",a:"ج"},{q:"س ثاني",a:"ج"},{q:"س ثالث",a:"ج"}]})}],
     usage:{input_tokens:3000,output_tokens:1500},stop_reason:"end_turn"});}
   return new Response("unexpected",{status:500});
  }) as typeof fetch;

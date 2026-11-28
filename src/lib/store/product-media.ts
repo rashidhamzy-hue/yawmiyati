@@ -9,7 +9,7 @@
  * Strict shape: one fixed upstream host, uuid file names, picture extensions, two sizes.
  * Anything else is 404 — this is not an open proxy.
  */
-import {readThrough,type MediaBucket,type MediaContext} from "./media-store";
+import {MAX_STORED_VIDEO_BYTES,readThrough,type MediaBucket,type MediaContext} from "./media-store";
 export const PRODUCT_MEDIA_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(?:jpe?g|png|webp)$/;
 export const PRODUCT_MEDIA_SIZES=[360] as const;
 /** Product videos: `/media/v/<uuid>.mp4`, same rules (fixed host, uuid names, no query). Range requests pass through. */
@@ -40,26 +40,63 @@ export function productUpstream(url:URL):string|null{
  return null;
 }
 
-async function handleProductVideo(request:Request,url:URL,upstream:typeof fetch):Promise<Response>{
+/**
+ * Product video. Our own copy (R2) first, with byte ranges, so a video the supplier later removes keeps playing and
+ * no shopper request depends on the supplier's host. A miss is served from the source, and the whole file is copied
+ * to R2 in the background (only when the source states its length and it is within MAX_STORED_VIDEO_BYTES).
+ */
+async function handleProductVideo(request:Request,url:URL,upstream:typeof fetch,store:{bucket:MediaBucket|null;ctx?:MediaContext}):Promise<Response>{
  if(request.method!=="GET"&&request.method!=="HEAD")return new Response(null,{status:405});
  const parts=url.pathname.split("/");
  if(url.search||parts.length!==4||!isProductVideoId(parts[3]))return new Response("Not found",{status:404});
  const range=request.headers.get("range");
- if(range&&!/^bytes=\d*-\d*$/.test(range))return new Response(null,{status:416});
+ const m=range?/^bytes=(\d*)-(\d*)$/.exec(range):null;
+ if(range&&(!m||(!m[1]&&!m[2])))return new Response(null,{status:416});
+ const key="video/"+parts[3];
+ const base:Record<string,string>={"cache-control":"public, max-age=2592000, immutable","accept-ranges":"bytes","x-content-type-options":"nosniff"};
+ if(store.bucket){
+  try{
+   const head=await store.bucket.get(key,{range:{offset:0,length:1}});
+   if(head&&head.size>0){
+    const size=head.size,type=head.httpMetadata?.contentType??"video/mp4";
+    let start=0,end=size-1;
+    if(m){
+     if(m[1]){start=Number(m[1]);if(m[2])end=Math.min(Number(m[2]),size-1);}
+     else{start=Math.max(0,size-Number(m[2]));}
+     if(!(start<=end)||start>=size)return new Response(null,{status:416,headers:{"content-range":`bytes */${size}`}});
+    }
+    const headers={...base,"content-type":type,"content-length":String(end-start+1),"x-media-source":"own-copy",...(m?{"content-range":`bytes ${start}-${end}/${size}`}:{})};
+    if(request.method==="HEAD")return new Response(null,{status:m?206:200,headers});
+    const part=await store.bucket.get(key,{range:{offset:start,length:end-start+1}});
+    if(part?.body)return new Response(part.body,{status:m?206:200,headers});
+   }
+  }catch{/* fall through to the source */}
+ }
  const res=await upstream(UPSTREAM+parts[3],{headers:range?{range}:{},redirect:"manual",
   ...(range?{}:{cf:{cacheEverything:true,cacheTtl:2592000}}),
  } as RequestInit);
  const type=res.headers.get("content-type")??"";
  if(res.status===404||res.status===403||(res.status>=300&&res.status<400))return new Response("Not found",{status:404});
  if((res.status!==200&&res.status!==206)||!type.startsWith("video/"))return new Response(null,{status:502});
- const headers:Record<string,string>={"content-type":type,"cache-control":"public, max-age=2592000, immutable","accept-ranges":"bytes","x-content-type-options":"nosniff"};
+ if(store.bucket&&store.ctx?.waitUntil){
+  const bucket=store.bucket;
+  store.ctx.waitUntil((async()=>{
+   try{
+    const full=await upstream(UPSTREAM+parts[3],{redirect:"manual"} as RequestInit);
+    const length=Number(full.headers.get("content-length")??0),t=full.headers.get("content-type")??"";
+    if(full.status===200&&full.body&&t.startsWith("video/")&&length>0&&length<=MAX_STORED_VIDEO_BYTES)await bucket.put(key,full.body,{httpMetadata:{contentType:t}});
+    else await full.body?.cancel();
+   }catch{/* the copy is a safeguard, never a blocker */}
+  })());
+ }
+ const headers:Record<string,string>={...base,"content-type":type,"x-media-source":"source"};
  for(const h of ["content-length","content-range"]){const v=res.headers.get(h);if(v)headers[h]=v;}
  return new Response(request.method==="HEAD"?null:res.body,{status:res.status,headers});
 }
 
 export async function handleProductMedia(request:Request,upstream:typeof fetch=fetch,store:{bucket:MediaBucket|null;ctx?:MediaContext}={bucket:null}):Promise<Response|null>{
  const url=new URL(request.url);
- if(url.pathname.startsWith("/media/v/"))return handleProductVideo(request,url,upstream);
+ if(url.pathname.startsWith("/media/v/"))return handleProductVideo(request,url,upstream,store);
  if(!url.pathname.startsWith("/media/p/"))return null;
  if(request.method!=="GET"&&request.method!=="HEAD")return new Response(null,{status:405});
  const target=productUpstream(url);

@@ -11,7 +11,9 @@
  * Keys are built only from values the strict allowlists already validated: this is never an open store.
  */
 export type MediaObject={body:ReadableStream|null;size:number;httpMetadata?:{contentType?:string}};
-export type MediaBucket={get(key:string):Promise<MediaObject|null>;put(key:string,value:ArrayBuffer,options?:{httpMetadata?:{contentType?:string}}):Promise<unknown>};
+export type MediaBucket={get(key:string,options?:{range?:{offset:number;length?:number}}):Promise<MediaObject|null>;put(key:string,value:ArrayBuffer|ReadableStream,options?:{httpMetadata?:{contentType?:string}}):Promise<unknown>};
+/** Product videos are copied whole, streamed, only when the source states a length up to this size. */
+export const MAX_STORED_VIDEO_BYTES=64*1024*1024;
 export type MediaContext={waitUntil?:(promise:Promise<unknown>)=>void};
 export const MAX_STORED_BYTES=8*1024*1024;
 const EXT:Record<string,string>={"image/avif":"avif","image/webp":"webp","image/jpeg":"jpg","image/png":"png"};

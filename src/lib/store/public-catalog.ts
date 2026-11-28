@@ -155,6 +155,8 @@ export async function fetchPublicSearch(origin:string,key:string,market:MarketCo
 /** The owner-approved page of one released listing (public_product_page). Customer-safe fields only. */
 export type PublicProductPage={listing_id:string;category:PublicCategorySlug|null;
  title:string;subtitle:string;description:string;bullets:string[];
+ /** Fixed page layout (brain): one benefit line, what is in the box, how to use. Empty when the page has none. */
+ benefit_line:string;in_box:string[];how_to_use:string[];
  specs:{label:string;value:string}[];faq:{q:string;a:string}[];
  seo:{title:string;description:string};images:{id:string;alt:string}[];
  videos:string[];
@@ -182,6 +184,7 @@ export function parsePublicProductPage(data:unknown,market:MarketCode,listingId:
  return {listing_id:listingId,category:PUBLIC_CATEGORY_SLUGS.find(c=>c===data.category)??null,
   title,subtitle:text(p.subtitle,200),description,
   bullets:list(p.bullets,6).map(b=>text(b,200)).filter(Boolean),
+  benefit_line:text(p.benefit_line,160),in_box:list(p.in_box,10).map(b=>text(b,120)).filter(Boolean),how_to_use:list(p.how_to_use,5).map(b=>text(b,200)).filter(Boolean),
   specs:list(p.specs,12).filter(record).map(s=>({label:text(s.label,60),value:text(s.value,160)})).filter(s=>s.label&&s.value),
   faq:list(p.faq,5).filter(record).map(f=>({q:text(f.q,160),a:text(f.a,400)})).filter(f=>f.q&&f.a),
   seo:{title:text(seo.title,70),description:text(seo.description,170)},images,

@@ -11,7 +11,7 @@ import { decidePrice, freeDeliveryThreshold, marketReference, type PriceDecision
 import { quantityOffersDual, salePlan, taagerFacts, type StockPoint } from "./taager-economics.ts";
 import { orderPictures, parsePictureVerdicts, picturePrompt } from "./bundles.ts";
 import { callClaude, estimateMax, extractJson, type Metered } from "./anthropic.ts";
-import { contentPrompt, evidenceRows, mappingPrompt, parseContent, parseMapping, parseResearch, researchPrompt } from "./prompts.ts";
+import { contentPrompt, contentSourceText, evidenceRows, mappingPrompt, parseContent, parseMapping, parseResearch, researchPrompt } from "./prompts.ts";
 import type { Db } from "./db.ts";
 
 export type WooCreds = { origin: string; key: string; secret: string };
@@ -346,7 +346,7 @@ async function stageContent(d: Deps, run: Run, m: MarketFacts, settings: Setting
   while (Date.now() < deadline - 60_000) {
     const batch = await d.db.select<Analysis>("brain_product_analysis", `select=*&run_id=eq.${run.id}&stage=eq.selected&content=is.null&order=score.desc&limit=${conc}`);
     if (!batch.length) { run.stage = "merchandise"; return; }
-    const est = estimateMax(settings.content_model, 3500, 2500, 0) * batch.length;
+    const est = estimateMax(settings.content_model, 4200, 2500, 0) * batch.length * 2; // one possible rewrite each
     if (!(await budgetOk(d, run, settings, est))) { run.status = "paused_budget"; return; }
     const offers = await loadOffersByKeys(d.db, run.store_code, batch, runSource(run));
     await pool(batch, conc, async (a) => {
@@ -357,13 +357,23 @@ async function stageContent(d: Deps, run: Run, m: MarketFacts, settings: Setting
         const mapping = (run.summary.capability as { mapping?: FieldMapping } | undefined)?.mapping ?? settings.field_mapping;
         const k = offerKind(o, mapping);
         const price = a.decision?.price_minor ? minorToDecimal(a.decision.price_minor, m.minorDigits) + " " + m.currency : "set by store";
-        const research = a.research as { summary?: string } | null;
-        const res = await callClaude({ apiKey: d.anthropicKey!, model: settings.content_model, maxTokens: 2500, temperature: 0.4, fetchImpl: d.fetchImpl,
-          ...contentPrompt(o, m, { category: a.category, piecesVerified: k.kind === "verified_multipack" ? k.pieces : null, priceText: price,
-            deliveryText: `${minorToDecimal(m.shippingMinor, m.minorDigits)} ${m.currency} per order, paid on delivery`, returnsText: "per the store's returns page", research: research?.summary ?? "" }) });
-        await recordCost(d.db, run, "content", key(a), res.metered);
-        cost = res.metered.cost_microusd;
-        content = { ...parseContent(extractJson(res.text)), model: settings.content_model, cost_microusd: cost };
+        const research = a.research as { summary?: string; facts?: { kind: string; fact: string; cited?: boolean }[]; buyer_questions?: string[] } | null;
+        // Only facts whose source page was really opened during research reach the writer.
+        const facts = (research?.facts ?? []).filter((f) => f.cited === true).map((f) => ({ kind: f.kind, fact: f.fact }));
+        const ctx = { category: a.category, piecesVerified: k.kind === "verified_multipack" ? k.pieces : null, priceText: price,
+          deliveryText: `${minorToDecimal(m.shippingMinor, m.minorDigits)} ${m.currency} per order, paid on delivery`, returnsText: "per the store's returns page",
+          research: research?.summary ?? "", facts, buyerQuestions: research?.buyer_questions ?? [] };
+        const sourceText = contentSourceText(o, ctx);
+        const write = async (fix?: string[]) => {
+          const res = await callClaude({ apiKey: d.anthropicKey!, model: settings.content_model, maxTokens: 2500, temperature: 0.4, fetchImpl: d.fetchImpl, ...contentPrompt(o, m, { ...ctx, fix }) });
+          await recordCost(d.db, run, "content", key(a), res.metered);
+          cost += res.metered.cost_microusd;
+          return parseContent(extractJson(res.text), { market: m.code, sourceText });
+        };
+        let page = await write();
+        // One rewrite when the draft breaks a rule (invented number, wrong dialect, layout). A second failure stays flagged for the owner.
+        if (page.issues.includes("needs_fix")) { const again = await write(page.issues.filter((i) => i !== "needs_fix")); if (!again.issues.includes("needs_fix") || again.issues.length < page.issues.length) page = again; }
+        content = { ...page, model: settings.content_model, cost_microusd: cost, facts_used: facts.length };
         // Picture rule (M11): clean pictures first, promo artwork never the face of the product. One small vision call.
         const pics = o.images.map((i) => /^https:\/\/media\.taager\.com\/([0-9a-f-]{36}\.(?:jpe?g|png|webp))$/.exec(i.src)?.[1]).filter((x): x is string => !!x).slice(0, 12);
         if (pics.length > 1) {
