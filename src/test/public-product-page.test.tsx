@@ -52,19 +52,25 @@ describe("released listings with pictures",()=>{
   const {unmount,container}=render(<ReleasedProductPage origin="https://x.supabase.co" apiKey="pk" market="sa" detail={detail} fallback={<p>plain</p>}/>);
   expect(screen.getByText("plain")).toBeInTheDocument();
   expect(await screen.findByRole("heading",{level:1,name:"خفاقة حليب كهربائية"})).toBeInTheDocument();
-  expect(screen.getByAltText("خفاقة على الطاولة")).toHaveAttribute("src","/media/p/"+img1);
+  // The first picture paints from the cached card-size file, then sharpens once the page is idle.
+  expect(screen.getByAltText("خفاقة على الطاولة")).toHaveAttribute("src","/media/p/360/"+img1);
   expect(screen.getByText("سهلة التنظيف")).toBeInTheDocument();
   expect(screen.getByText("هل تعمل بالبطارية؟")).toBeInTheDocument();
-  expect(screen.getByText(/الدفع عند الاستلام/)).toBeInTheDocument();
+  expect(screen.getAllByText(/الدفع عند الاستلام/).length).toBeGreaterThan(0);
   expect(container.innerHTML).not.toMatch(/taager/i);
-  // 2 for 229 SAR saves 29 SAR on 2 × 129; 3 for 400 is dearer than 3 × 129 and is not shown.
-  expect(screen.getByText(/قطعتين بـ/)).toHaveTextContent("٢٢٩");
-  expect(screen.getByText(/توفّرين/)).toHaveTextContent("٢٩٫٠٠");
-  expect(screen.queryByText(/3 قطع/)).toBeNull();
+  // 2 for 229 SAR saves 29 SAR on 2 × 129; 3 for 400 is dearer than 3 × 129 and is not offered.
+  const two=screen.getByRole("radio",{name:/قطعتين/});
+  expect(two.closest("label")).toHaveTextContent("٢٢٩");
+  expect(two.closest("label")).toHaveTextContent(/وفّري.*٢٩/);
+  expect(screen.queryByRole("radio",{name:/3 قطع/})).toBeNull();
+  expect(screen.getAllByRole("radio")).toHaveLength(2);
   expect(screen.getByText("سيروم الشعر")).toBeInTheDocument();expect(screen.getByText("× 2")).toBeInTheDocument();
+  // The video downloads nothing until she presses play.
+  expect(container.querySelector("video")).toBeNull();
+  fireEvent.click(screen.getAllByRole("button",{name:"شوفي الفيديو"})[0]!);
   expect(container.querySelector("video source")).toHaveAttribute("src","/media/v/"+vid);
-  fireEvent.click(screen.getByRole("button",{name:"عرض الصورة 2"}));
   expect(screen.getByAltText("خفاقة حليب كهربائية")).toHaveAttribute("src","/media/p/"+img2);
+  expect(screen.getByRole("button",{name:"اطلبي الآن"})).toBeInTheDocument();
   await waitFor(()=>expect(document.title).toBe("خفاقة حليب | يومياتي"));
   unmount();
   vi.stubGlobal("fetch",vi.fn(async()=>Response.json(null)));

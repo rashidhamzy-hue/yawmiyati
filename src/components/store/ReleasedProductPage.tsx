@@ -1,10 +1,12 @@
 import {useEffect,useState,type ReactNode} from "react";
-import {Check,ChevronDown,HandCoins,Package,RotateCcw,Tag,Truck} from "lucide-react";
+import {Check,ChevronDown,HandCoins,Package,RotateCcw,Truck} from "lucide-react";
 import {type MarketCode} from "@/lib/store/markets";
 import {customerServiceCopy} from "@/lib/store/customer-service-copy";
-import {fetchPublicProductPage,formatListingPrice,type PublicDetail,type PublicProductPage} from "@/lib/store/public-catalog";
-import {productMediaPath,productVideoPath} from "@/lib/store/product-media";
-import {formatMinor} from "@/lib/store/offer-version";
+import {fetchPublicProductPage,formatPrice,type PublicDetail,type PublicProductPage} from "@/lib/store/public-catalog";
+import {productMediaPath} from "@/lib/store/product-media";
+import {shopCopy} from "@/lib/store/shop-copy";
+import {ProductGallery} from "./ProductGallery";
+import {BuyBox} from "./BuyBox";
 
 /**
  * Product page for a released listing whose owner-approved page comes from `public_product_page`.
@@ -12,73 +14,55 @@ import {formatMinor} from "@/lib/store/offer-version";
  * the fallback (plain approved detail) is shown. No order is created from this page.
  */
 export function ProductPageView({page,detail,market}:{page:PublicProductPage;detail:PublicDetail;market:MarketCode}){
- const [selected,setSelected]=useState(0);
- const copy=customerServiceCopy[market];
- const image=page.images[selected]??page.images[0];
- const single=BigInt(detail.price_minor);
- // Only offers that are really cheaper than buying the same number singly.
- const offers=page.quantity_offers.map(o=>({...o,saving:single*BigInt(o.quantity)-BigInt(o.price_minor)})).filter(o=>o.saving>0n);
- return <article dir="rtl" aria-label="تفاصيل المنتج" className="space-y-8">
-  <div className="grid gap-6 lg:grid-cols-2 lg:gap-10">
-   <div className="space-y-3">
-    <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border bg-surface">
-     {image&&<img key={image.id} src={productMediaPath(image.id)} alt={image.alt} width={800} height={800} fetchPriority="high" decoding="async" className="h-full w-full object-contain"/>}
-    </div>
-    {page.images.length>1&&<div role="group" aria-label="معرض صور المنتج" className="flex gap-2 overflow-x-auto pb-1">
-     {page.images.map((img,index)=><button key={img.id} type="button" aria-label={`عرض الصورة ${index+1}`} aria-pressed={index===selected} onClick={()=>setSelected(index)}
-       className={"h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 bg-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary "+(index===selected?"border-primary":"border-transparent")}>
-       <img src={productMediaPath(img.id,360)} alt="" width={64} height={64} loading="lazy" decoding="async" className="h-full w-full object-cover"/></button>)}
-    </div>}
-   </div>
-   <div className="space-y-5">
+ const service=customerServiceCopy[market],copy=shopCopy(market);
+ const [more,setMore]=useState(false);
+ const long=page.description.length>420;
+ const pieces=page.bundle.reduce((n,b)=>n+b.quantity,0);
+ return <article dir="rtl" aria-label="تفاصيل المنتج" className="space-y-10">
+  <div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
+   <div className="min-w-0 lg:sticky lg:top-28 lg:self-start"><ProductGallery market={market} images={page.images} videos={page.videos}/></div>
+   <div className="min-w-0 space-y-5">
     <div className="space-y-2">
-     <h1 className="font-display text-2xl font-extrabold leading-relaxed sm:text-3xl">{page.title}</h1>
-     {page.subtitle&&<p className="text-sm leading-7 text-muted-foreground sm:text-base">{page.subtitle}</p>}
+     {(page.bundle.length>0||page.stock_signal==="low")&&<p className="flex flex-wrap gap-2">
+      {page.bundle.length>0&&<span className="ym-chip ym-chip-ink"><Package className="h-3 w-3" aria-hidden="true"/>{copy.inThisSet(pieces)}</span>}
+      {page.stock_signal==="low"&&<span className="ym-chip ym-chip-sand" data-stock-signal="">{copy.lowStock}</span>}
+     </p>}
+     <h1 className="ym-h2 break-words">{page.title}</h1>
+     {page.subtitle&&<p className="ym-body">{page.subtitle}</p>}
     </div>
-    <p className="text-2xl font-extrabold text-primary">{formatListingPrice(detail,market)}</p>
-    {offers.length>0&&<section aria-label="عروض الكمية" className="space-y-2">
-     <h2 className="inline-flex items-center gap-2 text-sm font-bold"><Tag className="h-4 w-4 text-primary" aria-hidden="true"/>اطلبي أكثر ووفّري</h2>
-     <ul className="grid gap-2 sm:grid-cols-2">{offers.map(o=><li key={o.quantity} className="rounded-xl border bg-card px-4 py-3 text-sm">
-      <p className="font-bold">{o.quantity===2?"قطعتين":`${o.quantity} قطع`} بـ {formatMinor(market,BigInt(o.price_minor))}</p>
-      <p className="text-xs text-muted-foreground">توفّرين {formatMinor(market,o.saving)} مقارنة بشراء كل قطعة وحدها</p>
-     </li>)}</ul>
-    </section>}
-    <ul className="grid gap-2 rounded-2xl border bg-card p-4 text-sm leading-7">
-     <li className="flex items-start gap-3"><HandCoins className="mt-1 h-5 w-5 shrink-0 text-primary" aria-hidden="true"/><span>{copy.paymentHeading}</span></li>
-     <li className="flex items-start gap-3"><Truck className="mt-1 h-5 w-5 shrink-0 text-primary" aria-hidden="true"/><span>{copy.shipping} {copy.delivery}</span></li>
-     <li className="flex items-start gap-3"><RotateCcw className="mt-1 h-5 w-5 shrink-0 text-primary" aria-hidden="true"/><span>{copy.returns}</span></li>
+    <p className="ym-price text-[1.75rem] leading-none">{formatPrice(detail.price_minor,market)}</p>
+    <BuyBox market={market} target={{listing_id:detail.listing_id,slug:detail.slug,title:page.title,image:page.images[0]?.id??null,price_minor:detail.price_minor}} offers={page.quantity_offers}/>
+    <ul className="ym-card divide-y divide-border px-4 text-sm leading-7">
+     <li className="flex items-start gap-3 py-3"><HandCoins className="mt-1 h-5 w-5 shrink-0" strokeWidth={1.6} aria-hidden="true"/><span><span className="font-semibold">{service.paymentHeading}</span><span className="block text-muted-foreground">{copy.reassureCall}</span></span></li>
+     <li className="flex items-start gap-3 py-3"><Truck className="mt-1 h-5 w-5 shrink-0" strokeWidth={1.6} aria-hidden="true"/><span className="text-muted-foreground">{service.shipping} {service.delivery}</span></li>
+     <li className="flex items-start gap-3 py-3"><RotateCcw className="mt-1 h-5 w-5 shrink-0" strokeWidth={1.6} aria-hidden="true"/><span className="text-muted-foreground">{service.returns}</span></li>
     </ul>
-    {page.bullets.length>0&&<ul className="space-y-2 text-sm leading-7 sm:text-base">
-     {page.bullets.map((b,i)=><li key={i} className="flex items-start gap-3"><Check className="mt-1.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true"/><span>{b}</span></li>)}
+    {page.bullets.length>0&&<ul className="space-y-2.5 text-[15px] leading-7">
+     {page.bullets.map((b,i)=><li key={i} className="flex items-start gap-3"><Check className="mt-1.5 h-4 w-4 shrink-0" aria-hidden="true"/><span className="min-w-0 break-words">{b}</span></li>)}
     </ul>}
-    <p className="rounded-xl bg-muted px-4 py-3 text-sm leading-7 text-muted-foreground">{copy.preCheckoutNotice}</p>
    </div>
   </div>
-  {page.bundle.length>0&&<section aria-label="محتويات العرض" className="max-w-3xl">
-   <h2 className="mb-3 inline-flex items-center gap-2 font-display text-xl font-extrabold"><Package className="h-5 w-5 text-primary" aria-hidden="true"/>محتويات العرض</h2>
-   <ul className="grid gap-2 sm:grid-cols-2">{page.bundle.map((b,i)=><li key={i} className="flex items-center gap-3 rounded-xl border bg-card p-3 text-sm">
-    {b.image?<img src={productMediaPath(b.image,360)} alt="" width={56} height={56} loading="lazy" decoding="async" className="h-14 w-14 shrink-0 rounded-lg bg-surface object-cover"/>:<span className="h-14 w-14 shrink-0 rounded-lg bg-surface" aria-hidden="true"/>}
+  {page.bundle.length>0&&<section aria-label={copy.bundleContents} className="max-w-3xl">
+   <h2 className="ym-h3 mb-3">{copy.bundleContents}</h2>
+   <ul className="grid gap-2 sm:grid-cols-2">{page.bundle.map((b,i)=><li key={i} className="ym-card flex items-center gap-3 p-3 text-sm">
+    {b.image?<img src={productMediaPath(b.image,360)} alt="" width={56} height={56} loading="lazy" decoding="async" className="h-14 w-14 shrink-0 rounded-xl bg-surface object-cover"/>:<span className="h-14 w-14 shrink-0 rounded-xl bg-surface" aria-hidden="true"/>}
     <span className="min-w-0 flex-1 break-words leading-6">{b.name}</span><span className="shrink-0 font-bold tabular-nums">× {b.quantity}</span>
    </li>)}</ul>
   </section>}
-  {page.videos.length>0&&<section aria-label="فيديو المنتج" className="max-w-3xl space-y-3">
-   <h2 className="font-display text-xl font-extrabold">شاهدي المنتج</h2>
-   {page.videos.slice(0,2).map(v=><video key={v} controls playsInline preload="none" poster={page.images[0]?productMediaPath(page.images[0].id):undefined}
-     className="aspect-square w-full max-w-md rounded-2xl border bg-surface object-contain"><source src={productVideoPath(v)} type="video/mp4"/></video>)}
-  </section>}
-  <section aria-label="وصف المنتج" className="max-w-3xl space-y-3">
-   <h2 className="font-display text-xl font-extrabold">عن المنتج</h2>
-   <p className="whitespace-pre-wrap break-words text-sm leading-8 text-muted-foreground sm:text-base">{page.description}</p>
+  <section aria-label={copy.aboutProduct} className="max-w-3xl">
+   <h2 className="ym-h3 mb-3">{copy.aboutProduct}</h2>
+   <p id="product-description" className={"whitespace-pre-wrap break-words text-[15px] leading-8 text-muted-foreground "+(long&&!more?"line-clamp-6":"")}>{page.description}</p>
+   {long&&<button type="button" aria-expanded={more} aria-controls="product-description" onClick={()=>setMore(v=>!v)} className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4">{more?copy.readLess:copy.readMore}</button>}
   </section>
-  {page.specs.length>0&&<section aria-label="المواصفات" className="max-w-3xl">
-   <h2 className="mb-3 font-display text-xl font-extrabold">المواصفات</h2>
-   <dl className="divide-y rounded-xl border bg-card px-4">{page.specs.map((s,i)=><div key={i} className="grid grid-cols-2 gap-3 py-3 text-sm"><dt className="font-semibold">{s.label}</dt><dd className="break-words text-muted-foreground">{s.value}</dd></div>)}</dl>
+  {page.specs.length>0&&<section aria-label={copy.specs} className="max-w-3xl">
+   <h2 className="ym-h3 mb-3">{copy.specs}</h2>
+   <dl className="ym-card divide-y divide-border px-4">{page.specs.map((s,i)=><div key={i} className="grid grid-cols-[2fr_3fr] gap-3 py-3 text-sm"><dt className="font-semibold">{s.label}</dt><dd className="min-w-0 break-words text-muted-foreground">{s.value}</dd></div>)}</dl>
   </section>}
-  {page.faq.length>0&&<section aria-label="أسئلة عن المنتج" className="max-w-3xl">
-   <h2 className="mb-3 font-display text-xl font-extrabold">أسئلة شائعة</h2>
-   <div className="space-y-2">{page.faq.map((f,i)=><details key={i} className="group rounded-2xl border bg-card px-5 py-4">
-    <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 font-bold marker:hidden">{f.q}<ChevronDown className="h-5 w-5 shrink-0 text-primary transition-transform group-open:rotate-180" aria-hidden="true"/></summary>
-    <p className="pb-2 pt-3 text-sm leading-8 text-muted-foreground">{f.a}</p></details>)}</div>
+  {page.faq.length>0&&<section aria-label={copy.productFaq} className="max-w-3xl">
+   <h2 className="ym-h3 mb-3">{copy.productFaq}</h2>
+   <div className="space-y-2">{page.faq.map((f,i)=><details key={i} className="group ym-card px-5 py-3">
+    <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-[15px] font-semibold marker:hidden">{f.q}<ChevronDown className="h-5 w-5 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true"/></summary>
+    <p className="pb-2 pt-2 text-sm leading-8 text-muted-foreground">{f.a}</p></details>)}</div>
   </section>}
  </article>;
 }

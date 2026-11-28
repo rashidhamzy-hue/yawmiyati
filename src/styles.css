@@ -232,3 +232,9 @@ summary::-webkit-details-marker { display: none; }
  :root { --mobile-nav-height: 64px; }
  .store-mobile-nav { min-height: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom)); }
 }
+
+/* Product pages: the order bar replaces the quick-navigation bar on phones, so one action owns the thumb zone. */
+@media (max-width: 767px) {
+  body.yawmiyati-product-page nav[aria-label="التنقل السريع للجوال"] { display: none; }
+  body.yawmiyati-product-page { --mobile-nav-height: 0px; }
+}
