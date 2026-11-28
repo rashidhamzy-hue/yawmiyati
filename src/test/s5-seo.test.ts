@@ -1,6 +1,7 @@
 import {describe,expect,it} from "vitest";
 import {INDEXING_LIVE,marketUrl,minorToDecimal,productSuffix,sharedPageLinks,hostMayBeIndexed} from "@/lib/seo/site";
-import {handleSeoRequest,llmsTxt,marketSitemapXml,merchantFeedXml,robotsTxt,robotsHeaderFor,sitemapIndexXml} from "@/lib/seo/endpoints";
+import {handleSeoRequest,llmsTxt,marketSitemapXml,merchantFeedXml,metaFeedXml,robotsTxt,robotsHeaderFor,sitemapIndexXml} from "@/lib/seo/endpoints";
+import {metaEventFor} from "@/lib/analytics/meta-events";
 import {faqNode,productNode} from "@/lib/seo/structured-data";
 import {productHead} from "@/lib/seo/route-head";
 import {commerceFacts} from "@/lib/seo/commerce-facts";
@@ -126,12 +127,32 @@ describe("crawler files",()=>{
   expect(body).toContain("[خفّاقة حليب](https://yawmiyati.shop/sa/p/milk-frother): 89 SAR");
   expect(body).toMatch(/cash on delivery/i);
  });
- it("Google feed prices in decimal with shipping, without invented images",async()=>{
-  const xml=await merchantFeedXml("sa",reader({sa:[listing({title:"A & B"})]}));
-  expect(xml).toContain("<g:price>89 SAR</g:price>");
+ it("Google feed: published products with their own picture, decimal price, delivery as she pays it",async()=>{
+  const img="11111111-2222-3333-4444-555555555555.jpg";
+  const xml=await merchantFeedXml("sa",reader({sa:[listing({title:"A & B",image:img,approved_category_slugs:["kitchen"]}),listing({slug:"no-picture",listing_id:"L2"}),
+   listing({slug:"free-one",listing_id:"L3",image:img,delivery_included:true}),
+   listing({slug:"on-offer",listing_id:"L4",image:img,price_minor:"7900",sale:{ends_at:"2026-12-20T00:00:00.000Z",list_price_minor:"9900"}})]}));
+  expect(xml).toContain("<g:id>sa-milk-frother</g:id>");expect(xml).toContain("<g:price>89 SAR</g:price>");
   expect(xml).toContain("<g:shipping><g:country>SA</g:country><g:price>28 SAR</g:price></g:shipping>");
   expect(xml).toContain("A &amp; B");
-  expect(xml).not.toContain("image_link");
+  expect(xml).toContain("<g:image_link>https://yawmiyati.shop/media/p/"+img+"</g:image_link>");
+  expect(xml).toContain("<g:product_type>المطبخ والقهوة</g:product_type>");
+  // No picture of its own: left out, never a placeholder.
+  expect(xml).not.toContain("no-picture");
+  // Delivery included: delivery costs nothing for that item.
+  expect(xml).toMatch(/<g:id>sa-free-one<\/g:id>.*?<g:shipping><g:country>SA<\/g:country><g:price>0 SAR<\/g:price><\/g:shipping>/);
+  // A real time-limited offer: list price, offer price and the offer's real end date.
+  expect(xml).toMatch(/<g:id>sa-on-offer<\/g:id>.*?<g:price>99 SAR<\/g:price><g:sale_price>79 SAR<\/g:sale_price><g:sale_price_effective_date>\d{4}-\d\d-\d\dT00:00:00Z\/2026-12-20T00:00:00.000Z<\/g:sale_price_effective_date>/);
+ });
+ it("Meta catalogue feed uses the product slug as the id: the same id the Pixel and the server events send",async()=>{
+  const img="11111111-2222-3333-4444-555555555555.jpg";
+  const xml=await metaFeedXml("eg",reader({eg:[listing({image:img,currency:"EGP",price_minor:"45000"})]}));
+  expect(xml).toContain("<g:id>milk-frother</g:id>");expect(xml).toContain("<g:price>450 EGP</g:price>");expect(xml).toContain("<g:availability>in_stock</g:availability>");
+  expect(xml).toContain("<link>https://yawmiyati.shop/eg/p/milk-frother</link>");
+  const e=metaEventFor("add_to_cart",{market:"eg",slug:"milk-frother",value_minor:"45000",quantity:1},"00000000-0000-4000-8000-000000000001")!;
+  expect(e).toEqual({name:"AddToCart",event_id:"00000000-0000-4000-8000-000000000001",market:"eg",params:{content_ids:["milk-frother"],content_type:"product",value:450,currency:"EGP",num_items:1}});
+  expect(xml).toContain("<g:id>"+e.params.content_ids![0]+"</g:id>");
+  expect((await handleSeoRequest(new Request("https://yawmiyati.shop/feeds/meta-iq.xml"),reader({})))?.status).toBe(200);
  });
  it("routes only the crawler paths",async()=>{
   const r=reader({});

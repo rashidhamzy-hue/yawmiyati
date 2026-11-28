@@ -72,6 +72,8 @@ export function track(event:string,props:Record<string,unknown>={}){
  // Before the library has started, events wait in a small queue; AnalyticsRoot starts it on the first
  // interaction or a few seconds after load, so analytics never competes with the page's first paint.
  if(client)client.capture(event,payload);else if(queue.length<60)queue.push([event,payload]);
+ // Meta twin (Pixel + Conversions API, one shared event id): only when a Pixel id is configured and she accepted analytics.
+ if(import.meta.env["VITE_META_PIXEL_ID"]&&readConsent()==="granted")void import("./meta-events").then(m=>{m.forwardToMeta(event,payload,"granted");}).catch(()=>undefined);
 }
 
 export function trackPageview(){

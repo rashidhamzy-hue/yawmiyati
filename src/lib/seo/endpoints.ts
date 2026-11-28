@@ -13,6 +13,8 @@ import {customerServiceCopy} from "@/lib/store/customer-service-copy";
 import {SEO_EDITORIAL_SLUGS,planCategorySeo} from "@/lib/store/seo-planning";
 import {fetchPublicCatalog,type PublicListing} from "@/lib/store/public-catalog";
 import {publicBrowserConfig} from "@/lib/store/staging-public-config";
+import {productMediaPath} from "@/lib/store/product-media";
+import {shopCopy} from "@/lib/store/shop-copy";
 import {commerceFacts} from "./commerce-facts";
 import {
  DEFAULT_MARKET,MARKET_CODES,SHARED_INFO_TOPICS,SITE_ORIGIN,hostMayBeIndexed,
@@ -113,26 +115,45 @@ export async function llmsTxt(read:CatalogReader=defaultCatalog):Promise<string>
  return lines.join("\n");
 }
 
-/**
- * Google Merchant Center product feed (RSS 2.0 + g: namespace) for one market.
- * The public catalog does not expose product photos yet, so items carry no
- * image_link until released media exists; Merchant Center will hold them
- * until then. Never add placeholder images.
- */
-export async function merchantFeedXml(market:MarketCode,read:CatalogReader=defaultCatalog):Promise<string>{
- const id=marketIdentity[market],facts=commerceFacts[market],currency=markets[market].currency;
- const shipping=facts.flatShipping?`<g:shipping><g:country>${facts.countryCode}</g:country><g:price>${facts.flatShipping} ${currency}</g:price></g:shipping>`:"";
- const items=(await released(read,market)).map(row=>{
-  const url=marketUrl(market,productSuffix(row.slug)!);
-  return `<item><g:id>${xmlEscape(market+"-"+row.slug)}</g:id><title>${xmlEscape(row.title.trim().slice(0,150))}</title>`+
-   `<description>${xmlEscape(row.title.trim())}</description><link>${xmlEscape(url)}</link>`+
-   `<g:price>${minorToDecimal(row.price_minor,markets[market].minorDigits)} ${currency}</g:price>`+
-   `<g:availability>in_stock</g:availability><g:condition>new</g:condition><g:identifier_exists>no</g:identifier_exists>`+
-   shipping+`</item>`;
- });
+/** One feed item, or null when the product has no picture of its own yet (a feed never carries a placeholder). */
+function feedItem(market:MarketCode,row:PublicListing,idOf:(slug:string)=>string):string|null{
+ if(!row.image)return null;
+ const facts=commerceFacts[market],currency=markets[market].currency,digits=markets[market].minorDigits;
+ const url=marketUrl(market,productSuffix(row.slug)!),price=(minor:string)=>`${minorToDecimal(minor,digits)} ${currency}`;
+ const section=row.approved_category_slugs?.[0],sectionName=section?shopCopy(market).sectionNames[section]:undefined;
+ // Delivery included: the shopper pays the product price only, so the feed says delivery costs nothing for this item.
+ const shipping=row.delivery_included?`<g:shipping><g:country>${facts.countryCode}</g:country><g:price>0 ${currency}</g:price></g:shipping>`
+  :facts.flatShipping?`<g:shipping><g:country>${facts.countryCode}</g:country><g:price>${facts.flatShipping} ${currency}</g:price></g:shipping>`:"";
+ // An owner-approved time-limited price: list price as the price, the offer as sale price, with its real end date.
+ const sale=row.sale?`<g:price>${price(row.sale.list_price_minor)}</g:price><g:sale_price>${price(row.price_minor)}</g:sale_price><g:sale_price_effective_date>${new Date().toISOString().slice(0,10)}T00:00:00Z/${row.sale.ends_at}</g:sale_price_effective_date>`
+  :`<g:price>${price(row.price_minor)}</g:price>`;
+ return `<item><g:id>${xmlEscape(idOf(row.slug))}</g:id><title>${xmlEscape(row.title.trim().slice(0,150))}</title>`+
+  `<description>${xmlEscape(row.title.trim())}</description><link>${xmlEscape(url)}</link>`+
+  `<g:image_link>${xmlEscape(SITE_ORIGIN+productMediaPath(row.image))}</g:image_link>`+sale+
+  `<g:availability>in_stock</g:availability><g:condition>new</g:condition><g:brand>${xmlEscape("يومياتي")}</g:brand><g:identifier_exists>no</g:identifier_exists>`+
+  (sectionName?`<g:product_type>${xmlEscape(sectionName)}</g:product_type>`:"")+
+  (row.kind==="bundle"?`<g:is_bundle>yes</g:is_bundle>`:"")+shipping+`</item>`;
+}
+async function feedXml(market:MarketCode,read:CatalogReader,idOf:(slug:string)=>string):Promise<string>{
+ const id=marketIdentity[market];
+ const items=(await released(read,market)).map(row=>feedItem(market,row,idOf)).filter(Boolean);
  return `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"><channel>`+
   `<title>${xmlEscape("يومياتي "+id.name)}</title><link>${marketUrl(market)}</link>`+
   `<description>${xmlEscape("منتجات يومياتي "+id.fullName)}</description>`+items.join("")+`</channel></rss>\n`;
+}
+/**
+ * Google Merchant Center feed for free shopping listings: published, in-stock products with their own picture, the
+ * current price in the market's currency, and delivery as the shopper pays it.
+ */
+export async function merchantFeedXml(market:MarketCode,read:CatalogReader=defaultCatalog):Promise<string>{
+ return feedXml(market,read,slug=>market+"-"+slug);
+}
+/**
+ * Meta catalogue feed (one catalogue per market) for dynamic and retargeting ads. The item id is the product slug:
+ * exactly the content id the Pixel and the Conversions API send, so Meta can match an event to a catalogue item.
+ */
+export async function metaFeedXml(market:MarketCode,read:CatalogReader=defaultCatalog):Promise<string>{
+ return feedXml(market,read,slug=>slug);
 }
 
 const text=(body:string,type:string,maxAge=3600)=>new Response(body,{headers:{
@@ -164,6 +185,8 @@ export async function handleSeoRequest(request:Request,read:CatalogReader=defaul
  if(sitemap)return text(await marketSitemapXml(sitemap[1] as MarketCode,read),"application/xml");
  const feed=/^\/feeds\/google-(sa|ae|om|eg|iq)\.xml$/.exec(path);
  if(feed)return text(await merchantFeedXml(feed[1] as MarketCode,read),"application/xml");
+ const meta=/^\/feeds\/meta-(sa|ae|om|eg|iq)\.xml$/.exec(path);
+ if(meta)return text(await metaFeedXml(meta[1] as MarketCode,read),"application/xml");
  return null;
 }
 
