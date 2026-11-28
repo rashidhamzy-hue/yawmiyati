@@ -41,7 +41,7 @@ export function OfferProductPanel({ market, version, versions }: { market: Marke
       <h1 className="font-display text-2xl font-extrabold leading-relaxed sm:text-3xl">{version.title}</h1>
       {pack&&<p className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1"><span className="text-2xl font-extrabold text-primary">{formatMinor(market,pack.price_minor)}</span>{effective&&zone&&<span className="text-xs font-bold text-muted-foreground">الإجمالي عند الاستلام {formatMinor(market,doorMinor(effective,zone))}</span>}</p>}
     </div>
-    <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border bg-[#efe6d7]">
+    <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border bg-surface">
       {version.image ? <img src={version.image.url} alt={version.image.alt} width={720} height={720} fetchPriority="high" decoding="async" className="h-full w-full object-contain" /> :
         <div className="flex flex-col items-center gap-3 text-muted-foreground"><ImageOff className="h-12 w-12" aria-hidden="true" /><span>لا تتوفر صورة معتمدة</span></div>}
     </div>
