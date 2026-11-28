@@ -2,6 +2,7 @@ import {
   Outlet,
   createRootRoute,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -14,31 +15,39 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { captureError } from "@/lib/monitoring/sentry-client";
 import { CONSENT_PRECHECK_SCRIPT } from "@/lib/analytics/analytics";
 import {img} from "@/lib/store/images";
+import {chromeCopy,marketFromPath} from "@/lib/store/chrome-copy";
 import {ArrowRight,RefreshCw,Search} from "lucide-react";
 
+function useChrome(){
+ const pathname=useRouterState({select:state=>state.location.pathname});
+ const market=marketFromPath(pathname);
+ return {market,copy:chromeCopy(market)};
+}
 function NotFoundComponent() {
+ const {market,copy}=useChrome(),home="/"+market;
  return <main dir="rtl" className="min-h-screen bg-background px-4 py-12 text-foreground sm:py-20">
    <div className="mx-auto max-w-5xl overflow-hidden rounded-[2rem] border bg-card shadow-soft lg:grid lg:grid-cols-2">
-    <img src={img["cat-home"]} alt="تفاصيل منزلية دافئة" className="h-56 w-full object-cover lg:h-full" loading="lazy"/>
+    <img src={img["cat-home"]} alt={copy.notFoundAlt} width={1200} height={800} className="h-56 w-full object-cover lg:h-full" loading="lazy"/>
     <div className="flex flex-col justify-center px-7 py-12 sm:px-12">
-     <a href="/sa" className="font-display text-2xl font-extrabold text-primary">يومياتي<span className="text-gold">.</span></a>
-     <p className="mt-7 text-sm font-bold text-primary">٤٠٤ · الصفحة غير موجودة</p>
-     <h1 className="mt-3 font-display text-3xl font-extrabold leading-tight sm:text-4xl">ضيعتي الطريق؟ خلّينا نرجعك للأشياء الحلوة</h1>
-     <p className="mt-4 text-sm leading-8 text-muted-foreground">يمكن الرابط تغيّر أو الصفحة ما عادت متاحة. تقدرين ترجعين ليومياتي أو تفتحين البحث مباشرة.</p>
-     <div className="mt-8 flex flex-wrap gap-3"><a href="/sa" className="btn-primary inline-flex items-center gap-2"><ArrowRight className="h-4 w-4"/>العودة للرئيسية</a><a href="/sa#discover" className="btn-outline inline-flex items-center gap-2"><Search className="h-4 w-4"/>تصفّحي الأقسام</a></div>
+     <a href={home} className="font-display text-2xl font-extrabold text-primary">يومياتي<span className="text-gold">.</span></a>
+     <p className="mt-7 text-sm font-bold text-muted-foreground">{copy.notFoundBadge}</p>
+     <h1 className="ym-h2 mt-3">{copy.notFoundTitle}</h1>
+     <p className="ym-body mt-4">{copy.notFoundBody}</p>
+     <div className="mt-8 flex flex-wrap gap-3"><a href={home} className="btn-primary"><ArrowRight className="h-4 w-4" aria-hidden="true"/>{copy.notFoundHome}</a><a href={home+"#discover"} className="btn-outline"><Search className="h-4 w-4" aria-hidden="true"/>{copy.notFoundBrowse}</a></div>
     </div>
    </div>
  </main>;
 }
 function ErrorComponent({error,reset}:ErrorComponentProps){
  const router=useRouter();
+ const {market,copy}=useChrome(),home="/"+market;
  useEffect(()=>{reportLovableError(error,{boundary:"tanstack_root_error_component"});captureError(error,{boundary:"tanstack_root_error_component"});},[error]);
  return <main dir="rtl" className="min-h-screen bg-background px-4 py-12 text-foreground sm:py-20">
   <div className="mx-auto max-w-3xl rounded-[2rem] border bg-card p-7 text-center shadow-soft sm:p-14">
-   <a href="/sa" className="font-display text-2xl font-extrabold text-primary">يومياتي<span className="text-gold">.</span></a>
-   <h1 className="mt-8 font-display text-3xl font-extrabold">صار شيء غير متوقع</h1>
-   <p className="mt-4 text-sm leading-8 text-muted-foreground">ما قدرنا نعرض الصفحة الآن. جرّبي مرة ثانية، أو ارجعي للرئيسية. معلوماتك ما تحتاجين تعيدين إرسالها هنا.</p>
-   <div className="mt-7 flex flex-wrap justify-center gap-3"><button type="button" onClick={()=>{router.invalidate();reset();}} className="btn-primary inline-flex items-center gap-2"><RefreshCw className="h-4 w-4"/>إعادة المحاولة</button><a href="/sa" className="btn-outline inline-flex items-center gap-2">العودة إلى يومياتي</a></div>
+   <a href={home} className="font-display text-2xl font-extrabold text-primary">يومياتي<span className="text-gold">.</span></a>
+   <h1 className="ym-h2 mt-8">{copy.errorTitle}</h1>
+   <p className="ym-body mt-4">{copy.errorBody}</p>
+   <div className="mt-7 flex flex-wrap justify-center gap-3"><button type="button" onClick={()=>{router.invalidate();reset();}} className="btn-primary"><RefreshCw className="h-4 w-4" aria-hidden="true"/>{copy.errorRetry}</button><a href={home} className="btn-outline">{copy.errorHome}</a></div>
   </div>
  </main>;
 }

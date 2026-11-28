@@ -208,7 +208,7 @@ summary::-webkit-details-marker { display: none; }
 /* When the non-modal shopping assistant is expanded, keep mobile navigation
    behind neither the message composer nor the on-screen keyboard. */
 @media (max-width: 767px) {
-  body.yawmiyati-assistant-open nav[aria-label="التنقل السريع للجوال"] {
+  body.yawmiyati-assistant-open nav.store-mobile-nav {
     display: none;
   }
 }
@@ -235,6 +235,6 @@ summary::-webkit-details-marker { display: none; }
 
 /* Product pages: the order bar replaces the quick-navigation bar on phones, so one action owns the thumb zone. */
 @media (max-width: 767px) {
-  body.yawmiyati-product-page nav[aria-label="التنقل السريع للجوال"] { display: none; }
+  body.yawmiyati-product-page nav.store-mobile-nav { display: none; }
   body.yawmiyati-product-page { --mobile-nav-height: 0px; }
 }

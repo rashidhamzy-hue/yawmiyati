@@ -27,6 +27,8 @@ jobs:
       - run: node scripts/check-m4h-handoff.mjs
       - run: node scripts/check-handoff-manifest.mjs
       - run: node scripts/check-offer-fixture-isolation.mjs
+      # One dictionary per market: missing keys, Latin leaks, banned wording, mixed dialect, new hard-coded Arabic.
+      - run: bun scripts/check-market-dictionaries.ts
       - run: bun run build
       # The default build must ship no storefront offer fixtures.
       - run: node scripts/check-offer-fixture-isolation.mjs --build .output
