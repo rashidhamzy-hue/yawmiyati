@@ -13,6 +13,7 @@ import { TaagerImport } from "@/components/owner/TaagerImport";
 import { OffersPanel } from "@/components/owner/OffersPanel";
 import { MorningBrief } from "@/components/owner/MorningBrief";
 import { OrderQualityPanel } from "@/components/owner/OrderQualityPanel";
+import { AssistantPanel } from "@/components/owner/AssistantPanel";
 import { markets, type MarketCode } from "../lib/store/markets";
 import {summarizeOwnerMarket,formatRecordedMinor} from "@/lib/store/owner-dashboard-presentation";
 import {marketIdentity} from "@/lib/store/market-identity";
@@ -146,6 +147,7 @@ function OwnerDashboard(){
    {origin&&key&&<BrainPanel key={"brain-"+market} market={market} origin={origin} publicKey={key} token={token}/>}
    {origin&&key&&<OffersPanel key={"offers-"+market} market={market} origin={origin} publicKey={key} token={token}/>}
    {origin&&key&&<OrderQualityPanel key={"quality-"+market} market={market} origin={origin} publicKey={key} token={token}/>}
+   {origin&&key&&<AssistantPanel key={"assistant-"+market} market={market} origin={origin} publicKey={key} token={token}/>}
    {data&&<OwnerActionQueue market={market} catalog={catalog} recommendations={recommendations} policy={policy}/>}
    {performance&&<Card id="performance" title={"Performance · last "+performance.window_days+" days"} icon={ChartNoAxesCombined}>
     <OrderOutcomes p={performance}/>

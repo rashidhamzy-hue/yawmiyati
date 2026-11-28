@@ -39,7 +39,7 @@ export type MarketExperience={
   categoryCaptions:Readonly<Record<string,string>>;
   questions:readonly {question:string;answer:string}[];
 };
-const baseOrder=["home","kitchen","beauty","fashion","wellness","organize"] as const;
+const baseOrder=["home","kitchen","kids","beauty","fashion","wellness","organize"] as const;
 export const marketExperience:Record<MarketCode,MarketExperience>={
  sa:{
   regionName:"السعودية",
@@ -58,7 +58,7 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
   beautyTitle:"لحظة عناية تستاهلينها",homeTitle:"تفاصيل تعطي البيت روح",
   footerDescription:"تفاصيل البيت، الجمال والعناية… اختيارات تلهم يومك وتعبّر عن ذوقك.",
   categoryOrder:baseOrder,
-  categoryCaptions:{home:"لأجواء تشبهك",kitchen:"لحظات تستحق التذوّق",beauty:"تفاصيل يومية ناعمة",fashion:"إطلالة تعبر عنك",wellness:"مساحة لنفسك",organize:"أقل فوضى، راحة أكثر"},
+  categoryCaptions:{home:"لأجواء تشبهك",kitchen:"لحظات تستحق التذوّق",beauty:"تفاصيل يومية ناعمة",fashion:"إطلالة تعبر عنك",wellness:"مساحة لنفسك",organize:"أقل فوضى، راحة أكثر",kids:"لك ولصغارك"},
   questions:[
    {question:"كيف ألقى اختيارات تناسبني؟",answer:"استخدمي البحث، أو تصفّحي الأقسام، أو اسألي مساعدة يومياتي من الزر أسفل الشاشة وهي تقترح عليك من المنتجات المتوفرة."},
    {question:"وين تفاصيل الشحن؟",answer:customerServiceCopy.sa.shipping+" "+customerServiceCopy.sa.delivery},
@@ -80,8 +80,8 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
   faqTitle:"أسئلة على بالج",faqDescription:"إجابات مختصرة عن التصفّح والطلبات في الإمارات.",
   beautyTitle:"روتين عناية على كيفج",homeTitle:"لمسة تغيّر جوّ البيت",
   footerDescription:"من البيت إلى الجمال… أفكار وتفاصيل تلهم يومج في الإمارات.",
-  categoryOrder:["fashion","beauty","home","kitchen","organize","wellness"],
-  categoryCaptions:{home:"لمسات تكمّل بيتج",kitchen:"وقت القهوة غير",beauty:"عناية تستاهلينها",fashion:"ستايل يعكس شخصيتج",wellness:"لحظة راحة لج",organize:"ترتيب على أصوله"},
+  categoryOrder:["fashion","beauty","home","kids","kitchen","organize","wellness"],
+  categoryCaptions:{home:"لمسات تكمّل بيتج",kitchen:"وقت القهوة غير",beauty:"عناية تستاهلينها",fashion:"ستايل يعكس شخصيتج",wellness:"لحظة راحة لج",organize:"ترتيب على أصوله",kids:"لج ولصغارج"},
   questions:[
    {question:"شلون ألاقي اللي على ذوقي؟",answer:"اكتبي اسم المنتج في البحث، أو تصفّحي الأقسام، أو اسألي مساعدة يومياتي من الزر تحت الشاشة وهي تقترح لج من المتوفر."},
    {question:"شو طريقة الدفع؟",answer:customerServiceCopy.ae.payment},
@@ -105,8 +105,8 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
   faqTitle:"أسئلة تتكرر",faqDescription:"عن تجربة يومياتي في سلطنة عُمان.",
   beautyTitle:"عناية ببساطة",homeTitle:"بيتك بروح مختلفة",
   footerDescription:"القهوة والبيت والعناية… تفاصيل لطيفة قريبة من أسلوب حياتك في عُمان.",
-  categoryOrder:["kitchen","home","wellness","organize","beauty","fashion"],
-  categoryCaptions:{home:"دفء البيت",kitchen:"وقت القهوة والجلسة",beauty:"لحظات عناية",fashion:"بساطة وأسلوب",wellness:"وقت لك",organize:"مساحات مرتبة"},
+  categoryOrder:["kitchen","home","kids","wellness","organize","beauty","fashion"],
+  categoryCaptions:{home:"دفء البيت",kitchen:"وقت القهوة والجلسة",beauty:"لحظات عناية",fashion:"بساطة وأسلوب",wellness:"وقت لك",organize:"مساحات مرتبة",kids:"لك ولأطفالك"},
   questions:[
    {question:"كيف أختار القسم المناسب؟",answer:"تصفّحي الأقسام، أو استخدمي البحث، أو اسألي مساعدة يومياتي من الزر أسفل الشاشة وهي تقترح عليك من المنتجات المتوفرة."},
    {question:"كيف أدفع؟",answer:customerServiceCopy.om.payment},
@@ -130,8 +130,8 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
   faqTitle:"أسئلة بتتكرر",faqDescription:"الإجابات اللي تحتاجيها قبل ما تختاري.",
   beautyTitle:"دلّعي نفسك شوية",homeTitle:"خلي بيتك أريح وأحلى",
   footerDescription:"أفكار للبيت والجمال والحياة اليومية… اختيارات على ذوقك في مصر.",
-  categoryOrder:["home","organize","beauty","kitchen","fashion","wellness"],
-  categoryCaptions:{home:"خلّي البيت أشيك",kitchen:"حاجات للمطبخ والقهوة",beauty:"دلّعي نفسك",fashion:"لمسة تكمل اللوك",wellness:"شوية راحة",organize:"ترتيب أسهل"},
+  categoryOrder:["home","organize","kids","beauty","kitchen","fashion","wellness"],
+  categoryCaptions:{home:"خلّي البيت أشيك",kitchen:"حاجات للمطبخ والقهوة",beauty:"دلّعي نفسك",fashion:"لمسة تكمل اللوك",wellness:"شوية راحة",organize:"ترتيب أسهل",kids:"ليكي ولولادك"},
   questions:[
    {question:"ألاقي الحاجة اللي بدور عليها إزاي؟",answer:"اكتبي اسم المنتج في البحث، أو لفي على الأقسام، أو اسألي مساعدة يومياتي من الزرار اللي تحت في الشاشة وهي ترشّح لك من المتوفر."},
    {question:"السعر بالجنيه المصري؟",answer:"أيوه، الأسعار المعروضة في متجر مصر بالجنيه المصري."},
@@ -155,8 +155,8 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
   faqTitle:"أسئلة ممكن تخطر ببالچ",faqDescription:"معلومات عن التصفّح والدفع والتوصيل بالعراق.",
   beautyTitle:"عناية تستاهليها",homeTitle:"خلي البيت أدفى",
   footerDescription:"البيت والمطبخ والجمال… أفكار يومية تلائم ذوقچ بالعراق.",
-  categoryOrder:["home","kitchen","organize","beauty","wellness","fashion"],
-  categoryCaptions:{home:"لمسة بيت حلوة",kitchen:"للقهوة واللمة",beauty:"وقت عناية إلچ",fashion:"تفاصيل تكمل الطلة",wellness:"وقت ترتاحين بيه",organize:"بيت مرتب أكثر"},
+  categoryOrder:["home","kitchen","kids","organize","beauty","wellness","fashion"],
+  categoryCaptions:{home:"لمسة بيت حلوة",kitchen:"للقهوة واللمة",beauty:"وقت عناية إلچ",fashion:"تفاصيل تكمل الطلة",wellness:"وقت ترتاحين بيه",organize:"بيت مرتب أكثر",kids:"إلچ ولأطفالچ"},
   questions:[
    {question:"شلون أدوّر على اللي أريده؟",answer:"اكتبي اسم المنتج بالبحث، أو تصفّحي الأقسام، أو اسألي مساعدة يومياتي من الزر جوه الشاشة وهي تقترحلچ من الموجود."},
    {question:"الأسعار بالدينار العراقي؟",answer:"إي، متجر العراق يعرض الأسعار بالدينار العراقي."},

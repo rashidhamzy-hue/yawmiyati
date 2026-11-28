@@ -6,10 +6,9 @@ import type { OfferRow } from "./woo-normalize.ts";
 import type { PriceDecision } from "./economics.ts";
 import { demandFactor, demandSignals, nearDuplicates, type StockPoint } from "./taager-economics.ts";
 
-// "kids" (mother & kids) is a brain grouping first: the storefront section opens once it has its photo.
-// Until then published kids items carry no storefront section and appear in all products and search.
+// "kids" (mother & kids) is a storefront section like the others since 28 Nov 2026 (photo + migration 20261130160000).
 export const STORE_CATEGORIES = ["kids", "home", "kitchen", "beauty", "fashion", "wellness", "organize"] as const;
-export const STOREFRONT_SECTIONS = ["home", "kitchen", "beauty", "fashion", "wellness", "organize"] as const;
+export const STOREFRONT_SECTIONS = ["kids", "home", "kitchen", "beauty", "fashion", "wellness", "organize"] as const;
 export type StoreCategory = typeof STORE_CATEGORIES[number];
 
 const CATEGORY_WORDS: Record<StoreCategory, RegExp> = {

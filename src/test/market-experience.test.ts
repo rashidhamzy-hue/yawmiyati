@@ -9,8 +9,8 @@ describe("country-specific editorial experience",()=>{
   expect(new Set(codes.map(code=>marketExperience[code as keyof typeof marketExperience].heroImage)).size).toBe(5);
   for(const market of codes){
    const cfg=marketExperience[market as keyof typeof marketExperience];
-   expect(cfg.categoryOrder).toHaveLength(6);
-   expect(new Set(cfg.categoryOrder).size).toBe(6);
+   expect(cfg.categoryOrder).toHaveLength(7);
+   expect(new Set(cfg.categoryOrder).size).toBe(7);
    expect(cfg.categoryOrder.every(slug=>Object.hasOwn(cfg.categoryCaptions,slug))).toBe(true);
    expect(cfg.questions.every(q=>Boolean(q.question.trim())&&Boolean(q.answer.trim()))).toBe(true);
    for(const field of ["discoveryNote","beautyLinkLabel","homeLinkLabel","faqEyebrow","storyLinkLabel","storyBrowseLabel"] as const){expect(cfg[field].trim().length).toBeGreaterThan(3);}

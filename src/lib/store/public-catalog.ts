@@ -1,6 +1,6 @@
 import {markets,type MarketCode} from "./markets";
 import {isProductMediaId,isProductVideoId} from "./product-media";
-export const PUBLIC_CATEGORY_SLUGS=["home","kitchen","beauty","fashion","wellness","organize"] as const;
+export const PUBLIC_CATEGORY_SLUGS=["kids","home","kitchen","beauty","fashion","wellness","organize"] as const;
 export type PublicCategorySlug=typeof PUBLIC_CATEGORY_SLUGS[number];
 export type PublicListing={listing_id:string;slug:string;title:string;price_minor:string;currency:string;
  /** Present only after category membership is owner-approved in a release-gated RPC. */

@@ -15,7 +15,7 @@ import {marketExperience} from "./market-experience";
 import type {PublicListing} from "./public-catalog";
 
 export const SEO_EDITORIAL_SLUGS=[
- "home","kitchen","beauty","fashion","wellness","organize",
+ "kids","home","kitchen","beauty","fashion","wellness","organize",
 ] as const;
 export type SeoCategory=typeof SEO_EDITORIAL_SLUGS[number];
 export type SeoRouteKind="home"|"category"|"product"|"search";
@@ -29,6 +29,7 @@ export type SeoDraft={
  readonly ownerReleaseAuthorized:false;
 };
 const categoryNames:Record<SeoCategory,string>={
+ kids:"الأم والطفل",
  home:"المنزل والديكور",kitchen:"المطبخ والقهوة",beauty:"الجمال والعناية",
  fashion:"الأزياء والإكسسوارات",wellness:"الراحة والرفاهية",organize:"التنظيم الذكي",
 };

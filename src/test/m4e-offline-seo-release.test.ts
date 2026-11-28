@@ -17,7 +17,7 @@ function product(market:MarketCode,slug="coffee-set",group="shared-product-1"):S
   product:{listing_id:"list-"+market,slug,title:"مجموعة قهوة عصرية",price_minor:"15900",currency:markets[market].currency}};
 }
 describe("M4E offline SEO release planning",()=>{
- it("creates 35 editorial proposals without publishing any of them",()=>{
+ it("creates 40 editorial proposals without publishing any of them",()=>{
   const result=planOfflineEditorialSeoAudit();
   expect(result.proposalCount).toBe(5*(1+SEO_EDITORIAL_SLUGS.length));
   expect(result.needsReviewCount).toBe(result.proposalCount);
@@ -28,13 +28,13 @@ describe("M4E offline SEO release planning",()=>{
   expect(result.entries.every(e=>!e.reviewReady&&!e.releaseAuthorized&&!e.sitemapEligible&&
    e.robots==="noindex,nofollow"&&e.canonicalUrl===null&&e.hreflang.length===0&&e.structuredData===null)).toBe(true);
   expect(new Set(result.entries.map(e=>e.relativePath)).size).toBe(result.entries.length);
-  expect(result.entries).toHaveLength(35);
+  expect(result.entries).toHaveLength(40);
  });
  it.each(markets5)("%s: local links use only known categories and do not cross store scope",market=>{
   const paths=planMarketEditorialLinks(market,"home");
   expect(paths[0]).toBe("/"+market+"/");
   expect(paths).not.toContain("/"+market+"/c/home");
-  expect(paths).toHaveLength(6);
+  expect(paths).toHaveLength(7);
   expect(new Set(paths).size).toBe(paths.length);
   expect(paths.every(x=>x.startsWith("/"+market+"/"))).toBe(true);
   expect(()=>planMarketEditorialLinks(market,"unknown")).toThrow("invalid_editorial_category");

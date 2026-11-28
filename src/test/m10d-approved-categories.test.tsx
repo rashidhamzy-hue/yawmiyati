@@ -27,7 +27,7 @@ describe("M10D proof-based public categories",()=>{
   const result=parsePublicListings([row],"sa");
   expect(result[0].approved_category_slugs).toEqual(["kitchen"]);
   expect(JSON.stringify(result)).not.toContain("supplier_name");
-  expect(PUBLIC_CATEGORY_SLUGS).toEqual(["home","kitchen","beauty","fashion","wellness","organize"]);
+  expect(PUBLIC_CATEGORY_SLUGS).toEqual(["kids","home","kitchen","beauty","fashion","wellness","organize"]);
   expect(parsePublicListings([raw],"sa")).toEqual([raw]);
  });
  it("fails closed on unapproved, invalid or duplicate categories and mismatched market currency",()=>{

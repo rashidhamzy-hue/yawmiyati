@@ -2,7 +2,7 @@ import {doorMinor,type ApprovedOfferVersion,type OfferCart} from "./offer-versio
 import {normalizeSearch} from "./smart-search";
 const words=(s:string)=>new Set(normalizeSearch(s).split(" ").filter(w=>w.length>=3&&!["جديد","قطعه","منتج","شكل","عدد","مجموعه"].includes(w)));
 const overlap=(a:Set<string>,b:Set<string>)=>[...a].filter(w=>b.has(w)).length;
-const partners:Record<string,string[]>={home:["organize"],organize:["home","kitchen"],kitchen:["organize"],beauty:["fashion"],fashion:["beauty"],wellness:["home"]};
+const partners:Record<string,string[]>={home:["organize"],organize:["home","kitchen"],kitchen:["organize"],beauty:["fashion"],fashion:["beauty"],wellness:["home"],kids:["home","organize"]};
 export function recommendOffers(current:ApprovedOfferVersion,versions:readonly ApprovedOfferVersion[],limit=4){
  const tokens=words(current.title),price=BigInt(current.packs.find(p=>p.pack_id===current.default_pack_id)!.price_minor);
  return versions.filter(v=>v.market===current.market&&v.currency===current.currency&&v.listing_id!==current.listing_id&&v.slug!==current.slug&&normalizeSearch(v.title)!==normalizeSearch(current.title))

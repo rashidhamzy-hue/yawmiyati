@@ -12,7 +12,7 @@ it("opens the same in-page search from mobile navigation, never changes routes",
  expect(screen.getByRole("dialog",{name:"بحث يومياتي الذكي"})).toBeTruthy();
  expect(screen.getByRole("searchbox",{name:"ابحثي في منتجات يومياتي"})).toBeTruthy();
  fireEvent.change(screen.getByRole("searchbox",{name:"ابحثي في منتجات يومياتي"}),{target:{value:"دله"}});
- expect(screen.getByRole("link",{name:/القهوة والمطبخ/}).getAttribute("href")).toBe("/sa/c/kitchen");
+ expect(screen.getByRole("link",{name:/المطبخ والقهوة/}).getAttribute("href")).toBe("/sa/c/kitchen");
  fireEvent.click(screen.getByRole("button",{name:"إغلاق البحث"}));
  expect(screen.queryByRole("dialog",{name:"بحث يومياتي الذكي"})).toBeNull();
 });

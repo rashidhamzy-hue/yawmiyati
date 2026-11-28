@@ -26,7 +26,8 @@ it("searches typo-tolerantly with synonyms and preserves approved-only input",()
 it("suggests editorial categories without claiming they contain products",()=>{
  expect(suggestEditorialCategories("قهوه").map(x=>x.slug)).toContain("kitchen");
  expect(suggestEditorialCategories("تخزين").map(x=>x.slug)).toContain("organize");
- expect(suggestEditorialCategories("")).toHaveLength(6);
+ expect(suggestEditorialCategories("")).toHaveLength(7);
+  expect(suggestEditorialCategories("رضيع").map(x=>x.slug)).toContain("kids");
 });
 it("is bounded and deterministic",()=>{
  expect(smartCatalogSearch("",products,2)).toHaveLength(2);
