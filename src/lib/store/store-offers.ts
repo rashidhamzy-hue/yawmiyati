@@ -47,8 +47,8 @@ export async function fetchStoreOffers(market:MarketCode,request:typeof fetch=fe
   return offers;
  }catch{return NO_OFFERS;}
 }
-export function useStoreOffers(market:MarketCode):StoreOffers{
+export function useStoreOffers(market:MarketCode,enabled=true):StoreOffers{
  const [offers,setOffers]=useState<StoreOffers>(NO_OFFERS);
- useEffect(()=>{let live=true;void fetchStoreOffers(market).then(o=>{if(live)setOffers(o);});return()=>{live=false;};},[market]);
+ useEffect(()=>{if(!enabled)return;let live=true;void fetchStoreOffers(market).then(o=>{if(live)setOffers(o);});return()=>{live=false;};},[market,enabled]);
  return offers;
 }

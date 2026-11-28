@@ -60,7 +60,7 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
   categoryOrder:baseOrder,
   categoryCaptions:{home:"لأجواء تشبهك",kitchen:"لحظات تستحق التذوّق",beauty:"تفاصيل يومية ناعمة",fashion:"إطلالة تعبر عنك",wellness:"مساحة لنفسك",organize:"أقل فوضى، راحة أكثر"},
   questions:[
-   {question:"كيف ألقى اختيارات تناسبني؟",answer:"استخدمي البحث أو تصفّحي الأقسام، وشوفي تفاصيل كل منتج في صفحته."},
+   {question:"كيف ألقى اختيارات تناسبني؟",answer:"استخدمي البحث، أو تصفّحي الأقسام، أو اسألي مساعدة يومياتي من الزر أسفل الشاشة وهي تقترح عليك من المنتجات المتوفرة."},
    {question:"وين تفاصيل الشحن؟",answer:customerServiceCopy.sa.shipping+" "+customerServiceCopy.sa.delivery},
   ],
  },
@@ -83,7 +83,7 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
   categoryOrder:["fashion","beauty","home","kitchen","organize","wellness"],
   categoryCaptions:{home:"لمسات تكمّل بيتج",kitchen:"وقت القهوة غير",beauty:"عناية تستاهلينها",fashion:"ستايل يعكس شخصيتج",wellness:"لحظة راحة لج",organize:"ترتيب على أصوله"},
   questions:[
-   {question:"شلون ألاقي اللي على ذوقي؟",answer:"اكتبي اسم المنتج في البحث أو تصفّحي الأقسام والاختيارات المعروضة."},
+   {question:"شلون ألاقي اللي على ذوقي؟",answer:"اكتبي اسم المنتج في البحث، أو تصفّحي الأقسام، أو اسألي مساعدة يومياتي من الزر تحت الشاشة وهي تقترح لج من المتوفر."},
    {question:"شو طريقة الدفع؟",answer:customerServiceCopy.ae.payment},
    {question:"كيف أعرف تفاصيل المنتج؟",answer:"عند توفر المنتج، افتحي صفحته عشان تشوفين المواصفات والصور والسعر."},
    {question:"كم رسوم التوصيل؟",answer:customerServiceCopy.ae.shipping},
@@ -108,7 +108,7 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
   categoryOrder:["kitchen","home","wellness","organize","beauty","fashion"],
   categoryCaptions:{home:"دفء البيت",kitchen:"وقت القهوة والجلسة",beauty:"لحظات عناية",fashion:"بساطة وأسلوب",wellness:"وقت لك",organize:"مساحات مرتبة"},
   questions:[
-   {question:"كيف أختار القسم المناسب؟",answer:"تصفّحي الأقسام أو استخدمي البحث داخل الصفحة للعثور على ما يناسبك."},
+   {question:"كيف أختار القسم المناسب؟",answer:"تصفّحي الأقسام، أو استخدمي البحث، أو اسألي مساعدة يومياتي من الزر أسفل الشاشة وهي تقترح عليك من المنتجات المتوفرة."},
    {question:"كيف أدفع؟",answer:customerServiceCopy.om.payment},
    {question:"هل الأسعار بالريال العُماني؟",answer:"نعم، المتجر العُماني يعرض الأسعار بعملته المحلية."},
    {question:"وين تفاصيل التوصيل؟",answer:customerServiceCopy.om.shipping},
@@ -133,7 +133,7 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
   categoryOrder:["home","organize","beauty","kitchen","fashion","wellness"],
   categoryCaptions:{home:"خلّي البيت أشيك",kitchen:"حاجات للمطبخ والقهوة",beauty:"دلّعي نفسك",fashion:"لمسة تكمل اللوك",wellness:"شوية راحة",organize:"ترتيب أسهل"},
   questions:[
-   {question:"ألاقي الحاجة اللي بدور عليها إزاي؟",answer:"اكتبي اسم المنتج في البحث أو لفي على الأقسام وشوفي اختيارات كل قسم."},
+   {question:"ألاقي الحاجة اللي بدور عليها إزاي؟",answer:"اكتبي اسم المنتج في البحث، أو لفي على الأقسام، أو اسألي مساعدة يومياتي من الزرار اللي تحت في الشاشة وهي ترشّح لك من المتوفر."},
    {question:"السعر بالجنيه المصري؟",answer:"أيوه، الأسعار المعروضة في متجر مصر بالجنيه المصري."},
    {question:"أدفع إزاي؟",answer:customerServiceCopy.eg.payment},
    {question:"ألاقي تفاصيل الشحن فين؟",answer:customerServiceCopy.eg.shipping},
@@ -158,7 +158,7 @@ export const marketExperience:Record<MarketCode,MarketExperience>={
   categoryOrder:["home","kitchen","organize","beauty","wellness","fashion"],
   categoryCaptions:{home:"لمسة بيت حلوة",kitchen:"للقهوة واللمة",beauty:"وقت عناية إلچ",fashion:"تفاصيل تكمل الطلة",wellness:"وقت ترتاحين بيه",organize:"بيت مرتب أكثر"},
   questions:[
-   {question:"شلون أدوّر على اللي أريده؟",answer:"اكتبي اسم المنتج بالبحث أو تصفّحي الأقسام اللي تعجبچ."},
+   {question:"شلون أدوّر على اللي أريده؟",answer:"اكتبي اسم المنتج بالبحث، أو تصفّحي الأقسام، أو اسألي مساعدة يومياتي من الزر جوه الشاشة وهي تقترحلچ من الموجود."},
    {question:"الأسعار بالدينار العراقي؟",answer:"إي، متجر العراق يعرض الأسعار بالدينار العراقي."},
    {question:"شلون أدفع؟",answer:customerServiceCopy.iq.payment},
    {question:"وين أشوف تفاصيل التوصيل؟",answer:customerServiceCopy.iq.shipping},

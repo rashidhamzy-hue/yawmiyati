@@ -71,11 +71,11 @@ describe("M10C mobile storefront details",()=>{
  });
  it("assistant visibility moves composer above mobile nav and removes global state on close/unmount",async()=>{
   const {unmount}=render(<><StoreFooter market="sa"/><ShoppingAssistant market="sa" products={[]}/></>);
-  const button=screen.getByRole("button",{name:"افتح مساعد يومياتي الذكي"});
+  const button=screen.getByRole("button",{name:"اسألي مساعدة يومياتي"});
   fireEvent.click(button);
   await waitFor(()=>expect(document.body.classList.contains("yawmiyati-assistant-open")).toBe(true));
-  expect(screen.getByRole("dialog",{name:"مساعد يومياتي للتسوق"})).toBeTruthy();
-  fireEvent.click(screen.getByRole("button",{name:"إغلاق المساعد"}));
+  expect(screen.getByRole("dialog",{name:"مساعدة يومياتي"})).toBeTruthy();
+  fireEvent.click(screen.getByRole("button",{name:"إغلاق المساعدة"}));
   await waitFor(()=>expect(document.body.classList.contains("yawmiyati-assistant-open")).toBe(false));
   unmount();
   expect(document.body.classList.contains("yawmiyati-assistant-open")).toBe(false);

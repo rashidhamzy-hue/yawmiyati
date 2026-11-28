@@ -1,5 +1,7 @@
 import {lazy,Suspense,useEffect,useState,type ReactNode} from "react";
-import {Check,ChevronDown,HandCoins,Package,RotateCcw,Truck} from "lucide-react";
+import {Check,ChevronDown,HandCoins,MessageCircle,Package,RotateCcw,Truck} from "lucide-react";
+import {assistantCopy} from "@/lib/store/assistant-copy";
+import {openAssistant} from "@/lib/store/assistant-open";
 import {type MarketCode} from "@/lib/store/markets";
 import {customerServiceCopy} from "@/lib/store/customer-service-copy";
 import {fetchPublicProductPage,formatPrice,type PublicDetail,type PublicProductPage} from "@/lib/store/public-catalog";
@@ -45,6 +47,7 @@ export function ProductPageView({page,detail,market}:{page:PublicProductPage;det
     </div>
     <BuyBox market={market} target={{listing_id:detail.listing_id,slug:detail.slug,title:page.title,image:page.images[0]?.id??null,price_minor:price}} offers={page.quantity_offers}/>
     {page.free_delivery&&!page.delivery_included&&<Suspense fallback={null}><ProductFreeDelivery market={market}/></Suspense>}
+    <button type="button" className="btn-quiet w-full justify-center text-sm" onClick={()=>openAssistant(assistantCopy(market).productQuestion(page.title))} data-ask-assistant=""><MessageCircle className="h-4 w-4" aria-hidden="true"/>{assistantCopy(market).askAboutProduct}</button>
     <ul className="ym-card divide-y divide-border px-4 text-sm leading-7">
      <li className="flex items-start gap-3 py-3"><HandCoins className="mt-1 h-5 w-5 shrink-0" strokeWidth={1.6} aria-hidden="true"/><span><span className="font-semibold">{service.paymentHeading}</span><span className="block text-muted-foreground">{copy.reassureCall}</span></span></li>
      <li className="flex items-start gap-3 py-3"><Truck className="mt-1 h-5 w-5 shrink-0" strokeWidth={1.6} aria-hidden="true"/><span className="text-muted-foreground">{service.shipping} {service.delivery}</span></li>

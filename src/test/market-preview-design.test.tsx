@@ -19,10 +19,11 @@ describe("Yawmiyati premium storefront",()=>{
   expect(screen.queryByRole("button",{name:/أضيفي للسلة|شراء الآن|اطلبي الآن/})).toBeNull();
   expect(screen.queryByText(/قريباً|مرحلة التحضير|قبل الإطلاق/)).toBeNull();
   // The assistant loads once the browser is idle, after the first paint.
-  fireEvent.click(await screen.findByRole("button",{name:"افتح مساعد يومياتي الذكي"},{timeout:4000}));
-  expect(screen.getByRole("dialog",{name:"مساعد يومياتي للتسوق"})).toBeTruthy();
-  fireEvent.click(screen.getByRole("button",{name:"كيف أختار القسم المناسب؟"}));
-  expect(screen.getByText(/يمكنك استكشاف: المنزل/)).toBeTruthy();
+  fireEvent.click(await screen.findByRole("button",{name:"اسألي مساعدة يومياتي"},{timeout:4000}));
+  expect(screen.getByRole("dialog",{name:"مساعدة يومياتي"})).toBeTruthy();
+  // A suggested question is answered from the store's published policy text.
+  fireEvent.click(screen.getByRole("button",{name:"كيف الدفع والتوصيل؟"}));
+  expect((await screen.findAllByText(/الدفع/,{selector:"p.whitespace-pre-wrap"})).length).toBeGreaterThan(1);
  });
  it("renders a focused search page without homepage hero clutter",()=>{
   render(<MarketPreview market="sa" searchOnly initialSearch="قهوة"/>);
