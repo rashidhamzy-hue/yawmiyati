@@ -139,7 +139,9 @@ export type PublicProductPage={listing_id:string;category:PublicCategorySlug|nul
  /** Brain-built "N for X" offers, already re-checked against the supplier's current cost by the database. */
  quantity_offers:{quantity:number;price_minor:number}[];
  /** What a bundle contains, from the supplier's declared bundle items only. */
- bundle:{name:string;quantity:number;image:string|null}[]};
+ bundle:{name:string;quantity:number;image:string|null}[];
+ /** "low" only when the supplier itself reports low quantity for this product right now. Never invented. */
+ stock_signal:"low"|null};
 const text=(v:unknown,max:number)=>typeof v==="string"?v.trim().slice(0,max):"";
 const list=(v:unknown,max:number)=>Array.isArray(v)?v.slice(0,max):[];
 const record=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==="object"&&!Array.isArray(v);
@@ -163,7 +165,8 @@ export function parsePublicProductPage(data:unknown,market:MarketCode,listingId:
    .filter(q=>Number.isInteger(q.quantity)&&(q.quantity as number)>=2&&(q.quantity as number)<=5&&Number.isSafeInteger(q.price_minor)&&(q.price_minor as number)>0)
    .map(q=>({quantity:q.quantity as number,price_minor:q.price_minor as number})),
   bundle:list(data.bundle,12).filter(record).filter(b=>text(b.name,160)&&Number.isInteger(b.quantity)&&(b.quantity as number)>=1&&(b.quantity as number)<=50)
-   .map(b=>({name:text(b.name,160),quantity:b.quantity as number,image:isProductMediaId(b.image)?b.image as string:null}))};
+   .map(b=>({name:text(b.name,160),quantity:b.quantity as number,image:isProductMediaId(b.image)?b.image as string:null})),
+  stock_signal:data.stock_signal==="low"?"low":null};
 }
 export async function fetchPublicProductPage(origin:string,key:string,market:MarketCode,slug:string,listingId:string,request:typeof fetch=fetch):Promise<PublicProductPage|null>{
  if(typeof slug!=="string"||!slug||slug.length>200||/[/?#\\]/.test(slug))throw Error("Invalid product slug");
