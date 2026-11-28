@@ -1,5 +1,5 @@
 import {markets,type MarketCode} from "./markets";
-import {isProductMediaId} from "./product-media";
+import {isProductMediaId,isProductVideoId} from "./product-media";
 export const PUBLIC_CATEGORY_SLUGS=["home","kitchen","beauty","fashion","wellness","organize"] as const;
 export type PublicCategorySlug=typeof PUBLIC_CATEGORY_SLUGS[number];
 export type PublicListing={listing_id:string;slug:string;title:string;price_minor:string;currency:string;
@@ -117,7 +117,12 @@ export async function fetchPublicSearch(origin:string,key:string,market:MarketCo
 export type PublicProductPage={listing_id:string;category:PublicCategorySlug|null;
  title:string;subtitle:string;description:string;bullets:string[];
  specs:{label:string;value:string}[];faq:{q:string;a:string}[];
- seo:{title:string;description:string};images:{id:string;alt:string}[]};
+ seo:{title:string;description:string};images:{id:string;alt:string}[];
+ videos:string[];
+ /** Brain-built "N for X" offers, already re-checked against the supplier's current cost by the database. */
+ quantity_offers:{quantity:number;price_minor:number}[];
+ /** What a bundle contains, from the supplier's declared bundle items only. */
+ bundle:{name:string;quantity:number;image:string|null}[]};
 const text=(v:unknown,max:number)=>typeof v==="string"?v.trim().slice(0,max):"";
 const list=(v:unknown,max:number)=>Array.isArray(v)?v.slice(0,max):[];
 const record=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==="object"&&!Array.isArray(v);
@@ -135,7 +140,13 @@ export function parsePublicProductPage(data:unknown,market:MarketCode,listingId:
   bullets:list(p.bullets,6).map(b=>text(b,200)).filter(Boolean),
   specs:list(p.specs,12).filter(record).map(s=>({label:text(s.label,60),value:text(s.value,160)})).filter(s=>s.label&&s.value),
   faq:list(p.faq,5).filter(record).map(f=>({q:text(f.q,160),a:text(f.a,400)})).filter(f=>f.q&&f.a),
-  seo:{title:text(seo.title,70),description:text(seo.description,170)},images};
+  seo:{title:text(seo.title,70),description:text(seo.description,170)},images,
+  videos:[...new Set(list(data.videos,3).filter(isProductVideoId))],
+  quantity_offers:list(data.quantity_offers,4).filter(record)
+   .filter(q=>Number.isInteger(q.quantity)&&(q.quantity as number)>=2&&(q.quantity as number)<=5&&Number.isSafeInteger(q.price_minor)&&(q.price_minor as number)>0)
+   .map(q=>({quantity:q.quantity as number,price_minor:q.price_minor as number})),
+  bundle:list(data.bundle,12).filter(record).filter(b=>text(b.name,160)&&Number.isInteger(b.quantity)&&(b.quantity as number)>=1&&(b.quantity as number)<=50)
+   .map(b=>({name:text(b.name,160),quantity:b.quantity as number,image:isProductMediaId(b.image)?b.image as string:null}))};
 }
 export async function fetchPublicProductPage(origin:string,key:string,market:MarketCode,slug:string,listingId:string,request:typeof fetch=fetch):Promise<PublicProductPage|null>{
  if(typeof slug!=="string"||!slug||slug.length>200||/[/?#\\]/.test(slug))throw Error("Invalid product slug");

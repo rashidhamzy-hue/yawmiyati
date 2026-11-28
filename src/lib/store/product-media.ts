@@ -11,6 +11,13 @@
  */
 export const PRODUCT_MEDIA_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(?:jpe?g|png|webp)$/;
 export const PRODUCT_MEDIA_SIZES=[360] as const;
+/** Product videos: `/media/v/<uuid>.mp4`, same rules (fixed host, uuid names, no query). Range requests pass through. */
+export const PRODUCT_VIDEO_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.mp4$/;
+export const isProductVideoId=(value:unknown):value is string=>typeof value==="string"&&PRODUCT_VIDEO_ID.test(value);
+export function productVideoPath(id:string){
+ if(!isProductVideoId(id))throw Error("Invalid video id");
+ return `/media/v/${id}`;
+}
 export type ProductMediaSize=typeof PRODUCT_MEDIA_SIZES[number];
 const UPSTREAM="https://media.taager.com/";
 
@@ -32,8 +39,26 @@ export function productUpstream(url:URL):string|null{
  return null;
 }
 
+async function handleProductVideo(request:Request,url:URL,upstream:typeof fetch):Promise<Response>{
+ if(request.method!=="GET"&&request.method!=="HEAD")return new Response(null,{status:405});
+ const parts=url.pathname.split("/");
+ if(url.search||parts.length!==4||!isProductVideoId(parts[3]))return new Response("Not found",{status:404});
+ const range=request.headers.get("range");
+ if(range&&!/^bytes=\d*-\d*$/.test(range))return new Response(null,{status:416});
+ const res=await upstream(UPSTREAM+parts[3],{headers:range?{range}:{},redirect:"manual",
+  ...(range?{}:{cf:{cacheEverything:true,cacheTtl:2592000}}),
+ } as RequestInit);
+ const type=res.headers.get("content-type")??"";
+ if(res.status===404||res.status===403||(res.status>=300&&res.status<400))return new Response("Not found",{status:404});
+ if((res.status!==200&&res.status!==206)||!type.startsWith("video/"))return new Response(null,{status:502});
+ const headers:Record<string,string>={"content-type":type,"cache-control":"public, max-age=2592000, immutable","accept-ranges":"bytes","x-content-type-options":"nosniff"};
+ for(const h of ["content-length","content-range"]){const v=res.headers.get(h);if(v)headers[h]=v;}
+ return new Response(request.method==="HEAD"?null:res.body,{status:res.status,headers});
+}
+
 export async function handleProductMedia(request:Request,upstream:typeof fetch=fetch):Promise<Response|null>{
  const url=new URL(request.url);
+ if(url.pathname.startsWith("/media/v/"))return handleProductVideo(request,url,upstream);
  if(!url.pathname.startsWith("/media/p/"))return null;
  if(request.method!=="GET"&&request.method!=="HEAD")return new Response(null,{status:405});
  const target=productUpstream(url);

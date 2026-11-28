@@ -8,7 +8,10 @@ import {brainClient} from "@/lib/store/brain-client";
 const img1="11111111-2222-3333-4444-555555555555.jpg",img2="aaaaaaaa-2222-3333-4444-555555555555.png";
 const row={listing_id:"l1",slug:"milk-frother-22929",title:"خفاقة حليب",price_minor:"12900",currency:"SAR"};
 const detail:PublicDetail={...row,description:"وصف"};
+const vid="aaaaaaaa-1111-2222-3333-444444444444.mp4";
 const payload={listing_id:"l1",market:"sa",release:"public_approved",category:"kitchen",
+ videos:[vid,vid,"https://youtube.com/x"],quantity_offers:[{quantity:2,price_minor:22900},{quantity:3,price_minor:40000},{quantity:9,price_minor:1}],
+ bundle:[{name:"سيروم الشعر",quantity:2,image:img1},{name:"",quantity:1,image:null},{name:"مشط",quantity:1,image:"https://x/y.jpg"}],
  images:[{id:img1,alt:"خفاقة على الطاولة"},{id:img2,alt:""},{id:img1,alt:"dup"},{id:"https://evil.example/x.jpg",alt:"x"}],
  page:{title:"خفاقة حليب كهربائية",subtitle:"رغوة في ثوانٍ",description:"وصف المنتج.",bullets:["سهلة التنظيف",""],specs:[{label:"اللون",value:"أسود"},{label:"",value:"x"}],
   faq:[{q:"هل تعمل بالبطارية؟",a:"نعم."}],tags:["قهوة"],seo:{title:"خفاقة حليب | يومياتي",description:"وصف قصير"}}};
@@ -25,7 +28,10 @@ describe("released listings with pictures",()=>{
  it("parses only a released page for this exact listing and market",()=>{
   const page=parsePublicProductPage(payload,"sa","l1")!;
   expect(page.images).toEqual([{id:img1,alt:"خفاقة على الطاولة"},{id:img2,alt:"خفاقة حليب كهربائية"}]);
-  expect(page.bullets).toEqual(["سهلة التنظيف"]);expect(page.specs).toHaveLength(1);expect(page.category).toBe("kitchen");
+  expect(page.bullets).toEqual(["سهلة التنظيف"]);
+  expect(page.videos).toEqual([vid]);
+  expect(page.quantity_offers).toEqual([{quantity:2,price_minor:22900},{quantity:3,price_minor:40000}]);
+  expect(page.bundle).toEqual([{name:"سيروم الشعر",quantity:2,image:img1},{name:"مشط",quantity:1,image:null}]);expect(page.specs).toHaveLength(1);expect(page.category).toBe("kitchen");
   expect(parsePublicProductPage(payload,"ae","l1")).toBeNull();
   expect(parsePublicProductPage(payload,"sa","other")).toBeNull();
   expect(parsePublicProductPage({...payload,release:"draft"},"sa","l1")).toBeNull();
@@ -51,6 +57,12 @@ describe("released listings with pictures",()=>{
   expect(screen.getByText("هل تعمل بالبطارية؟")).toBeInTheDocument();
   expect(screen.getByText(/الدفع عند الاستلام/)).toBeInTheDocument();
   expect(container.innerHTML).not.toMatch(/taager/i);
+  // 2 for 229 SAR saves 29 SAR on 2 × 129; 3 for 400 is dearer than 3 × 129 and is not shown.
+  expect(screen.getByText(/قطعتين بـ/)).toHaveTextContent("٢٢٩");
+  expect(screen.getByText(/توفّرين/)).toHaveTextContent("٢٩٫٠٠");
+  expect(screen.queryByText(/3 قطع/)).toBeNull();
+  expect(screen.getByText("سيروم الشعر")).toBeInTheDocument();expect(screen.getByText("× 2")).toBeInTheDocument();
+  expect(container.querySelector("video source")).toHaveAttribute("src","/media/v/"+vid);
   fireEvent.click(screen.getByRole("button",{name:"عرض الصورة 2"}));
   expect(screen.getByAltText("خفاقة حليب كهربائية")).toHaveAttribute("src","/media/p/"+img2);
   await waitFor(()=>expect(document.title).toBe("خفاقة حليب | يومياتي"));

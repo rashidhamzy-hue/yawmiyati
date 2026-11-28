@@ -3,7 +3,7 @@ import {describe,expect,it} from "vitest";
 import {MARKETS,decimalToMinor,minorToDecimal} from "../../supabase/functions/_shared/brain/markets.ts";
 import {normalizeWoo,findVideos,flattenMeta} from "../../supabase/functions/_shared/brain/woo-normalize.ts";
 import {capabilityReport,economicsInputs,familyKey,heuristicMapping,offerKind,titleClaimedPieces} from "../../supabase/functions/_shared/brain/catalog-analysis.ts";
-import {decidePrice,expectedPerOrder,freeDeliveryThreshold,pricePoints,profitDelivered} from "../../supabase/functions/_shared/brain/economics.ts";
+import {decidePrice,expectedPerOrder,freeDeliveryThreshold,pricePoints,profitDelivered,quantityOffers} from "../../supabase/functions/_shared/brain/economics.ts";
 import {audienceCheck,mapCategory,prefilter,riskCheck,selectFinal,merchandise} from "../../supabase/functions/_shared/brain/selection.ts";
 import {costOf,extractJson,estimateMax} from "../../supabase/functions/_shared/brain/anthropic.ts";
 import {parseContent,parseResearch,parseMapping} from "../../supabase/functions/_shared/brain/prompts.ts";
@@ -227,5 +227,26 @@ describe("risk rules on real supplier wording",()=>{
   expect(rc("تابلت مزود بكيبورد شبيه الايفون i15 Pro").kills).toContain("counterfeit_brands");
   expect(rc("ساعة ذكية سامسونج").kills).toContain("counterfeit_brands");
   expect(rc("سرير قابل للطي").kills).toEqual([]);
+ });
+});
+
+describe("quantity offers",()=>{
+ it("offers 2 and 3 pieces cheaper than singles, never earning less than one single sale at full unit cost",()=>{
+  const offers=quantityOffers(19900,{cost_minor:7700,floor_minor:14000},MARKETS.sa);
+  expect(offers.map(o=>o.quantity)).toEqual([2,3]);
+  for(const o of offers){
+   expect(o.price_minor).toBeLessThan(o.quantity*19900);
+   expect(String(o.price_minor/100)).toMatch(/9$/);
+   expect(o.profit_delivered_minor).toBeGreaterThanOrEqual(profitDelivered(19900,{cost_minor:7700,floor_minor:14000},MARKETS.sa));
+   expect(o.price_minor).toBeGreaterThan(o.quantity*7700);
+  }
+ });
+ it("skips offers when the margin is too thin",()=>{
+  expect(quantityOffers(5900,{cost_minor:5200,floor_minor:5900},MARKETS.sa)).toEqual([]);
+  expect(quantityOffers(4000,{cost_minor:5000,floor_minor:null},MARKETS.sa)).toEqual([]);
+ });
+ it("is part of every priced decision",()=>{
+  const d=decidePrice({inputs:{cost_minor:4500,floor_minor:9900,suggested_minor:null},m:MARKETS.sa,competitors:[]});
+  expect(Array.isArray(d.quantity_offers)).toBe(true);
  });
 });
