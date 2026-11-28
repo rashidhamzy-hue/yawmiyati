@@ -10,6 +10,8 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import headingFont from "@fontsource-variable/el-messiri/files/el-messiri-arabic-wght-normal.woff2?url";
+import textFont from "@fontsource-variable/readex-pro/files/readex-pro-arabic-wght-normal.woff2?url";
 import {AnalyticsRoot} from "@/components/analytics/AnalyticsRoot";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { captureError } from "@/lib/monitoring/sentry-client";
@@ -72,10 +74,12 @@ export const Route = createRootRoute({
     ],
     scripts: [{ children: CONSENT_PRECHECK_SCRIPT }],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      // The stylesheet is written into the page itself by the server (src/lib/inline-css.ts), so the first paint does not
+      // wait for a second request. Only the development server, which has no such step, links the file.
+      ...(import.meta.env.DEV ? [{ rel: "stylesheet", href: appCss }] : []),
+      // Both Arabic fonts start with the page instead of after the stylesheet is read.
+      { rel: "preload", as: "font", type: "font/woff2", href: headingFont, crossOrigin: "anonymous" as const },
+      { rel: "preload", as: "font", type: "font/woff2", href: textFont, crossOrigin: "anonymous" as const },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
