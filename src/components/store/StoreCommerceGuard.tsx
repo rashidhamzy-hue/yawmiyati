@@ -2,6 +2,7 @@ import {ArrowLeft,ArrowRight,ShoppingBag,PackageSearch,ShieldCheck,Search} from 
 import {StoreFrame} from "./StoreChrome";
 import {ShoppingAssistant} from "./ShoppingAssistantDeferred";
 import {img} from "@/lib/store/images";
+import {editorialSrcSet} from "@/lib/store/editorial-srcset";
 import type {MarketCode} from "@/lib/store/markets";
 import {marketExperience} from "@/lib/store/market-experience";
 import {customerServiceCopy} from "@/lib/store/customer-service-copy";
@@ -38,7 +39,7 @@ export function StoreCommerceGuard({market,type}:{market:MarketCode;type:keyof t
   <section className="mx-auto max-w-6xl px-4 pb-20 pt-7 sm:px-6 sm:pt-12 lg:px-8">
    <nav aria-label="مسار الصفحة" className="mb-6 text-sm text-muted-foreground"><a href={path} className="hover:text-primary">يومياتي</a> / {entry.eyebrow}</nav>
    <div className="grid overflow-hidden rounded-[2rem] border bg-card shadow-soft md:grid-cols-2">
-    <img src={entry.image} alt={entry.alt} loading="lazy" className="h-64 w-full object-cover md:h-full md:min-h-[480px]"/>
+    <img src={entry.image} srcSet={editorialSrcSet(entry.image)} sizes="(min-width: 1152px) 560px, (min-width: 768px) 50vw, calc(100vw - 2rem)" alt={entry.alt} width={1200} height={800} fetchPriority="high" className="h-64 w-full object-cover md:h-full md:min-h-[480px]"/>
     <div className="flex flex-col justify-center p-7 sm:p-12">
      <span className="mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-primary-soft text-primary"><Icon className="h-7 w-7"/></span>
      <p className="text-sm font-extrabold text-primary">{entry.eyebrow}</p>

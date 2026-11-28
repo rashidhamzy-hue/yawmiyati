@@ -11,7 +11,7 @@ permissions:
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
     env:
       BASE: https://yawmiyati-storefront-staging.rashid-hamzy.workers.dev
     steps:
@@ -19,7 +19,9 @@ jobs:
         run: |
           set -u
           mkdir -p lh
-          pages="sa ae om eg iq sa/c/kitchen sa/search sa/info/shipping-returns sa/cart sa/story"
+          # Home, a section page and the cart in every market, plus search, a policy page and the story once.
+          pages="sa/search sa/info/shipping-returns sa/story"
+          for m in sa ae om eg iq; do pages="$pages $m $m/c/kitchen $m/cart"; done
           for p in $pages; do
             name=$(echo "$p" | tr '/' '_')
             npx -y lighthouse@12 "$BASE/$p" --quiet --chrome-flags="--headless=new --no-sandbox" \
