@@ -173,6 +173,9 @@ async function stagePrefilter(d: Deps, run: Run, m: MarketFacts, settings: Setti
   const offers = await loadOffers(d.db, run.store_code, run.id);
   const mapping = (run.summary.capability as { mapping?: FieldMapping } | undefined)?.mapping ?? settings.field_mapping;
   const rows = prefilter(offers, mapping, m, settings.shortlist_size, { stockHistory: await loadStockHistory(d, run.store_code), now: (d.now ?? Date.now)() });
+  // A build for chosen products only (the day's approved additions): everything else stays out of this run.
+  const only = buildProducts(run.summary);
+  if (only) for (const r of rows) if (r.stage === "shortlisted" && !only.has(r.product_id)) { r.stage = "excluded"; r.reasons.push("not_in_this_batch"); }
   for (let i = 0; i < rows.length; i += 500) {
     await d.db.upsert("brain_product_analysis", rows.slice(i, i + 500).map((r) => ({ run_id: run.id, store_code: run.store_code, ...r, updated_at: new Date().toISOString() })), "run_id,product_id,variation_id");
   }
@@ -452,6 +455,13 @@ async function stageMerchandise(d: Deps, run: Run) {
 export function buildTarget(summary: Record<string, unknown>): number | null {
   const n = (summary.build as { target?: unknown } | undefined)?.target;
   return typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= 200 ? n : null;
+}
+/** Taager product ids a build is restricted to (the owner's approved daily additions), or null. */
+export function buildProducts(summary: Record<string, unknown>): Set<number> | null {
+  const ids = (summary.build as { product_ids?: unknown } | undefined)?.product_ids;
+  if (!Array.isArray(ids)) return null;
+  const clean = ids.filter((x): x is number => typeof x === "number" && Number.isSafeInteger(x) && x > 0).slice(0, 50);
+  return clean.length ? new Set(clean) : null;
 }
 /** Research half as many again as the target (blocked prices, weak research and near-duplicates fall out), at most 400. */
 export const buildShortlist = (target: number) => Math.min(400, Math.max(target + 10, Math.ceil(target * 1.5)));
