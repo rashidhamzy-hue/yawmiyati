@@ -1,3 +1,4 @@
+import {pageCopy} from "@/lib/store/page-copy";
 import {paymentLabel} from "../../../supabase/functions/_shared/payment-policy";
 import {useEffect,useState} from "react";
 import {markets,type MarketCode} from "../../lib/store/markets";
@@ -16,7 +17,7 @@ export function EditorialPage({page,market,metadata=false}:{page:EditorialPageDa
     <p>{page.category}</p><h2 className="font-display text-3xl font-bold">{page.title}</h2>
     <div className="grid gap-3 sm:grid-cols-2">{page.images.map((img,i)=><img key={i} src={img.src} alt={img.alt} loading="lazy" className="w-full rounded-xl"/>)}</div>
     <p>{page.description}</p><ul>{page.components.map(c=><li key={c.id}>{c.quantity.toLocaleString(m.locale)} × {c.id}</li>)}</ul>
-    <dl><dt>سعر المنتج</dt><dd>{amount(page.priceMinor)}</dd><dt>الشحن</dt><dd>{amount(page.shippingMinor)}</dd><dt>الإجمالي مع الشحن</dt><dd>{amount(page.priceMinor+page.shippingMinor)}</dd></dl>
+    <dl><dt>{pageCopy(market).productPrice}</dt><dd>{amount(page.priceMinor)}</dd><dt>{pageCopy(market).shippingFee}</dt><dd>{amount(page.shippingMinor)}</dd><dt>{pageCopy(market).totalWithShipping}</dt><dd>{amount(page.priceMinor+page.shippingMinor)}</dd></dl>
     <p className="text-sm">{paymentLabel}</p>
     {page.faq.map((q,i)=><details key={i}><summary>{q.question}</summary><p>{q.answer}</p></details>)}
   </article>;

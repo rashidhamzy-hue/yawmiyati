@@ -4,6 +4,7 @@ import { ImageOff } from "lucide-react";
 import { parseMinorUnits, type MarketCode } from "./markets";
 import { formatListingPrice, formatPrice, type PublicDetail, type PublicListing } from "./public-catalog";
 import { shopCopy } from "./shop-copy";
+import { pageCopy } from "./page-copy";
 import { filterApprovedListings, presentApprovedDetail, type ApprovedExtra, type ApprovedSort } from "./approved-product-experience";
 
 /**
@@ -48,7 +49,7 @@ export function ApprovedCatalogBrowser({market,products,onOpen,images={},initial
   const [max,setMax]=useState("");
   const [page,setPage]=useState(1);
   const [category,setCategory]=useState("all");
-  const categoryNames:Record<string,string>={home:"المنزل والديكور",kitchen:"المطبخ والقهوة",beauty:"الجمال والعناية",fashion:"الأزياء والإكسسوارات",wellness:"الراحة والرفاهية",organize:"التنظيم الذكي"};
+  const pc=pageCopy(market),categoryNames:Record<string,string>=shopCopy(market).sectionNames;
   const availableCategories=Object.keys(categoryNames).filter(slug=>products.some(row=>row.approved_category_slugs?.includes(slug as NonNullable<PublicListing["approved_category_slugs"]>[number])));
   const categoryProducts=category==="all"?products:products.filter(row=>row.approved_category_slugs?.includes(category as NonNullable<PublicListing["approved_category_slugs"]>[number]));
   const parseBound=(value:string)=>value.trim()?parseMinorUnits(market,value.trim()):undefined;
@@ -59,35 +60,35 @@ export function ApprovedCatalogBrowser({market,products,onOpen,images={},initial
   const result=invalidRange?null:filterApprovedListings(categoryProducts,market,{query,sort,minPriceMinor,maxPriceMinor,page,pageSize:12});
   const reset=()=>{setQuery("");setSort("default");setMin("");setMax("");setCategory("all");setPage(1);};
   const hasFilters=Boolean(query||min||max||sort!=="default"||category!=="all");
-  return <section dir="rtl" aria-label="تصفحي جميع المنتجات" className="space-y-5">
-    <div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="text-[11px] font-extrabold text-primary">كتالوج يومياتي</p><h1 className="font-display text-xl font-extrabold leading-tight sm:text-2xl">كل المنتجات</h1></div><span className="shrink-0 rounded-full bg-primary-soft px-3 py-2 text-xs font-bold text-primary">{categoryProducts.length} منتج</span></div>
-    {availableCategories.length>0&&<nav aria-label="تصفية حسب القسم" className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{["all",...availableCategories].map(slug=><button key={slug} type="button" aria-pressed={category===slug} onClick={()=>{setCategory(slug);setPage(1);}} className={"min-h-10 shrink-0 rounded-full border px-4 text-xs font-bold "+(category===slug?"border-primary bg-primary text-primary-foreground":"bg-card text-foreground")}>{slug==="all"?"كل الأقسام":categoryNames[slug]}</button>)}</nav>}
+  return <section dir="rtl" aria-label={pc.browseAllLabel} className="space-y-5">
+    <div className="flex items-center justify-between gap-3"><div className="min-w-0"><h1 className="font-display text-xl font-extrabold leading-tight sm:text-2xl">{pc.allProducts}</h1></div><span className="shrink-0 rounded-full bg-primary-soft px-3 py-2 text-xs font-bold text-primary">{pc.productCount(categoryProducts.length)}</span></div>
+    {availableCategories.length>0&&<nav aria-label={pc.filterBySection} className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{["all",...availableCategories].map(slug=><button key={slug} type="button" aria-pressed={category===slug} onClick={()=>{setCategory(slug);setPage(1);}} className={"min-h-10 shrink-0 rounded-full border px-4 text-xs font-bold "+(category===slug?"border-primary bg-primary text-primary-foreground":"bg-card text-foreground")}>{slug==="all"?pc.allSections:categoryNames[slug]}</button>)}</nav>}
     <div className="space-y-2">
-      <input type="search" aria-label="بحث المنتجات" maxLength={120} value={query} onChange={e=>{setQuery(e.target.value);setPage(1);}} placeholder={shopCopy(market).searchInSection} className="field min-h-12 w-full"/>
+      <input type="search" aria-label={pc.searchBox} maxLength={120} value={query} onChange={e=>{setQuery(e.target.value);setPage(1);}} placeholder={shopCopy(market).searchInSection} className="field min-h-12 w-full"/>
       <div className="flex items-center gap-2">
-        <select aria-label="ترتيب المنتجات" value={sort} onChange={e=>{setSort(e.target.value as ApprovedSort);setPage(1);}} className="field min-h-11 min-w-0 flex-1 text-sm sm:max-w-xs">
-          <option value="popular">الأكثر رواجاً</option><option value="default">الأكثر صلة</option><option value="price_asc">السعر: الأقل أولاً</option><option value="price_desc">السعر: الأعلى أولاً</option><option value="title">الاسم</option>
+        <select aria-label={pc.sortLabel} value={sort} onChange={e=>{setSort(e.target.value as ApprovedSort);setPage(1);}} className="field min-h-11 min-w-0 flex-1 text-sm sm:max-w-xs">
+          <option value="popular">{pc.mostPopular}</option><option value="default">{pc.sortRelevance}</option><option value="price_asc">{pc.sortLow}</option><option value="price_desc">{pc.sortHigh}</option><option value="title">{pc.sortName}</option>
         </select>
         <button type="button" aria-expanded={filtersOpen} aria-controls="catalog-price-filter" onClick={()=>setFiltersOpen(v=>!v)} className="btn-quiet shrink-0">{shopCopy(market).filter}{(min||max)?" •":""}</button>
-        {hasFilters&&<button type="button" onClick={reset} className="min-h-10 shrink-0 px-2 text-xs font-bold underline underline-offset-4">مسح التصفية</button>}
+        {hasFilters&&<button type="button" onClick={reset} className="min-h-10 shrink-0 px-2 text-xs font-bold underline underline-offset-4">{pc.clearFilters}</button>}
       </div>
       <div id="catalog-price-filter" className={(filtersOpen||min||max?"grid":"hidden")+" max-w-sm grid-cols-2 gap-2"}>
-        <input inputMode="decimal" aria-label="أقل سعر" placeholder={shopCopy(market).priceFrom} value={min} onChange={e=>{setMin(e.target.value);setPage(1);}} className="field min-w-0 text-sm"/>
-        <input inputMode="decimal" aria-label="أعلى سعر" placeholder={shopCopy(market).priceTo} value={max} onChange={e=>{setMax(e.target.value);setPage(1);}} className="field min-w-0 text-sm"/>
+        <input inputMode="decimal" aria-label={pc.lowestPrice} placeholder={shopCopy(market).priceFrom} value={min} onChange={e=>{setMin(e.target.value);setPage(1);}} className="field min-w-0 text-sm"/>
+        <input inputMode="decimal" aria-label={pc.highestPrice} placeholder={shopCopy(market).priceTo} value={max} onChange={e=>{setMax(e.target.value);setPage(1);}} className="field min-w-0 text-sm"/>
       </div>
-      <p role="status" className="text-xs text-muted-foreground">{invalidRange?"تحققي من نطاق السعر وإدخاله بشكل صحيح.":`${result!.total} نتيجة`}</p>
+      <p role="status" className="text-xs text-muted-foreground">{invalidRange?pc.priceRangeCheck:pc.resultCount(result!.total)}</p>
     </div>
-    {invalidRange?<p role="alert" className="rounded-xl border border-destructive/30 p-4 text-sm">أدخلي سعراً صحيحاً، وتأكدي أن الحد الأدنى لا يتجاوز الحد الأعلى.</p>:result!.total===0?
-      <div className="rounded-2xl border bg-card px-5 py-12 text-center"><PackageSearchFallback/><h2 className="mt-3 text-base font-bold">ما لقينا منتجات تطابق اختياراتك</h2><p className="mt-2 text-sm text-muted-foreground">جرّبي تخفيف التصفية أو تغيير كلمة البحث.</p><button type="button" onClick={reset} className="btn-outline mt-4 min-h-11">عرض كل المنتجات</button></div>:
+    {invalidRange?<p role="alert" className="rounded-xl border border-destructive/30 p-4 text-sm">{pc.priceRangeError}</p>:result!.total===0?
+      <div className="rounded-2xl border bg-card px-5 py-12 text-center"><PackageSearchFallback/><h2 className="mt-3 text-base font-bold">{pc.noMatchTitle}</h2><p className="mt-2 text-sm text-muted-foreground">{pc.tryOtherWord}</p><button type="button" onClick={reset} className="btn-outline mt-4 min-h-11">{pc.showAll}</button></div>:
       <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-4 lg:grid-cols-4 lg:gap-x-5 lg:gap-y-8">
         {result!.products.map(row=>{const image=images[row.listing_id];return <article key={row.listing_id} className="group min-w-0">
-          <a href={`/${market}/p/${encodeURIComponent(row.slug)}`} onClick={onOpen?e=>{e.preventDefault();onOpen(row.slug);}:undefined} aria-label={`تفاصيل ${row.title}`} className="block aspect-square overflow-hidden rounded-2xl bg-surface">
-            {image?<img src={image.url} alt={image.alt||row.title} loading="lazy" decoding="async" width={360} height={360} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"/>:<div className="flex h-full flex-col items-center justify-center gap-2 text-center text-xs text-muted-foreground"><ImageOff aria-hidden="true" className="h-8 w-8"/><span>الصورة غير متاحة</span></div>}
+          <a href={`/${market}/p/${encodeURIComponent(row.slug)}`} onClick={onOpen?e=>{e.preventDefault();onOpen(row.slug);}:undefined} aria-label={pc.detailsOf(row.title)} className="block aspect-square overflow-hidden rounded-2xl bg-surface">
+            {image?<img src={image.url} alt={image.alt||row.title} loading="lazy" decoding="async" width={360} height={360} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"/>:<div className="flex h-full flex-col items-center justify-center gap-2 text-center text-xs text-muted-foreground"><ImageOff aria-hidden="true" className="h-8 w-8"/><span>{pc.noPicture}</span></div>}
           </a>
           <div className="px-0.5 pt-2.5"><h3 className="line-clamp-2 font-sans text-[13px] font-medium leading-[1.375rem] sm:text-sm"><a href={`/${market}/p/${encodeURIComponent(row.slug)}`} onClick={onOpen?e=>{e.preventDefault();onOpen(row.slug);}:undefined} className="hover:underline">{row.title}</a></h3><p className="ym-price mt-1 text-[15px] sm:text-base">{formatPrice(row.price_minor,market)}</p></div>
         </article>;})}
       </div>}
-    {!invalidRange&&result!.pages>1&&<nav className="flex items-center justify-center gap-3" aria-label="صفحات المنتجات"><button type="button" className="min-h-11 rounded-xl border px-4 disabled:opacity-40" disabled={page===1} onClick={()=>setPage(x=>x-1)}>السابق</button><span className="text-sm">صفحة {page} من {result!.pages}</span><button type="button" className="min-h-11 rounded-xl border px-4 disabled:opacity-40" disabled={page>=result!.pages} onClick={()=>setPage(x=>x+1)}>التالي</button></nav>}
+    {!invalidRange&&result!.pages>1&&<nav className="flex items-center justify-center gap-3" aria-label={pc.pagesLabel}><button type="button" className="min-h-11 rounded-xl border px-4 disabled:opacity-40" disabled={page===1} onClick={()=>setPage(x=>x-1)}>{pc.previousPage}</button><span className="text-sm">{pc.pageOf(page,result!.pages)}</span><button type="button" className="min-h-11 rounded-xl border px-4 disabled:opacity-40" disabled={page>=result!.pages} onClick={()=>setPage(x=>x+1)}>{pc.nextPage}</button></nav>}
   </section>;
 }
 function PackageSearchFallback(){return <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary-soft text-primary"><ImageOff className="h-7 w-7" aria-hidden="true"/></span>}

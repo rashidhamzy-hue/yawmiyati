@@ -13,7 +13,6 @@ const root=mkdtempSync(join(tmpdir(),"yawmiyati-m4g-truth-"));
 const script=resolve(dirname(fileURLToPath(import.meta.url)),"check-storefront-truth.mjs");
 const paths=[
  "src/components/store/MarketPreview.tsx",
- "src/components/store/MarketPromiseStrip.tsx",
  "src/components/store/StoreInfoPage.tsx",
  "src/components/store/StoreCommerceGuard.tsx",
  "src/components/store/StoreChrome.tsx",
@@ -21,8 +20,8 @@ const paths=[
  "src/components/store/StoreCategoryPage.tsx",
  "src/components/store/StoreSearchOverlay.tsx",
  "src/components/store/ShoppingAssistant.tsx",
- "src/components/store/OfferProductPanel.tsx",
- "src/components/store/OfferCartPage.tsx",
+ "src/components/preview/OfferProductPanel.tsx",
+ "src/components/preview/OfferCartPage.tsx",
  "src/lib/store/saudi-commerce-content.ts",
  "src/lib/store/market-policy-pages.ts",
  "src/lib/store/market-experience.ts",

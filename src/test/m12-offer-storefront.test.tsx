@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { fixtureOfferVersions } from "@/fixtures/storefront-offers";
-import { OfferProductPanel } from "@/components/store/OfferProductPanel";
-import { OfferCartPage } from "@/components/store/OfferCartPage";
+import { OfferProductPanel } from "@/components/preview/OfferProductPanel";
+import { OfferCartPage } from "@/components/preview/OfferCartPage";
 import { offerCartKey, readOfferCart } from "@/lib/store/offer-cart";
 import { fixtureHostAllowed, offerFixturesRequested } from "@/lib/store/offer-source";
 
