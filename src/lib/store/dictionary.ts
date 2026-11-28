@@ -5,6 +5,7 @@ import {brandStory} from "./brand-story";
 import {shopCopy} from "./shop-copy";
 import {chromeCopy} from "./chrome-copy";
 import {assistantCopy} from "./assistant-copy";
+import {policyTemplates} from "./policy-facts";
 
 /**
  * ONE dictionary per market: every customer-facing word of the storefront in that market's own dialect.
@@ -14,10 +15,11 @@ import {assistantCopy} from "./assistant-copy";
  *   shop       — product page, cart, offers, recommendations (shop-copy.ts)
  *   chrome     — navigation, footer, consent, order form, not-found and error pages (chrome-copy.ts)
  *   assistant  — the shopping assistant's own words (assistant-copy.ts)
+ *   policy     — delivery and return sentences built from a confirmed number (policy-facts.ts)
  * New shopper-facing text goes into one of these, never into a component. `scripts/check-market-dictionaries.ts`
  * fails CI on missing keys, Latin text, banned wording and dialect mixed across markets.
  */
 export function marketDictionary(market:MarketCode){
- return {experience:marketExperience[market],service:customerServiceCopy[market],story:brandStory[market],shop:shopCopy(market),chrome:chromeCopy(market),assistant:assistantCopy(market)};
+ return {experience:marketExperience[market],service:customerServiceCopy[market],story:brandStory[market],shop:shopCopy(market),chrome:chromeCopy(market),assistant:assistantCopy(market),policy:policyTemplates[market]};
 }
 export type MarketDictionary=ReturnType<typeof marketDictionary>;

@@ -10,6 +10,8 @@ export type MarketFacts = {
   minorDigits: number;       // matches src/lib/store/markets.ts
   /** Delivery fee the CUSTOMER pays per order (Taager), in minor units. Egypt varies 95-105 EGP: mid value. */
   shippingMinor: number;
+  /** Every delivery fee band of the market, ascending, when Taager's information pages list them (Egypt's three zones). */
+  shippingZonesMinor?: number[];
   /** Share of profit ABOVE Taager's minimum that Taager deducts as VAT (Saudi only, per Taager policy). */
   vatOnAddedProfitBps: number;
   /** Charge to the merchant when a customer refuses (Egypt 5 EGP; others none published). */
@@ -39,6 +41,9 @@ export const MARKETS: Record<Market, MarketFacts> = {
     vatOnAddedProfitBps: 0, refusalChargeMinor: 0, defaultDeliveryRateBps: 7000, perUsd: 1310, dialect: "Iraqi (Baghdadi)",
     retailerHints: ["miswag.com", "elryan.com", "amazon (shipped to Iraq)", "noon (shipped to Iraq)"] },
 };
+
+/** The highest delivery fee we could have to pay in this market (Egypt's dearest band is 105 EGP unless the pages say otherwise). */
+export const worstDeliveryFee = (m: MarketFacts) => Math.max(m.shippingMinor, ...(m.shippingZonesMinor ?? (m.currency === "EGP" ? [10500] : [])));
 
 export function isMarket(value: unknown): value is Market {
   return typeof value === "string" && Object.prototype.hasOwnProperty.call(MARKETS, value);

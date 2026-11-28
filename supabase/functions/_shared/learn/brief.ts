@@ -5,6 +5,7 @@ import { marginBps, netPerDelivered } from "../brain/economics.ts";
 import { productRates, productVerdict, sourceRates, type ProductCounts, type SourceCounts, type Verdict } from "./scorecard.ts";
 import { audienceDefinitions, type Audience } from "./audiences.ts";
 import type { SeasonPlan } from "./seasonal.ts";
+import type { RulesBrief } from "../brain/taager-facts.ts";
 
 export type BriefProduct = { listing_id: string; slug: string; title: string; visible: boolean; hidden_reason: string | null; price_minor: number; cost_minor: number | null; floor_minor: number | null;
   cheapest_minor: number | null; median_minor: number | null; counts: ProductCounts; delivery_included?: boolean; has_video?: boolean; image?: string | null };
@@ -19,6 +20,8 @@ export type BriefInput = {
   add: { sku: string; product_id: number; title: string; why: string; margin_pct: number | null; profit_usd: number | null }[];
   search_gaps: { query: string; searches: number }[];
   offers_waiting: number; seasonal: SeasonPlan[]; spend_today_usd: number; daily_cap_usd: number; notes: string[];
+  /** What Taager's information pages changed since the last sync and where they contradict our figures. */
+  taager_rules?: RulesBrief | null;
 };
 export type AdBrief = { listing_id: string; slug: string; title: string; angle: string; creative: string; show_price_usd: number; show_offer: string; target_country: string; why: string };
 export type Brief = {
@@ -31,6 +34,7 @@ export type Brief = {
   search_gaps: BriefInput["search_gaps"]; offers_waiting: number; audiences: Audience[]; seasonal: SeasonPlan[];
   health: { sync_age_hours: number | null; sync_ok: boolean; orders_connected: boolean; analytics_connected: boolean; unknown_order_statuses: number; spend_today_usd: number; daily_cap_usd: number; notes: string[] };
   to_approve: { products_to_add: number; products_to_retire: number; price_changes: number; offers: number };
+  taager_rules: RulesBrief | null;
 };
 const usd = (minor: number, m: MarketFacts) => Math.round(minorToUsd(minor, m) * 100) / 100;
 const HIDDEN: Record<string, string> = { out_of_stock: "out of stock at Taager", margin_below_floor: "earns under the $2 floor", stale_sync: "Taager sync older than the limit", paused: "paused",
@@ -85,6 +89,7 @@ export function buildBrief(i: BriefInput): Brief {
     sources, search_gaps: i.search_gaps.slice(0, 15), offers_waiting: i.offers_waiting, audiences: audienceDefinitions(i.market), seasonal: i.seasonal,
     health: { sync_age_hours: syncAge, sync_ok: syncAge !== null && syncAge <= i.sync.max_age_hours, orders_connected: i.sync.orders_connected, analytics_connected: i.sync.analytics_connected,
       unknown_order_statuses: i.orders.unknown_status, spend_today_usd: i.spend_today_usd, daily_cap_usd: i.daily_cap_usd, notes: i.notes },
+    taager_rules: i.taager_rules ?? null,
     to_approve: { products_to_add: i.add.length, products_to_retire: retire.length, price_changes: i.reprice.changes + i.reprice.pauses, offers: i.offers_waiting },
   };
 }

@@ -62,8 +62,8 @@ export type OfferProposals = {
   taager_discounts_proven: boolean;
 };
 
-/** The highest delivery fee we could have to pay in this market (Egypt's dearest band is 105 EGP). */
-export const worstDeliveryFee = (m: MarketFacts) => (m.currency === "EGP" ? Math.max(m.shippingMinor, 10500) : m.shippingMinor);
+import { worstDeliveryFee } from "./markets.ts";
+export { worstDeliveryFee };
 const usd = (minor: number, m: MarketFacts) => Math.round(minorToUsd(minor, m) * 100) / 100;
 const words = (t: string) => new Set(t.normalize("NFKC").replace(/[ً-ْـ]/g, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 3));
 function sameness(a: string, b: string): number {

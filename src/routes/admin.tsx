@@ -10,6 +10,7 @@ import { CommercialReview } from "@/components/store/CommercialReview";
 import { OwnerActionQueue } from "@/components/store/OwnerActionQueue";
 import { BrainPanel } from "@/components/owner/BrainPanel";
 import { TaagerImport } from "@/components/owner/TaagerImport";
+import { TaagerRules } from "@/components/owner/TaagerRules";
 import { OffersPanel } from "@/components/owner/OffersPanel";
 import { MorningBrief } from "@/components/owner/MorningBrief";
 import { OrderQualityPanel } from "@/components/owner/OrderQualityPanel";
@@ -143,6 +144,7 @@ function OwnerDashboard(){
     </details>}
    </section>
    {origin&&key&&<TaagerImport key={"taager-"+market} market={market} origin={origin} publicKey={key} token={token}/>}
+   {origin&&key&&<TaagerRules key={"rules-"+market} market={market} origin={origin} publicKey={key} token={token}/>}
    {origin&&key&&<MorningBrief key={"brief-"+market} market={market} origin={origin} publicKey={key} token={token}/>}
    {origin&&key&&<BrainPanel key={"brain-"+market} market={market} origin={origin} publicKey={key} token={token}/>}
    {origin&&key&&<OffersPanel key={"offers-"+market} market={market} origin={origin} publicKey={key} token={token}/>}

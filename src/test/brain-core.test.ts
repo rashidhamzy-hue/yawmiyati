@@ -140,7 +140,8 @@ describe("margin band (owner rule, 28 Nov 2026)",()=>{
   // Egypt: 5 EGP per refusal; at a 50% delivery rate each delivered order carries one refusal.
   expect(undeliveredCostPerDelivered(5000,MARKETS.eg)).toBe(500);
   expect(netPerDelivered(40000,{cost_minor:30000,floor_minor:null},MARKETS.eg,5000)).toBe(9500);
-  expect(netPerDelivered(40000,{cost_minor:30000,floor_minor:null},MARKETS.eg,5000,true)).toBe(-500);
+  // Delivery we pay for is counted at Egypt's dearest band (105 EGP), so no destination can lose money.
+  expect(netPerDelivered(40000,{cost_minor:30000,floor_minor:null},MARKETS.eg,5000,true)).toBe(-1000);
   expect(marginBps(1500,10000)).toBe(1500);
  });
  it("lands just under the cheapest credible shop while inside the band",()=>{

@@ -66,6 +66,13 @@ export function MorningBrief({ market, origin, publicKey, token, request }: Prop
         <p><b>{b.sold.orders_placed}</b> orders · <b>{b.sold.delivered}</b> delivered · <b>{b.sold.open}</b> on the way · <b>{d(b.sold.delivered_profit_usd)}</b> profit from delivered orders</p>
         {b.sold.top.length ? <ul className="divide-y">{b.sold.top.map((t: any) => <li key={t.title} className="flex justify-between gap-2 py-1.5"><span dir="auto" className="min-w-0 truncate">{t.title}</span><span className="shrink-0 tabular-nums">{t.orders} orders · {d(t.profit_usd)}</span></li>)}</ul> : none("No orders yesterday.")}
       </Block>
+      {b.taager_rules && (b.taager_rules.changes.length + b.taager_rules.contradictions.length + b.taager_rules.planning_notes.length + b.taager_rules.customer_copy.length > 0) && <Block title="Taager's fees and rules" tone="border-amber-300">
+        {b.taager_rules.changes.map((c: any) => <p key={c.what} className="text-amber-900"><b>Changed since the last sync:</b> {c.what} <span className="text-xs text-muted-foreground">({c.source})</span></p>)}
+        {b.taager_rules.contradictions.map((c: any) => <p key={c.what}><b className="capitalize">{c.what}:</b> we plan with {c.ours}; Taager's page says {c.page}. <span className="text-muted-foreground">{c.status}</span></p>)}
+        {b.taager_rules.planning_notes.map((n: string) => <p key={n} className="text-muted-foreground">{n}</p>)}
+        {b.taager_rules.customer_copy.map((n: string) => <p key={n} className="text-amber-900">{n}</p>)}
+        <p className="text-xs text-muted-foreground">Decide each one in "Taager's rules for this market" above.{b.taager_rules.loyalty ? " " + b.taager_rules.loyalty : ""}</p>
+      </Block>}
       <Block title="Refusals and why">
         <p><b>{b.refusals.refused}</b> refused · <b>{b.refusals.returned}</b> returned · <b>{b.refusals.unreachable}</b> unreachable · <b>{b.refusals.cancelled}</b> cancelled</p>
         {b.refusals.reasons.length ? <p className="text-muted-foreground">{b.refusals.reasons.map((r: any) => `${r.reason}: ${r.orders}`).join(" · ")}</p> : none("No refusal reasons recorded.")}

@@ -17,6 +17,7 @@ import {publicBrowserConfig} from "@/lib/store/staging-public-config";
 import {productMediaPath} from "@/lib/store/product-media";
 import {shopCopy} from "@/lib/store/shop-copy";
 import {commerceFacts} from "./commerce-facts";
+import {fetchPolicyFacts,policySentences,type PolicyFacts} from "@/lib/store/policy-facts";
 import {
  DEFAULT_MARKET,MARKET_CODES,SHARED_INFO_TOPICS,SITE_ORIGIN,hostMayBeIndexed,
  marketUrl,minorToDecimal,productSuffix,xmlEscape,
@@ -185,8 +186,9 @@ const text=(body:string,type:string,maxAge=3600)=>new Response(body,{headers:{
  * Machine-readable store facts for one market: the same published sentences shoppers read (customer-service-copy.ts),
  * nothing more. Read by the shopping assistant's server side and by AI search; never a place for unpublished terms.
  */
-export function storeFacts(market:MarketCode){
- const copy=customerServiceCopy[market],id=marketIdentity[market];
+/** `policy`: the confirmed customer-facing facts, when the database holds any; a confirmed number that differs from our written sentence replaces it. */
+export function storeFacts(market:MarketCode,policy:PolicyFacts|null=null){
+ const written=customerServiceCopy[market],id=marketIdentity[market],sentences=policySentences(market,policy),copy={...written,shipping:sentences.shipping,delivery:sentences.delivery,returns:sentences.returns};
  return {market,country:BRAIN_MARKETS[market].countryName,country_ar:id.name,currency:markets[market].currency,minor_digits:markets[market].minorDigits,locale:markets[market].locale,
   dialect:BRAIN_MARKETS[market].dialect,payment:copy.payment,shipping:copy.shipping,delivery:copy.delivery,returns:copy.returns,
   confirmation_call:assistantCopy(market).callAnswer,tracking:copy.tracking,human:humanLink(market),
@@ -205,7 +207,12 @@ export async function handleSeoRequest(request:Request,read:CatalogReader=defaul
  if(path==="/sitemap.xml")return text(sitemapIndexXml(),"application/xml");
  if(path==="/llms.txt")return text(await llmsTxt(read),"text/plain");
  const facts=/^\/api\/store-facts\/(sa|ae|om|eg|iq)\.json$/.exec(path);
- if(facts)return text(JSON.stringify(storeFacts(facts[1] as MarketCode)),"application/json");
+ if(facts){
+  const m=facts[1] as MarketCode;
+  let policy:PolicyFacts|null=null;
+  try{const {origin,key}=publicBrowserConfig(import.meta.env["VITE_YAWMIYATI_SUPABASE_URL"],import.meta.env["VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY"]);policy=await fetchPolicyFacts(origin,key,m);}catch{policy=null;}
+  return text(JSON.stringify(storeFacts(m,policy)),"application/json");
+ }
  const sitemap=/^\/sitemaps\/(sa|ae|om|eg|iq)\.xml$/.exec(path);
  if(sitemap)return text(await marketSitemapXml(sitemap[1] as MarketCode,read),"application/xml");
  const feed=/^\/feeds\/google-(sa|ae|om|eg|iq)\.xml$/.exec(path);

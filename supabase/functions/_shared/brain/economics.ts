@@ -8,7 +8,7 @@
 // - Refused order: no profit; Egypt charges the merchant 5 EGP, others nothing published.
 // - Free delivery (our choice) means we absorb the delivery fee from profit.
 // All money is integer minor units. No price is proposed without Taager's cost.
-import { minorToUsd, usdToMinor, type MarketFacts } from "./markets.ts";
+import { minorToUsd, usdToMinor, worstDeliveryFee, type MarketFacts } from "./markets.ts";
 
 export type ProfitInputs = { cost_minor: number; floor_minor: number | null };
 
@@ -16,7 +16,8 @@ export function profitDelivered(price: number, inp: ProfitInputs, m: MarketFacts
   // VAT applies to profit added above Taager's minimum (no minimum known: treat all profit as added, the cautious case).
   const added = Math.max(0, price - (inp.floor_minor ?? inp.cost_minor));
   const vat = Math.ceil((added * m.vatOnAddedProfitBps) / 10000);
-  return price - inp.cost_minor - vat - (freeDelivery ? m.shippingMinor : 0);
+  // Delivery we pay for is counted at the dearest band of the market, so no destination can turn the order into a loss.
+  return price - inp.cost_minor - vat - (freeDelivery ? worstDeliveryFee(m) : 0);
 }
 
 export function expectedPerOrder(profit: number, deliveryRateBps: number, m: MarketFacts): number {

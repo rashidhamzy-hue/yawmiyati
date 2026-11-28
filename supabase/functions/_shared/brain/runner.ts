@@ -2,7 +2,8 @@
 // its time budget allows and saves where it stopped, so the dashboard can drive a
 // long run in short, visible steps. Paid AI calls pass a daily budget gate first,
 // and every call's exact cost is written to brain_cost_ledger.
-import { MARKETS, minorToDecimal, type Market, type MarketFacts } from "./markets.ts";
+import { loadMarket } from "./taager-facts.ts";
+import { minorToDecimal, type Market, type MarketFacts } from "./markets.ts";
 import { normalizeWoo, type OfferRow } from "./woo-normalize.ts";
 import { normalizeTaager, TAAGER_MAPPING, type TaagerCatalogRow } from "./taager-normalize.ts";
 import { capabilityReport, offerKind, type FieldMapping } from "./catalog-analysis.ts";
@@ -478,7 +479,8 @@ export async function step(d: Deps, runId: string): Promise<Run> {
     return current; // busy, paused, finished or cancelled: nothing to do
   }
   const run = claimed[0];
-  const m = MARKETS[d.market];
+  // Market figures after Taager's own information pages (fees, zones, charges): never cheaper than the database's price guards.
+  const m = (await loadMarket(d.db, d.market)).m;
   const settings = (await d.db.select<Settings>("brain_settings", `select=*&store_code=eq.${run.store_code}`))[0];
   // "Build store → N products": the run carries its own target; the shortlist is sized so N survive pricing and review.
   const target = buildTarget(run.summary);
