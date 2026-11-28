@@ -1,11 +1,12 @@
 /** Route head helpers shared by the five market storefronts. */
 import type {MarketCode} from "@/lib/store/markets";
 import {fetchPublicDetail,fetchPublicProductPage,type PublicDetail,type PublicProductPage} from "@/lib/store/public-catalog";
-import {productMediaPath} from "@/lib/store/product-media";
+import {productMediaPath,productVideoPath} from "@/lib/store/product-media";
+import {shopCopy} from "@/lib/store/shop-copy";
 import {publicBrowserConfig} from "@/lib/store/staging-public-config";
 import {productPageMetadata} from "@/lib/store/store-page-metadata";
-import {SHARED_INFO_TOPICS,SITE_ORIGIN,canonicalLink,productSuffix,sharedPageLinks} from "./site";
-import {breadcrumbNode,graph,productNode,serializeJsonLd} from "./structured-data";
+import {SHARED_INFO_TOPICS,SITE_ORIGIN,canonicalLink,marketUrl,productSuffix,sharedPageLinks} from "./site";
+import {breadcrumbNode,faqNode,graph,productNode,serializeJsonLd,videoNode} from "./structured-data";
 
 export function infoLinks(market:MarketCode,topic:string){
  return (SHARED_INFO_TOPICS as readonly string[]).includes(topic)?sharedPageLinks(market,"/info/"+topic):[];
@@ -41,9 +42,15 @@ export function productHead(market:MarketCode,loaded:ProductSeo|PublicDetail|nul
  const image=page?.images[0]?{url:SITE_ORIGIN+productMediaPath(page.images[0].id),alt:page.images[0].alt}:null;
  const suffix=detail?productSuffix(detail.slug):null;
  const product=detail&&suffix?productNode(market,detail,image):null;
+ const url=suffix?marketUrl(market,suffix):"";
+ // Home > section > product when the approved page names a section; plus the page's own FAQ and first video.
+ const section=page?.category?shopCopy(market).sectionNames[page.category]:undefined;
+ const trail=detail&&suffix?[...(section?[{name:section,suffix:"/c/"+page!.category}]:[]),{name:detail.title,suffix}]:[];
+ const faq=page&&url?faqNode(url,page.faq):null;
+ const video=page?.videos[0]&&image&&url?videoNode(url,m.title,m.description,SITE_ORIGIN+productVideoPath(page.videos[0]),image.url):null;
  return {
   links:suffix?canonicalLink(market,suffix):[],
-  scripts:product&&suffix?[{type:"application/ld+json",children:serializeJsonLd(graph(product,breadcrumbNode(market,[{name:detail!.title,suffix}])))}]:[],
+  scripts:product&&suffix?[{type:"application/ld+json",children:serializeJsonLd(graph(product,breadcrumbNode(market,trail),faq,video))}]:[],
   meta:[{title:m.title},{name:"description",content:m.description},{name:"robots",content:m.robots},
    ...(page?[{property:"og:type",content:"product"},{property:"og:title",content:m.title},{property:"og:description",content:m.description}]:[]),
    ...(image?[{property:"og:image",content:image.url},{property:"og:image:alt",content:image.alt}]:[])],

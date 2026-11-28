@@ -6,7 +6,7 @@ import {capabilityReport,economicsInputs,familyKey,heuristicMapping,offerKind,ti
 import {decidePrice,expectedPerOrder,floorMinor,freeDeliveryThreshold,marginBps,marketReference,netPerDelivered,pricePoints,profitDelivered,quantityOffers,reprice,undeliveredCostPerDelivered} from "../../supabase/functions/_shared/brain/economics.ts";
 import {audienceCheck,mapCategory,prefilter,riskCheck,selectFinal,merchandise} from "../../supabase/functions/_shared/brain/selection.ts";
 import {costOf,extractJson,estimateMax} from "../../supabase/functions/_shared/brain/anthropic.ts";
-import {evidenceRows,parseContent,parseResearch,parseMapping,researchPrompt} from "../../supabase/functions/_shared/brain/prompts.ts";
+import {contentPrompt,evidenceRows,parseContent,parseResearch,parseMapping,researchPrompt} from "../../supabase/functions/_shared/brain/prompts.ts";
 
 const sa=MARKETS.sa;
 const woo=(over:Record<string,unknown>={})=>({id:101,name:"خفاقة حليب كهربائية",type:"simple",status:"publish",sku:"TG-101",price:"89.00",regular_price:"89.00",sale_price:"",
@@ -294,6 +294,32 @@ describe("AI plumbing",()=>{
   const rows=evidenceRows("sa","TG-1",r,"2026-11-28T10:00:00.000Z");
   expect(rows).toHaveLength(2);expect(rows[0]).toMatchObject({store_code:"sa",sku:"TG-1",url:"https://www.noon.com/p/1",price_minor:11900,delivery_minor:1200,credible:true,cited:true,source:"web_search",seen_at:"2026-11-28T10:00:00.000Z"});
   expect(researchPrompt({title:"x",sku:"1",categories:[],attributes:[],description:"",short_description:"",images:[],videos:[],meta:{}} as never,sa).system).toMatch(/YOUR OWN plain English words \(never copy a sentence\)/);
+ });
+ it("enforces the fixed layout, the market's dialect and the no-invention rule on brain pages",()=>{
+  const source="خفاقة حليب كهربائية تعمل ببطاريتين AA طولها 24 سم من الستانلس ستيل";
+  const good={title:"خفاقة حليب كهربائية لرغوة ناعمة",benefit_line:"رغوة ناعمة لقهوتك في ثوانٍ.",description:"خفاقة خفيفة تجهّز رغوة الحليب بسرعة.\n\nسهلة التنظيف بعد كل استخدام.",
+   bullets:["رأس من الستانلس ستيل","تعمل ببطاريتين AA","طولها 24 سم وتدخل أي درج"],specs:[{label:"الطول",value:"24 سم"}],in_box:["خفاقة حليب"],how_to_use:["ضعي الرأس في الحليب","اضغطي الزر"],
+   faq:[{q:"هل تحتاج بطاريات؟",a:"نعم، تعمل ببطاريتين AA."},{q:"كم طولها؟",a:"طولها 24 سم."},{q:"ما مادة الرأس؟",a:"الرأس من الستانلس ستيل."}],
+   seo:{title:"خفاقة حليب كهربائية",meta_description:"خفاقة حليب لرغوة ناعمة.",keywords:["خفاقة حليب"],slug:"milk-frother"},category:"kitchen"};
+  const ok=parseContent(good,{market:"sa",sourceText:source});
+  expect(ok.issues).toEqual([]);expect(ok.benefit_line).toBe("رغوة ناعمة لقهوتك في ثوانٍ.");expect(ok.in_box).toEqual(["خفاقة حليب"]);expect(ok.how_to_use).toHaveLength(2);
+  // An invented size, an invented certification and an invented origin are all caught.
+  const invented=parseContent({...good,bullets:["قوة 500 واط","معتمدة من هيئة الغذاء","تدخل أي درج"]},{market:"sa",sourceText:source});
+  expect(invented.issues).toEqual(expect.arrayContaining(["unsupported_number","unsupported_claim","needs_fix"]));
+  expect(invented.removed_claims.join(" ")).toMatch(/500/);
+  // Arabic-Indic digits count as the same number; a number the research found is allowed.
+  expect(parseContent({...good,specs:[{label:"الطول",value:"٢٤ سم"}]},{market:"sa",sourceText:source}).issues).toEqual([]);
+  // Egyptian wording on the Saudi store, promo words and keyword lists in the title, walls of text.
+  expect(parseContent({...good,benefit_line:"مش هتلاقي زيها دلوقتي."},{market:"sa",sourceText:source}).issues).toContain("wrong_dialect");
+  expect(parseContent({...good,benefit_line:"مش هتلاقي زيها دلوقتي."},{market:"eg",sourceText:source}).issues).not.toContain("wrong_dialect");
+  expect(parseContent({...good,title:"عرض خاص خفاقة حليب"},{market:"sa",sourceText:source}).issues).toContain("title_promo_words");
+  expect(parseContent({...good,title:"خفاقة حليب | خفاقة قهوة | خفاقة كهربائية | خفاقة"},{market:"sa",sourceText:source}).issues).toContain("title_keyword_stuffing");
+  expect(parseContent({...good,description:"كلام ".repeat(120)},{market:"sa",sourceText:source}).issues).toContain("layout_wall_of_text");
+  expect(parseContent({...good,bullets:["واحدة"],faq:[]},{market:"sa",sourceText:source}).issues).toEqual(expect.arrayContaining(["layout_bullets","layout_faq"]));
+  expect(parseContent({...good,benefit_line:"لا تفوّتي الكمية تنفد"},{market:"sa",sourceText:source}).issues).toContain("banned_wording_present");
+  // The prompt tells the writer the same rules, in the market's voice.
+  const pr=contentPrompt({title:"x",sku:"1",categories:[],attributes:[],description:"",short_description:"",images:[],videos:[],meta:{}} as never,MARKETS.eg,{category:null,piecesVerified:null,priceText:"",deliveryText:"",returnsText:"",research:"",facts:[{kind:"size",fact:"24 cm long"}],buyerQuestions:["Does it need batteries?"],fix:["unsupported_number"]});
+  expect(pr.system).toMatch(/Egyptian shoppers/);expect(pr.system).toMatch(/LEFT OUT/);expect(pr.user).toMatch(/24 cm long/);expect(pr.user).toMatch(/rejected for: unsupported_number/);
  });
  it("validates store content and flags supplier names, prices and claims",()=>{
   const ok=parseContent({title:"خفاقة حليب كهربائية",description:"رغوة ناعمة لقهوتك.",seo:{title:"خفاقة حليب",meta_description:"وصف",keywords:["خفاقة حليب"],slug:"Milk Frother!"},category:"kitchen"});

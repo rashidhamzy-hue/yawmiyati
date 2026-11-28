@@ -13,6 +13,8 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { marketDictionary } from "../src/lib/store/dictionary";
 import { markets, type MarketCode } from "../src/lib/store/markets";
+// One rule set for the dictionaries and for the pages the brain writes.
+import { BANNED_WORDING, DIALECT_MARKERS } from "../supabase/functions/_shared/brain/language-rules";
 
 const MARKETS = Object.keys(markets) as MarketCode[];
 const report = process.argv.includes("--report");
@@ -55,32 +57,14 @@ for (const m of MARKETS) for (const e of dict[m]) {
 }
 
 // ---- 3. Banned wording (M9, supplier identity, invented urgency or savings) ----
-const BANNED: [RegExp, string][] = [
-  [/المتوقعة|المتوقّعة/, "M9: 'expected' placeholder"],
-  [/سيكون متاحاً|سيكون متاحا|قريباً في يومياتي|قبل بدء استقبال الطلبات|عند بدء استقبال الطلبات/, "M9: future-launch placeholder"],
-  [/تاجر\b|Taager|المورّد|المورد|المورِّد|الموزّع المعتمد/i, "supplier identity"],
-  [/آخر قطعة|آخر القطع|ينتهي العرض|ينتهي خلال|لفترة محدودة|الكمية تنفد|سارعي|لا تفوّتي|لا تفوتي|عرض اليوم فقط/, "invented urgency"],
-  [/خصم \d+ ?٪|خصم ٪|تخفيضات حتى|الأكثر مبيعاً|الأكثر مبيعا|الأعلى تقييماً|\d+ ?تقييم|عميلة سعيدة|ضمان استرجاع المال/, "unproven claim (discount, best seller, ratings, guarantee)"],
-  [/شحن مجاني لكل الطلبات|توصيل مجاني لكل الطلبات|توصيل مجاني دائماً/, "blanket free delivery"],
-];
+const BANNED = BANNED_WORDING;
 // The one place an end-of-offer line is allowed: the countdown rendered ONLY from an owner-approved offer's real end date
 // (public_product_page.sale.ends_at, itself tied to the supplier sale's end). Any other urgency wording stays banned.
 const REAL_END_DATE_KEY = /^shop\.offerEndsIn\(\)$/;
 for (const m of MARKETS) for (const e of dict[m]) for (const [re, why] of BANNED) if (re.test(e.text) && !(why === "invented urgency" && REAL_END_DATE_KEY.test(e.key))) fail(`[banned] ${m}.${e.key}: ${why}: "${e.text.slice(0, 70)}"`);
 
 // ---- 4. Dialect markers that belong to one market only ----
-const B = "(?<![\\u0600-\\u06FF\\u0750-\\u077F])", A = "(?![\\u0600-\\u06FF\\u0750-\\u077F])"; // Arabic word boundaries
-const word = (list: string) => new RegExp(B + "(?:" + list + ")" + A);
-const DIALECT: { owner: MarketCode[]; name: string; re: RegExp }[] = [
-  { owner: ["iq"], name: "Iraqi", re: /چ|گ|ڤ/ },
-  { owner: ["iq"], name: "Iraqi", re: word("شنو|هسه|هسة|ماكو|أكو|اكو|ويه|هواي|شكد|بيچ|مو متوفر|يمته|هاي") },
-  { owner: ["iq", "ae"], name: "Iraqi/Emirati", re: word("شلون") },
-  { owner: ["eg"], name: "Egyptian", re: word("دلوقتي|ازاي|إزاي|كده|كدا|مش|إيه|ايه|بتاع|بتاعة|اتفرّجي|اتفرجي|تاني|تانية|كمان|لسه|هنكلمك|مفيش|مافيهاش|مبقتش|مستنية|أوي|دي|ده|بتدوّري|بتدوري") },
-  { owner: ["eg", "sa", "ae", "om"], name: "not Iraqi", re: word("عشان|علشان") },
-  { owner: ["ae"], name: "Emirati", re: word("شو|هني|وايد|مب|ويا|وياج|يومج|ذوقج|بيتج|سلتج|طلبج|عليج|حياتج|عالمج|يعجبج|يناسبج|اختيارج|تفضيلاتج|بياناتج|اختياراتج|ودّج|ودج|بنتواصل|تلاقين") },
-  { owner: ["sa", "om"], name: "Saudi/Omani", re: word("وش|أبغى|ابغى|تبين") },
-  { owner: ["sa", "ae", "om"], name: "Gulf", re: word("الحين") },
-];
+const DIALECT = DIALECT_MARKERS;
 for (const m of MARKETS) for (const e of dict[m]) {
   if (DATA_KEY.test(e.key)) continue;
   for (const d of DIALECT) {

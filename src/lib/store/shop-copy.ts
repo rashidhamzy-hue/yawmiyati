@@ -37,6 +37,8 @@ const base={
  chooseQuantity:"اختاري الكمية",onePiece:"قطعة واحدة",twoPieces:"قطعتان",pieces:(n:number)=>n+" قطع",
  save:(amount:string)=>"وفّري "+amount,bestValue:"الأوفر",lowStock:"الكمية محدودة",
  gallery:"صور المنتج",photo:(i:number,n:number)=>"صورة "+i+" من "+n,video:"فيديو المنتج",watchVideo:"شاهدي الفيديو",
+ inBox:"محتويات العلبة",howToUse:"طريقة الاستخدام",moreFromSection:(name:string)=>"المزيد من "+name,
+ sectionNames:{kids:"الأم والطفل",home:"المنزل والديكور",kitchen:"المطبخ والقهوة",beauty:"الجمال والعناية",fashion:"الأزياء والإكسسوارات",wellness:"الراحة والرفاهية",organize:"التنظيم الذكي"} as Record<string,string>,
  aboutProduct:"عن المنتج",readMore:"اقرئي المزيد",readLess:"عرض أقل",specs:"المواصفات",productFaq:"أسئلة شائعة",
  bundleContents:"محتويات الطقم",inThisSet:(n:number)=>n===2?"قطعتان في طقم واحد":n+" قطع في طقم واحد",
  reassureCall:"نتصل بك لتأكيد الطلب قبل الشحن",unitEach:(amount:string)=>amount+" للقطعة",

@@ -40,7 +40,7 @@ export function ProductPageView({page,detail,market}:{page:PublicProductPage;det
       {page.stock_signal==="low"&&<span className="ym-chip ym-chip-sand" data-stock-signal="">{copy.lowStock}</span>}
      </p>}
      <h1 className="ym-h2 break-words">{page.title}</h1>
-     {page.subtitle&&<p className="ym-body">{page.subtitle}</p>}
+     {(page.benefit_line||page.subtitle)&&<p className="ym-body" data-benefit-line="">{page.benefit_line||page.subtitle}</p>}
     </div>
     <div className="space-y-1.5">
      <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1"><span className={"ym-price text-[1.75rem] leading-none "+(sale?"text-sale":"")} data-price="">{formatPrice(price,market)}</span>
@@ -74,6 +74,14 @@ export function ProductPageView({page,detail,market}:{page:PublicProductPage;det
    <p id="product-description" className={"whitespace-pre-wrap break-words text-[15px] leading-8 text-muted-foreground "+(long&&!more?"line-clamp-6":"")}>{page.description}</p>
    {long&&<button type="button" aria-expanded={more} aria-controls="product-description" onClick={()=>setMore(v=>!v)} className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4">{more?copy.readLess:copy.readMore}</button>}
   </section>
+  {page.in_box.length>0&&<section aria-label={copy.inBox} className="max-w-3xl">
+   <h2 className="ym-h3 mb-3">{copy.inBox}</h2>
+   <ul className="ym-card divide-y divide-border px-4 text-sm">{page.in_box.map((b,i)=><li key={i} className="flex items-start gap-3 py-3"><Package className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true"/><span className="min-w-0 break-words">{b}</span></li>)}</ul>
+  </section>}
+  {page.how_to_use.length>0&&<section aria-label={copy.howToUse} className="max-w-3xl">
+   <h2 className="ym-h3 mb-3">{copy.howToUse}</h2>
+   <ol className="space-y-2.5 text-[15px] leading-7">{page.how_to_use.map((b,i)=><li key={i} className="flex items-start gap-3"><span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold tabular-nums" aria-hidden="true">{i+1}</span><span className="min-w-0 break-words">{b}</span></li>)}</ol>
+  </section>}
   {page.specs.length>0&&<section aria-label={copy.specs} className="max-w-3xl">
    <h2 className="ym-h3 mb-3">{copy.specs}</h2>
    <dl className="ym-card divide-y divide-border px-4">{page.specs.map((s,i)=><div key={i} className="grid grid-cols-[2fr_3fr] gap-3 py-3 text-sm"><dt className="font-semibold">{s.label}</dt><dd className="min-w-0 break-words text-muted-foreground">{s.value}</dd></div>)}</dl>
@@ -84,6 +92,7 @@ export function ProductPageView({page,detail,market}:{page:PublicProductPage;det
     <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-[15px] font-semibold marker:hidden">{f.q}<ChevronDown className="h-5 w-5 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true"/></summary>
     <p className="pb-2 pt-2 text-sm leading-8 text-muted-foreground">{f.a}</p></details>)}</div>
   </section>}
+  {page.category&&copy.sectionNames[page.category]&&<p className="max-w-3xl"><a href={`/${market}/c/${page.category}`} data-section-link="" className="inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4">{copy.moreFromSection(copy.sectionNames[page.category])}</a></p>}
  </article>;
 }
 

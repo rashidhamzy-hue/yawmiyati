@@ -1,11 +1,11 @@
 import {describe,expect,it} from "vitest";
 import {INDEXING_LIVE,marketUrl,minorToDecimal,productSuffix,sharedPageLinks,hostMayBeIndexed} from "@/lib/seo/site";
 import {handleSeoRequest,llmsTxt,marketSitemapXml,merchantFeedXml,robotsTxt,robotsHeaderFor,sitemapIndexXml} from "@/lib/seo/endpoints";
-import {productNode} from "@/lib/seo/structured-data";
+import {faqNode,productNode} from "@/lib/seo/structured-data";
 import {productHead} from "@/lib/seo/route-head";
 import {commerceFacts} from "@/lib/seo/commerce-facts";
 import {customerServiceCopy} from "@/lib/store/customer-service-copy";
-import type {PublicListing} from "@/lib/store/public-catalog";
+import {parsePublicProductPage,type PublicListing} from "@/lib/store/public-catalog";
 import type {MarketCode} from "@/lib/store/markets";
 
 const listing=(over:Partial<PublicListing>={}):PublicListing=>({listing_id:"L1",slug:"milk-frother",title:"خفّاقة حليب",price_minor:"8900",currency:"SAR",...over});
@@ -69,6 +69,20 @@ describe("Product JSON-LD from released data only",()=>{
   expect(real.links).toEqual([{rel:"canonical",href:"https://yawmiyati.shop/sa/p/milk-frother"}]);
   expect(real.meta).toContainEqual({name:"robots",content:"noindex,nofollow"});
   expect(real.scripts[0].children).not.toContain("<");
+ });
+ it("product head carries FAQ, section breadcrumb and video from the approved page, in the fixed layout",()=>{
+  const img="11111111-2222-3333-4444-555555555555.jpg",vid="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.mp4";
+  const page=parsePublicProductPage({release:"public_approved",market:"sa",listing_id:"l1",category:"kitchen",images:[{id:img,alt:"خفاقة حليب"}],videos:[vid],
+   page:{title:"خفاقة حليب",description:"وصف.",benefit_line:"رغوة ناعمة في ثوانٍ.",bullets:["أ","ب","ج"],in_box:["خفاقة"],how_to_use:["اضغطي الزر"],
+    faq:[{q:"هل تحتاج بطاريات؟",a:"نعم، تعمل ببطاريتين."},{q:"هل تُغسل؟",a:"يُغسل الرأس بالماء."}],seo:{title:"خفاقة حليب كهربائية",description:"خفاقة حليب لرغوة ناعمة."}}},"sa","l1")!;
+  expect(page).toMatchObject({benefit_line:"رغوة ناعمة في ثوانٍ.",in_box:["خفاقة"],how_to_use:["اضغطي الزر"]});
+  const head=productHead("sa",{...listing(),listing_id:"l1",description:"وصف",page});
+  const g=JSON.parse(head.scripts[0].children)["@graph"] as Record<string,any>[];
+  expect(g.map(n=>n["@type"])).toEqual(["Product","BreadcrumbList","FAQPage","VideoObject"]);
+  expect(g[1].itemListElement.map((i:any)=>i.item)).toEqual(["https://yawmiyati.shop/sa","https://yawmiyati.shop/sa/c/kitchen","https://yawmiyati.shop/sa/p/milk-frother"]);
+  expect(g[2].mainEntity[0]).toEqual({"@type":"Question",name:"هل تحتاج بطاريات؟",acceptedAnswer:{"@type":"Answer",text:"نعم، تعمل ببطاريتين."}});
+  expect(g[3].contentUrl).toBe("https://yawmiyati.shop/media/v/"+vid);expect(g[3]).not.toHaveProperty("duration");
+  expect(faqNode("https://x/y",[{q:"س",a:"ج"}])).toBeNull();
  });
 });
 

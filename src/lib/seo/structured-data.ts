@@ -88,6 +88,19 @@ export function bundleNode(market:MarketCode,set:{slug:string;title:string;price
    includesObject:pieces.map(p=>({"@type":"TypeAndQuantityNode",amountOfThisGood:p.quantity,typeOfGood:{"@type":"Product",name:p.title.trim(),...(productSuffix(p.slug)?{url:marketUrl(market,productSuffix(p.slug)!)}:{})}})),
    ...(shipping?{shippingDetails:shipping}:{}),...(returns?{hasMerchantReturnPolicy:returns}:{})}};
 }
+/** FAQPage from the approved page's own questions: answer-style copy a search engine or an AI assistant can quote. */
+export function faqNode(url:string,faq:readonly {q:string;a:string}[]){
+ const items=faq.filter(f=>f.q.trim()&&f.a.trim()).slice(0,5);
+ if(items.length<2)return null;
+ return {"@type":"FAQPage","@id":url+"#faq",mainEntity:items.map(f=>({"@type":"Question",name:f.q.trim(),acceptedAnswer:{"@type":"Answer",text:f.a.trim()}}))};
+}
+
+/** VideoObject for a product video served from our own media path. No duration or upload date is invented. */
+export function videoNode(url:string,name:string,description:string,contentUrl:string,thumbnailUrl:string|null){
+ if(!contentUrl.startsWith("https://")||!thumbnailUrl?.startsWith("https://"))return null;
+ return {"@type":"VideoObject","@id":url+"#video",name,description:description.slice(0,300),contentUrl,thumbnailUrl:[thumbnailUrl]};
+}
+
 export function graph(...nodes:(object|null|undefined)[]){
  return {"@context":"https://schema.org","@graph":nodes.filter(Boolean)};
 }
