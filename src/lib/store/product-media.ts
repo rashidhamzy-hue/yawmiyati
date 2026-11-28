@@ -9,6 +9,7 @@
  * Strict shape: one fixed upstream host, uuid file names, picture extensions, two sizes.
  * Anything else is 404 — this is not an open proxy.
  */
+import {readThrough,type MediaBucket,type MediaContext} from "./media-store";
 export const PRODUCT_MEDIA_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(?:jpe?g|png|webp)$/;
 export const PRODUCT_MEDIA_SIZES=[360] as const;
 /** Product videos: `/media/v/<uuid>.mp4`, same rules (fixed host, uuid names, no query). Range requests pass through. */
@@ -56,7 +57,7 @@ async function handleProductVideo(request:Request,url:URL,upstream:typeof fetch)
  return new Response(request.method==="HEAD"?null:res.body,{status:res.status,headers});
 }
 
-export async function handleProductMedia(request:Request,upstream:typeof fetch=fetch):Promise<Response|null>{
+export async function handleProductMedia(request:Request,upstream:typeof fetch=fetch,store:{bucket:MediaBucket|null;ctx?:MediaContext}={bucket:null}):Promise<Response|null>{
  const url=new URL(request.url);
  if(url.pathname.startsWith("/media/v/"))return handleProductVideo(request,url,upstream);
  if(!url.pathname.startsWith("/media/p/"))return null;
@@ -65,19 +66,23 @@ export async function handleProductMedia(request:Request,upstream:typeof fetch=f
  if(!target)return new Response("Not found",{status:404});
  const a=request.headers.get("accept")??"";
  const accept=a.includes("image/webp")?"image/webp,image/*;q=0.8":"image/jpeg,image/png,image/*;q=0.8";
- // Workers accept only "follow" or "manual"; a redirect from the media host is treated as missing.
- const res=await upstream(target,{headers:{accept},redirect:"manual",
-  cf:{cacheEverything:true,cacheTtl:2592000,cacheKey:target+"#"+accept.split(",")[0]},
- } as RequestInit);
- const type=res.headers.get("content-type")??"";
- if(res.status===404||res.status===403||(res.status>=300&&res.status<400))return new Response("Not found",{status:404});
- if(!res.ok||!type.startsWith("image/"))return new Response(null,{status:502});
+ // Our own copy first (R2): a picture the supplier later removes stays on the store. Key = path + negotiated format.
+ const key=`product/${url.pathname.slice("/media/p/".length)}.${a.includes("image/webp")?"webp":"orig"}`;
+ const got=await readThrough(store.bucket,key,async()=>{
+  // Workers accept only "follow" or "manual"; a redirect from the media host is treated as missing.
+  const res=await upstream(target,{headers:{accept},redirect:"manual",
+   cf:{cacheEverything:true,cacheTtl:2592000,cacheKey:target+"#"+accept.split(",")[0]},
+  } as RequestInit);
+  return res.status===404||res.status===403||(res.status>=300&&res.status<400)?null:res;
+ },store.ctx);
+ if(got.status==="missing")return new Response("Not found",{status:404});
+ if(got.status==="error")return new Response(null,{status:502});
  // Only our own headers go out: nothing from the upstream response identifies it.
- return new Response(request.method==="HEAD"?null:res.body,{status:200,headers:{
-  "content-type":type,
+ return new Response(request.method==="HEAD"?null:got.body,{status:200,headers:{
+  "content-type":got.type,
   "cache-control":"public, max-age=2592000, immutable",
   "vary":"Accept",
   "x-content-type-options":"nosniff",
-  ...(res.headers.get("content-length")?{"content-length":res.headers.get("content-length")!}:{}),
+  ...(got.length?{"content-length":String(got.length)}:{}),
  }});
 }

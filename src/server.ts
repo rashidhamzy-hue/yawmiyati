@@ -9,6 +9,7 @@ import { handleSeoRequest, robotsHeaderFor } from "./lib/seo/endpoints";
 import { handleEditorialMedia } from "./lib/store/editorial-media";
 import { handleProductMedia } from "./lib/store/product-media";
 import { handleVisitorCountry, rootRedirect } from "./lib/store/visitor-country";
+import { mediaBucket, type MediaContext } from "./lib/store/media-store";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -61,6 +62,29 @@ function withRobotsHeader(response: Response, value: string | null): Response {
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
+/**
+ * Cloudflare's edge cache in front of the media routes: pictures are immutable, so a cached copy is served without
+ * touching R2 or the source. Keyed by URL plus the negotiated format; range requests (video) are never cached here.
+ */
+async function edgeCached(request: Request, ctx: MediaContext, load: () => Promise<Response>): Promise<Response> {
+  const cache = (globalThis as { caches?: { default?: Cache } }).caches?.default;
+  if (!cache || request.method !== "GET" || request.headers.has("range")) return load();
+  const accept = request.headers.get("accept") ?? "";
+  const format = accept.includes("image/avif") ? "avif" : accept.includes("image/webp") ? "webp" : "base";
+  const url = new URL(request.url);
+  url.searchParams.set("__f", format);
+  const key = new Request(url.toString(), { method: "GET" });
+  const hit = await cache.match(key).catch(() => undefined);
+  if (hit) return hit;
+  const response = await load();
+  if (response.status === 200 && response.body) {
+    const copy = response.clone();
+    const save = cache.put(key, copy).catch(() => undefined);
+    if (ctx?.waitUntil) ctx.waitUntil(save);
+  }
+  return response;
+}
+
 // Hosting compresses every response at the edge. Never compress a body (gzip, brotli,
 // CompressionStream) or set content-encoding here or in a server route: the body gets encoded
 // twice and renders garbled.
@@ -71,13 +95,14 @@ const handler = {
       try { return await proxyPosthog(request, proxyTarget); }
       catch { return new Response(null, { status: 502 }); }
     }
-    if (/^\/media\/[pv]\//.test(new URL(request.url).pathname)) {
-      try { return (await handleProductMedia(request))!; }
-      catch { return new Response(null, { status: 502 }); }
-    }
     if (new URL(request.url).pathname.startsWith("/media/")) {
-      try { return (await handleEditorialMedia(request))!; }
-      catch { return new Response(null, { status: 502 }); }
+      // Our own copies live in R2 (binding MEDIA); the edge cache sits in front so repeat views cost nothing.
+      const store = { bucket: mediaBucket(env), ctx: ctx as MediaContext };
+      const product = /^\/media\/[pv]\//.test(new URL(request.url).pathname);
+      try {
+        return await edgeCached(request, ctx as MediaContext, async () =>
+          (product ? await handleProductMedia(request, fetch, store) : await handleEditorialMedia(request, fetch, store))!);
+      } catch { return new Response(null, { status: 502 }); }
     }
     const robotsHeader = robotsHeaderFor(new URL(request.url).hostname);
     // Country handling from Cloudflare's header only (nothing stored): the root sends visitors from our five
