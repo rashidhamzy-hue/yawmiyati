@@ -8,7 +8,7 @@ import {useStoreOffers,type StoreBundle} from "@/lib/store/store-offers";
 import {MAX_LINE_QUANTITY,cartCount,lineId,priceForQuantity,setLineQuantity,useShopCart,type CartLine,type QuantityOffer} from "@/lib/store/shop-cart";
 import {deliveryFee,egyptDestinations} from "@/lib/store/delivery-fees";
 import {freeDeliveryState} from "@/lib/store/free-delivery";
-import {FreeDeliveryBar} from "./FreeDelivery";
+import {FreeDeliveryBar} from "./FreeDeliveryBar";
 import {cartAddOns} from "@/lib/store/recommendations";
 import {customerServiceCopy} from "@/lib/store/customer-service-copy";
 import {shopCopy} from "@/lib/store/shop-copy";

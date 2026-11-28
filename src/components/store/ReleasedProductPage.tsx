@@ -9,7 +9,7 @@ import {productMediaPath} from "@/lib/store/product-media";
 import {shopCopy} from "@/lib/store/shop-copy";
 import {ProductGallery} from "./ProductGallery";
 import {BuyBox} from "./BuyBox";
-import {OfferUntil} from "./FreeDelivery";
+import {OfferUntil} from "./FreeDeliveryBar";
 // The cart-progress bar reads the cart and its offers: loaded after the page, only for products that count.
 const ProductFreeDelivery=lazy(()=>import("./FreeDelivery"));
 

@@ -10,6 +10,7 @@
  * Strict allowlist: only the seven licensed photo IDs, known widths and
  * qualities. Anything else is 404 — this is not an open proxy.
  */
+import {formatOf,readThrough,type MediaBucket,type MediaContext} from "./media-store";
 export const EDITORIAL_PHOTO_IDS=[
  "photo-1767720580810-58be50f89bf8","photo-1762529716272-b316f61502e7",
  "photo-1765341448915-57b22d2c53ae","photo-1778373620793-a369943bf9b3",
@@ -43,24 +44,26 @@ function preferredAccept(accept:string|null):string{
  return "image/jpeg,image/*;q=0.8";
 }
 
-export async function handleEditorialMedia(request:Request,upstream:typeof fetch=fetch):Promise<Response|null>{
+export async function handleEditorialMedia(request:Request,upstream:typeof fetch=fetch,store:{bucket:MediaBucket|null;ctx?:MediaContext}={bucket:null}):Promise<Response|null>{
  const url=new URL(request.url);
  if(!url.pathname.startsWith("/media/"))return null;
  if(request.method!=="GET"&&request.method!=="HEAD")return new Response(null,{status:405});
  const target=editorialUpstream(url);
  if(!target)return new Response("Not found",{status:404});
  const accept=preferredAccept(request.headers.get("accept"));
- const res=await upstream(target,{headers:{accept},
+ // Our own copy first (R2); the photo CDN is contacted once per size and format, then never again.
+ const key=`editorial/${url.pathname.slice("/media/".length)}/w${url.searchParams.get("w")}-q${url.searchParams.get("q")}.${formatOf(accept)}`;
+ const got=await readThrough(store.bucket,key,()=>upstream(target,{headers:{accept},
   // Cache the upstream rendition at Cloudflare, keyed by format.
   cf:{cacheEverything:true,cacheTtl:2592000,cacheKey:target+"#"+accept.split(",")[0]},
- } as RequestInit);
- const type=res.headers.get("content-type")??"";
- if(!res.ok||!type.startsWith("image/"))return new Response(null,{status:502});
- return new Response(request.method==="HEAD"?null:res.body,{status:200,headers:{
-  "content-type":type,
+ } as RequestInit),store.ctx);
+ if(got.status==="missing"||got.status==="error")return new Response(null,{status:502});
+ return new Response(request.method==="HEAD"?null:got.body,{status:200,headers:{
+  "content-type":got.type,
   "cache-control":"public, max-age=31536000, immutable",
   "vary":"Accept",
   "x-content-type-options":"nosniff",
-  ...(res.headers.get("content-length")?{"content-length":res.headers.get("content-length")!}:{}),
+  "x-media-source":got.status==="hit"?"own-copy":"first-fetch",
+  ...(got.length?{"content-length":String(got.length)}:{}),
  }});
 }

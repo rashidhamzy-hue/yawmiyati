@@ -4,7 +4,7 @@ vi.mock("@/lib/analytics/analytics",()=>({track:vi.fn()}));
 import {freeDeliveryState,lineEligible,timeLeft,type FreeDeliveryLine} from "../lib/store/free-delivery";
 import {parseStoreOffers,type StoreOffers} from "../lib/store/store-offers";
 import {parsePublicListings,parsePublicProductPage,type PublicListing} from "../lib/store/public-catalog";
-import {FreeDeliveryBar,OfferUntil} from "../components/store/FreeDelivery";
+import {FreeDeliveryBar,OfferUntil} from "../components/store/FreeDeliveryBar";
 import {ProductTile} from "../components/store/ProductTile";
 import {track} from "../lib/analytics/analytics";
 

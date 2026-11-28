@@ -2,5 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "yawmiyati-storefront-staging",
   "compatibility_date": "2026-11-26",
-  "compatibility_flags": ["nodejs_compat"]
+  "compatibility_flags": ["nodejs_compat"],
+  // Our own copies of the lifestyle photographs and product pictures (private bucket, read and written only by this Worker).
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "yawmiyati" }]
 }
