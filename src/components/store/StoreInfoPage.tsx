@@ -1,3 +1,4 @@
+import {shopCopy} from "@/lib/store/shop-copy";
 import {customerServiceCopy} from "@/lib/store/customer-service-copy";
 import {paymentAnswer} from "../../../supabase/functions/_shared/payment-policy";
 import {ShoppingAssistant} from "./ShoppingAssistantDeferred";
@@ -72,7 +73,10 @@ const localHelpText:Record<MarketCode,{asideTitle:string;asideDescription:string
  iq:{asideTitle:"اختيارچ صار أسهل",asideDescription:"لفّي على الأقسام أو دوّري على الشي اللي يناسب ذوقچ.",assistantTitle:"عندچ سؤال؟",assistantDescription:"اسألي مساعد يومياتي عن الأقسام والمنتجات المعروضة. الأجوبة حسب المعلومات المتاحة.",searchLabel:"دوّري بيومياتي",answerHeading:"أجوبة تهمچ"},
 };
 export function StoreInfoPage({market,topic}:{market:MarketCode;topic:InfoTopic}){
- const page=market==="sa"?(topic==="shipping-returns"?saudiShippingPage:saudiInfo[topic]):(topic==="shipping-returns"?marketPolicyPages[market]:chapters[topic]);
+ const base=market==="sa"?(topic==="shipping-returns"?saudiShippingPage:saudiInfo[topic]):(topic==="shipping-returns"?marketPolicyPages[market]:chapters[topic]);
+ // Privacy: what is kept about phone numbers for order confirmation (a one-way code and a count, nothing else), in the market's own words.
+ const orderCopy=shopCopy(market);
+ const page=topic==="privacy"?{...base,groups:[...base.groups,[orderCopy.privacyOrdersTitle,orderCopy.privacyOrdersText] as const]}:base;
  const v=visuals[topic],helpCopy=localHelpText[market];
  const heroPhoto=topic==="shipping-returns"&&market!=="sa"?img[marketExperience[market].heroImage]:v.hero;
  return <StoreFrame market={market}>

@@ -29,6 +29,9 @@ export type PublicationStatus = {
 /** A price change (or a pause) the brain proposes after a Taager sync or new shop prices. Money in minor units; per_usd for dollar display. */
 export type RepriceProposal = { id: string; listing_id: string; title: string | null; slug: string | null; action: "change" | "pause"; old_price_minor: number; new_price_minor: number | null;
   reason: string; created_at: string; hidden_now: boolean; profit_now_minor: number | null; profit_new_minor: number | null; per_usd: number; pricing: Record<string, unknown> };
+/** Orders waiting for the owner and numbers under the blacklist rule. `customer` is a short code of the phone's one-way hash: never the number. */
+export type OrderQuality = { queue: { id: string; order_ref: string; reasons: string[]; summary: Record<string, unknown>; created_at: string; customer: string; undelivered_90d: number }[];
+  blacklist: { customer: string; key: string; undelivered_90d: number; last_at: string; delivered_all_time: number }[]; rule: { window_days: number; confirm_at: number; refuse_at: number } };
 /** What brain_brief returns: the latest morning brief and everything waiting for a decision. */
 export type DailyBrief = { day: string | null; brief: any | null; created_at: string | null; days: string[];
   proposals: { id: string; kind: "add_product" | "retire_product"; ref: string; title: string; why: string; data: Record<string, any>; status: string; day: string }[];
@@ -84,6 +87,9 @@ export function brainClient(origin: string, publicKey: string, token: string, re
     buildStore: (m: MarketCode, count: number) => { if (!Number.isInteger(count) || count < 1 || count > 200) throw Error("Choose 1 to 200 products"); return action<{ run: BrainRun; note?: string }>(m, "build_store", { count }); },
     /** Build only the given Taager products (the day's approved additions): research, price, page, then the owner's review. */
     buildProducts: (m: MarketCode, productIds: number[]) => { const ids = productIds.filter((x) => Number.isSafeInteger(x) && x > 0).slice(0, 50); if (!ids.length) throw Error("No products to build"); return action<{ run: BrainRun; note?: string }>(m, "build_store", { count: ids.length, product_ids: ids }); },
+    orderQuality: (m: MarketCode) => { assertMarket(m); return rpc<OrderQuality>("brain_order_quality", { p_store: m }); },
+    customerUnblock: (m: MarketCode, key: string, note: string | null = null) => { assertMarket(m); if (!/^[0-9a-f]{64}$/.test(key)) throw Error("Invalid customer"); return rpc<boolean>("brain_customer_unblock", { p_store: m, p_phone_hash: key, p_note: note }); },
+    orderQueueDecide: (m: MarketCode, id: string, decision: "released" | "cancelled") => { assertMarket(m); return rpc<{ order_ref: string; status: string }>("brain_order_queue_decide", { p_store: m, p_id: id, p_decision: decision }); },
     brief: (m: MarketCode, day: string | null = null) => { assertMarket(m); return rpc<DailyBrief>("brain_brief", { p_store: m, p_day: day }); },
     dailyDecide: (m: MarketCode, ids: string[] | null, decision: "approved" | "rejected") => { assertMarket(m); return rpc<{ decided: number; retired: number; add_product_ids: number[] }>("brain_daily_decide", { p_store: m, p_ids: ids, p_decision: decision }); },
     setPaused: (m: MarketCode, listing: string, paused: boolean, reason: string | null = null) => { assertMarket(m); return rpc<boolean>("brain_set_paused", { p_store: m, p_listing: listing, p_paused: paused, p_reason: reason }); },
