@@ -33,7 +33,7 @@ async function main(){
    const department=await page.locator("#discover nav a").first().boundingBox();
    assert.ok(box&&box.height>80,label+": first approved product card is not rendered");
    assert.ok(department&&box.y>department.y,label+": product shelf must follow visual department discovery");
-   await page.locator('#collection a[aria-label="حامل عبوات التوابل"]').click();
+   await page.locator('#collection article a').filter({hasText:"حامل عبوات التوابل"}).first().click();
    await page.waitForURL(new RegExp("/"+market+"/p/spice-rack"));
    await page.locator("[data-offer-version]").waitFor();
    if(market==="eg")await page.getByRole("radio",{name:/منطقة التوصيل الأولى/}).check();
