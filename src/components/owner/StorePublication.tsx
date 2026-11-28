@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Eye, EyeOff, Store, Upload } from "lucide-react";
 import { type MarketCode } from "@/lib/store/markets";
-import { money, PUBLISH_REASONS, type brainClient, type PublicationStatus, type PublishResult } from "@/lib/store/brain-client";
+import { money, PUBLISH_REASONS, type brainClient, type PublicationStatus, type PublishResult, type RepriceProposal } from "@/lib/store/brain-client";
+import { markets } from "@/lib/store/markets";
 
 type Client = ReturnType<typeof brainClient>;
 const reason = (code: string) => PUBLISH_REASONS[code] ?? code.replace(/_/g, " ");
@@ -16,6 +17,9 @@ export function StorePublication({ client, market, runId, approved }: { client: 
   const [result, setResult] = useState<PublishResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [reprices, setReprices] = useState<RepriceProposal[]>([]);
+  const loadReprices = useCallback(async () => { try { const r = await client.repriceList(market); setReprices(Array.isArray(r) ? r : []); } catch { setReprices([]); } }, [client, market]);
+  useEffect(() => { void loadReprices(); }, [loadReprices]);
   const load = useCallback(async () => { try { const s = await client.publicationStatus(market); setStatus(s && typeof s.listings === "number" && typeof s.ready === "number" && Array.isArray(s.sample) ? s : null); } catch { setStatus(null); } }, [client, market]);
   useEffect(() => { setResult(null); setError(""); void load(); }, [load]);
   async function act(fn: () => Promise<unknown>) { setBusy(true); setError(""); try { await fn(); await load(); } catch (e) { setError(String((e as Error).message ?? e)); } finally { setBusy(false); } }
@@ -55,6 +59,22 @@ export function StorePublication({ client, market, runId, approved }: { client: 
       <p><b>{result.published}</b> new on the store, <b>{result.updated}</b> refreshed{result.skipped.length ? <>, <b>{result.skipped.length}</b> left out:</> : "."}</p>
       {result.skipped.length > 0 && <ul className="mt-1 list-disc space-y-0.5 ps-5">{result.skipped.slice(0, 30).map((s) => <li key={s.product_id + ":" + s.variation_id}><span dir="rtl">{s.title}</span> — {reason(s.reason)}</li>)}</ul>}
     </div>}
+    {reprices.length > 0 && <section aria-label="Price changes to approve" className="space-y-2 rounded-xl border border-amber-300 bg-amber-50/40 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h4 className="text-sm font-extrabold">Price changes to approve ({reprices.length})</h4>
+        <button type="button" disabled={busy} onClick={() => act(async () => { await client.repriceDecide(market, null, "approved"); await loadReprices(); })}
+          className="inline-flex min-h-10 items-center rounded-xl bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50">Approve all price changes</button>
+      </div>
+      <p className="text-xs text-muted-foreground">Worked out after the latest Taager sync and shop prices. Profit is per delivered order, in US dollars. A product earning under $2 is already hidden until you approve its new price.</p>
+      <ul className="divide-y text-sm">{reprices.map((p) => { const d = (v: number | null) => v === null ? "—" : "$" + (v / 10 ** markets[market].minorDigits / p.per_usd).toFixed(2);
+        return <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+          <span className="min-w-0 flex-1"><span dir="rtl" className="block truncate font-semibold">{p.title ?? p.slug ?? p.listing_id}</span><span className="block text-xs text-muted-foreground">{p.action === "pause" ? "Paused. " : ""}{p.reason}</span></span>
+          <span className="text-xs tabular-nums">{money(p.old_price_minor, market)} → {p.new_price_minor ? money(p.new_price_minor, market) : "no safe price"} · earns {d(p.profit_now_minor)} → {d(p.profit_new_minor)}</span>
+          <span className="flex gap-1">
+            <button type="button" disabled={busy || !p.new_price_minor} onClick={() => act(async () => { await client.repriceDecide(market, [p.id], "approved"); await loadReprices(); })} className="min-h-9 rounded-lg border px-2 text-xs font-bold disabled:opacity-50">Approve</button>
+            <button type="button" disabled={busy} onClick={() => act(async () => { await client.repriceDecide(market, [p.id], "rejected"); await loadReprices(); })} className="min-h-9 rounded-lg border px-2 text-xs disabled:opacity-50">Keep price</button>
+          </span></li>; })}</ul>
+    </section>}
     {status && status.sample.length > 0 && <details><summary className="cursor-pointer text-sm font-semibold">Published products ({status.listings})</summary>
       <ul className="mt-2 divide-y text-sm">{status.sample.map((p) => <li key={p.listing_id} className="flex flex-wrap items-center justify-between gap-2 py-2">
         <span dir="rtl" className="min-w-0 flex-1 truncate">{p.title}</span><span className="tabular-nums">{money(p.price_minor, market)}</span>

@@ -165,7 +165,7 @@ export function finalScore(d: PriceDecision, research: ResearchSummary | null, i
   const demand = research ? 0.4 + 0.15 * Math.min(research.retailers_found, 4) + (research.demand_signals > 0 ? 0.1 : 0) : 0.5;
   const confidence = d.competitor_basis === "exact" ? 1 : d.competitor_basis === "similar" ? 0.85 : 0.6;
   const media = images >= 3 ? 1 : images === 2 ? 0.9 : 0.75;
-  const fit = d.positioning === "dearer" ? 0.7 : 1;
+  const fit = d.price_blocks_sales ? 0.5 : d.positioning === "dearer" ? 0.7 : 1;
   return Math.round(exp * demand * confidence * media * fit * demandFactorValue * 1000) / 1000;
 }
 

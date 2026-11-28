@@ -26,7 +26,11 @@ export type PublicationStatus = {
   sample: { listing_id: string; slug: string; title: string; price_minor: number; image: string | null; hidden_reason: string | null }[];
 };
 /** Plain-English reasons for the owner: why an approved product was not published, or why a published one is hidden. */
+/** A price change (or a pause) the brain proposes after a Taager sync or new shop prices. Money in minor units; per_usd for dollar display. */
+export type RepriceProposal = { id: string; listing_id: string; title: string | null; slug: string | null; action: "change" | "pause"; old_price_minor: number; new_price_minor: number | null;
+  reason: string; created_at: string; hidden_now: boolean; profit_now_minor: number | null; profit_new_minor: number | null; per_usd: number; pricing: Record<string, unknown> };
 export const PUBLISH_REASONS: Record<string, string> = {
+  margin_below_floor: "earns under the $2 floor per delivered order at Taager's current cost (paused automatically)",
   not_in_taager_catalogue: "not in the latest Taager sync", missing_from_catalogue: "gone from the Taager sync",
   no_price: "the brain could not price it", no_page_content: "no Arabic page written", page_content_needs_fix: "the Arabic page has wording to fix",
   no_supplier_cost: "Taager shows no cost", below_supplier_cost: "our price is at or under Taager's cost (would be a loss)",
@@ -58,6 +62,8 @@ export function brainClient(origin: string, publicKey: string, token: string, re
     publish: (m: MarketCode, run: string) => { assertMarket(m); return rpc<PublishResult>("brain_publish_approved", { p_store: m, p_run: run }); },
     unpublish: (m: MarketCode, listings: string[] | null) => { assertMarket(m); return rpc<number>("brain_unpublish", { p_store: m, p_listings: listings }); },
     publicationStatus: (m: MarketCode) => { assertMarket(m); return rpc<PublicationStatus>("brain_publication_status", { p_store: m }); },
+    repriceList: (m: MarketCode) => { assertMarket(m); return rpc<RepriceProposal[] | null>("brain_reprice_list", { p_store: m }); },
+    repriceDecide: (m: MarketCode, ids: string[] | null, decision: "approved" | "rejected") => { assertMarket(m); return rpc<{ decided: number; skipped_unsafe: number }>("brain_reprice_decide", { p_store: m, p_ids: ids, p_decision: decision }); },
     setRelease: (m: MarketCode, enabled: boolean) => { assertMarket(m); return rpc<boolean>("brain_set_release", { p_store: m, p_enabled: enabled }); },
     testWoo: (m: MarketCode) => action<{ ok: boolean; error?: string; products_total?: number | null; currency?: string | null; expected_currency?: string }>(m, "test_woo"),
     testAi: (m: MarketCode) => action<{ ok: boolean; error?: string; cost_microusd?: number }>(m, "test_ai"),

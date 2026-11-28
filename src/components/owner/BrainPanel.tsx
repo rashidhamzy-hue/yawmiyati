@@ -217,22 +217,27 @@ function ProductCard({ it, market, busy, decide }: { it: BrainItem; market: Mark
           <span className="rounded-full bg-muted px-2 py-0.5 font-semibold">{it.category ?? "uncategorised"}</span>
           <span className="rounded-full bg-muted px-2 py-0.5">{it.offer_kind.replace(/_/g, " ")}</span>
           {d.needs_owner_review && <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 font-semibold text-amber-900">needs your look</span>}
+          {d.band_exception && <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 font-semibold text-amber-900">outside the 15–50% band</span>}
+          {d.delivery_included && <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-800">delivery included in price</span>}
+          {d.price_blocks_sales && <span className="rounded-full border border-rose-300 bg-rose-50 px-2 py-0.5 font-semibold text-rose-800">price blocks sales</span>}
           {it.flags.map((f) => <span key={f} className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-amber-900">{f.replace(/_/g, " ")}</span>)}
           {it.owner_decision && <span className={"rounded-full px-2 py-0.5 font-bold " + (it.owner_decision === "approved" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800")}>{it.owner_decision}</span>}
         </p>
       </div>
       <div className="text-right text-sm">
         <p className="text-lg font-extrabold">{money(d.price_minor, market)}</p>
-        <p className="text-xs text-muted-foreground">customer pays {money(d.customer_total_minor, market)} with delivery</p>
+        <p className="text-xs text-muted-foreground">customer pays {money(d.customer_total_minor, market)} {d.delivery_included ? "delivered (we pay the fee)" : "with delivery"}</p>
       </div>
     </div>
     <div className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
       <Stat label="Taager cost / minimum" value={`${money(e.cost_minor, market)} / ${money(e.floor_minor, market)}`} />
-      <Stat label="Profit if delivered" value={money(d.profit_delivered_minor, market)} />
+      <Stat label="Profit per delivered order · margin" value={`${money(d.profit_delivered_minor, market)}${d.margin_on_price_pct !== undefined ? ` · ${d.margin_on_price_pct}%` : ""}`} />
       <Stat label="Expected per order" value={d.expected_profit_usd !== undefined ? "$" + Number(d.expected_profit_usd).toFixed(2) : "—"} />
-      <Stat label="Other shops" value={d.competitor_reference_minor ? `${money(d.competitor_reference_minor, market)} (${d.competitor_basis}, ${d.competitor_count})` : "none found"} />
+      <Stat label="Other shops: cheapest / typical" value={d.competitor_reference_minor ? `${money(d.competitor_cheapest_minor ?? d.competitor_reference_minor, market)} / ${money(d.competitor_reference_minor, market)} (${d.competitor_basis}, ${d.competitor_count})` : "none found"} />
       <Stat label="Score · AI cost" value={`${Number(it.score ?? 0).toFixed(2)} · ${usd(it.cost_microusd)}`} />
     </div>
+    {d.band_exception?.reason && <p className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-900">Why this is outside the band: {d.band_exception.reason}</p>}
+    {d.below_band_option && <p className="mt-2 text-xs text-muted-foreground">Cheaper option: {money(d.below_band_option.price_minor, market)} ({d.below_band_option.margin_on_price_pct}% margin). {d.below_band_option.reason}</p>}
     {(d.notes ?? []).length > 0 && <p className="mt-2 text-xs text-amber-800">{d.notes.join(" ")}</p>}
     <details className="mt-2 text-sm">
       <summary className="cursor-pointer text-xs font-semibold text-primary">Research, page draft and cross-sell</summary>
