@@ -12,15 +12,8 @@ import {smartCatalogSearch,suggestEditorialCategories,SEARCH_GROUPS} from "@/lib
 import {img} from "@/lib/store/images";
 import {editorialSrcSet} from "@/lib/store/editorial-srcset";
 import {customerServiceCopy} from "@/lib/store/customer-service-copy";
+import {storeSections} from "@/lib/store/sections";
 const {origin,key}=publicBrowserConfig(import.meta.env.VITE_YAWMIYATI_SUPABASE_URL,import.meta.env.VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY);
-const categories=[
- {slug:"home",name:"البيت والديكور",photo:img["cat-home"]},
- {slug:"kitchen",name:"القهوة والمطبخ",photo:img["cat-kitchen"]},
- {slug:"beauty",name:"الجمال والعناية",photo:img["cat-beauty"]},
- {slug:"fashion",name:"الأزياء والإكسسوارات",photo:img["cat-fashion"]},
- {slug:"wellness",name:"الراحة والرفاهية",photo:img["cat-wellness"]},
- {slug:"organize",name:"التنظيم",photo:img["cat-organize"]}
-] as const;
 export function StoreSearchOverlay({market,open,onClose}:{market:MarketCode;open:boolean;onClose:()=>void}){
  const [q,setQ]=useState(""),[items,setItems]=useState<PublicListing[]|null>(null),[error,setError]=useState(false);
  const experience=marketExperience[market];
@@ -64,7 +57,7 @@ export function StoreSearchOverlay({market,open,onClose}:{market:MarketCode;open
  const seenIds=new Set(localResults.map(p=>p.listing_id));
  const results=[...localResults,...remoteResults.filter(p=>!seenIds.has(p.listing_id))].slice(0,12);
  const recommended=suggestEditorialCategories(q);
- const ordered=experience.categoryOrder.map(slug=>categories.find(c=>c.slug===slug)).filter((c):c is (typeof categories)[number]=>Boolean(c));
+ const ordered=storeSections(market);
  const shown=q.trim()?ordered.filter(x=>recommended.some(s=>s.slug===x.slug)):ordered;
  function submit(event:FormEvent){event.preventDefault();input.current?.blur();if(q.trim())track("search_submitted",{query:q.trim().slice(0,80),category_matches:shown.length});}
  return <div className="fixed inset-0 z-[90] flex justify-center bg-foreground/70 p-0 backdrop-blur-sm sm:items-start sm:px-4 sm:pt-[7vh]" dir="rtl" role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>

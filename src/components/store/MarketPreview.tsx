@@ -28,16 +28,9 @@ import {HomeShelves} from "./HomeShelves";
 const ProductRecommendations=lazy(()=>import("./ProductRecommendations").then(m=>({default:m.ProductRecommendations})));
 import {byRank} from "@/lib/store/store-catalog";
 import {shopCopy} from "@/lib/store/shop-copy";
+import {storeSection,storeSections} from "@/lib/store/sections";
 
 const {origin,key}=publicBrowserConfig(import.meta.env["VITE_YAWMIYATI_SUPABASE_URL"],import.meta.env["VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY"]);
-const categories=[
- {slug:"home",name:"المنزل والديكور",caption:"لأجواء تشبهك",picture:img["cat-home"]},
- {slug:"kitchen",name:"المطبخ والقهوة",caption:"لحظات تستحق التذوّق",picture:img["cat-kitchen"]},
- {slug:"beauty",name:"الجمال والعناية",caption:"تفاصيل يومية ناعمة",picture:img["cat-beauty"]},
- {slug:"fashion",name:"الأزياء والإكسسوارات",caption:"إطلالة تعبر عنك",picture:img["cat-fashion"]},
- {slug:"wellness",name:"الراحة والرفاهية",caption:"مساحة لنفسك",picture:img["cat-wellness"]},
- {slug:"organize",name:"التنظيم الذكي",caption:"أقل فوضى، راحة أكثر",picture:img["cat-organize"]},
-] as const;
 function SectionIntro({eyebrow,title,description}:{eyebrow:string;title:string;description?:string|undefined}){
  return <div className="space-y-2"><p className="text-xs font-extrabold tracking-wider text-primary">{eyebrow}</p><h2 className="font-display text-2xl font-extrabold leading-tight sm:text-3xl md:text-4xl">{title}</h2>{description&&<p className="max-w-2xl text-sm leading-8 text-muted-foreground md:text-base">{description}</p>}</div>;
 }
@@ -51,7 +44,7 @@ const browseTiles=[
 function BrowseProducts({market}:{market:MarketCode}){
  return <nav aria-label="تصفّحي حسب نوع المنتج" className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
   {browseTiles.map(tile=>{
-   const category=categories.find(c=>c.slug===tile.department)!;
+   const category=storeSection(market,tile.department)!;
    return <a key={tile.image} href={`/${market}/c/${category.slug}`} className="group flex min-w-0 flex-col overflow-hidden rounded-[1.35rem] border border-border/70 bg-card shadow-soft transition-all hover:border-primary/35 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
     <div className="aspect-[5/4] w-full overflow-hidden bg-muted"><img src={tile.image} srcSet={tile.image.replace(".webp","-180.webp")+" 180w, "+tile.image+" 360w"} sizes="(max-width: 640px) 45vw, 180px" alt="" width={360} height={288} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"/></div>
     <div className="flex min-h-[84px] flex-1 flex-col justify-between gap-2 p-3 sm:p-4"><span className="block text-sm font-extrabold leading-6 sm:text-base">{tile.title}</span><span className="inline-flex items-center gap-1 text-xs font-bold text-primary">{category.name}<ArrowLeft size={14} aria-hidden="true"/></span></div>
@@ -70,7 +63,7 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
  
  const path="/"+market;
  const experience=marketExperience[market];
- const orderedCategories=experience.categoryOrder.map(slug=>categories.find(c=>c.slug===slug)).filter((c):c is (typeof categories)[number]=>Boolean(c));
+ const orderedCategories=storeSections(market);
  const shopName="يومياتي "+marketIdentity[market].name;
  // Approved offer versions (isolated fixtures today) take over the catalog without touching Supabase.
  const offers=useOfferVersions(market);
@@ -141,12 +134,12 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
      <p className="mt-2.5 text-center text-xs leading-6 text-muted-foreground">{customerServiceCopy[market].shipping}</p>
     </div>
      <div className="flex items-center justify-between gap-3"><h2 id="discover-title" className="font-display text-lg font-extrabold sm:text-xl">{experience.discoverTitle}</h2><span className="hidden text-xs text-muted-foreground sm:inline">{experience.discoveryNote}</span></div>
-     <nav aria-label="تسوقي حسب القسم" className="storefront-category-strip mt-3">{orderedCategories.map(c=><a key={c.slug} href={path+"/c/"+c.slug} className="group flex min-w-0 flex-col items-center gap-2 rounded-lg px-1 py-1 text-center"><div className="aspect-square w-full overflow-hidden rounded-2xl bg-muted"><img src={c.picture} srcSet={editorialSrcSet(c.picture)} sizes="(max-width: 640px) 110px, 180px" alt="" width={80} height={80} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"/></div><h3 className="text-xs font-bold leading-5 group-hover:text-primary sm:text-sm">{c.name}</h3></a>)}</nav>
+     <nav aria-label="تسوقي حسب القسم" className="storefront-category-strip mt-3">{orderedCategories.map(c=><a key={c.slug} href={path+"/c/"+c.slug} className="group flex min-w-0 flex-col items-center gap-2 rounded-lg px-1 py-1 text-center"><div className="aspect-square w-full overflow-hidden rounded-2xl bg-muted"><img src={c.photo} srcSet={editorialSrcSet(c.photo)} sizes="(max-width: 640px) 110px, 180px" alt="" width={80} height={80} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"/></div><h3 className="text-xs font-bold leading-5 group-hover:text-primary sm:text-sm">{c.name}</h3></a>)}</nav>
     </section>
    </>}
 
    <section id="collection" className={"mx-auto max-w-7xl scroll-mt-24 px-4 pb-8 sm:px-6 lg:px-8 "+(slug?"pt-3 sm:pt-6":searchOnly?"pt-8 sm:pt-12":"pt-6 sm:pt-8")}>
-    {slug&&<nav aria-label="مسار التنقل" className="mb-4 flex flex-wrap items-center gap-2 text-xs font-bold text-muted-foreground sm:text-sm"><a href={path} className="inline-flex min-h-9 items-center text-primary hover:underline">الرئيسية</a><span aria-hidden="true">/</span>{(()=>{const categorySlug=offerVersion?.category_slug??detail?.approved_category_slugs?.[0]??null;const category=categories.find(c=>c.slug===categorySlug);return category?<><a href={path+"/c/"+category.slug} className="inline-flex min-h-9 items-center text-primary hover:underline">{category.name}</a><span aria-hidden="true">/</span></>:<><a href={path+"/search"} className="inline-flex min-h-9 items-center text-primary hover:underline">كل المنتجات</a><span aria-hidden="true">/</span></>;})()}<span aria-current="page" className="line-clamp-1 max-w-[55vw] text-foreground">{detail?.title??offerVersion?.title??"تفاصيل المنتج"}</span></nav>}
+    {slug&&<nav aria-label="مسار التنقل" className="mb-4 flex flex-wrap items-center gap-2 text-xs font-bold text-muted-foreground sm:text-sm"><a href={path} className="inline-flex min-h-9 items-center text-primary hover:underline">الرئيسية</a><span aria-hidden="true">/</span>{(()=>{const categorySlug=offerVersion?.category_slug??detail?.approved_category_slugs?.[0]??null;const category=categorySlug?storeSection(market,categorySlug):null;return category?<><a href={path+"/c/"+category.slug} className="inline-flex min-h-9 items-center text-primary hover:underline">{category.name}</a><span aria-hidden="true">/</span></>:<><a href={path+"/search"} className="inline-flex min-h-9 items-center text-primary hover:underline">كل المنتجات</a><span aria-hidden="true">/</span></>;})()}<span aria-current="page" className="line-clamp-1 max-w-[55vw] text-foreground">{detail?.title??offerVersion?.title??"تفاصيل المنتج"}</span></nav>}
     <div className="flex flex-wrap items-end justify-between gap-5">{homePage?<h2 className="ym-h2">{experience.collectionTitle}</h2>:null}</div>
     {searchOnly&&(!rows||error||!origin||!key)&&<div className="mb-5 space-y-3"><p className="text-[11px] font-extrabold text-primary">{shopName}</p><h1 className="font-display text-2xl font-extrabold sm:text-3xl">كل المنتجات</h1><label className="block text-sm font-bold">ابحثي في المنتجات<input type="search" aria-label="بحث المنتجات المعتمدة" maxLength={120} value={term} onChange={e=>setTerm(e.target.value)} placeholder="ابحثي باسم المنتج أو القسم" className="field mt-2 min-h-12 w-full"/></label></div>}
     {searchOnly&&rows!==null&&!error?<ApprovedCatalogBrowser market={market} products={rows} images={Object.fromEntries(rows.map(row=>[row.listing_id,imageFor(row)]))}/>:browseEmpty?<BrowseProducts market={market}/>:homePage&&error?<><BrowseProducts market={market}/><div role="alert" className="mx-auto max-w-7xl px-4 pb-6 text-center text-sm text-muted-foreground"><p>تعذّر تحديث المنتجات الآن. يمكنك تصفّح الأقسام أو المحاولة مجدداً.</p><Button variant="outline" className="mt-3 min-h-10" onClick={()=>setAttempt(v=>v+1)}>إعادة المحاولة</Button></div></>:offers.state==="off"&&(!origin||!key)?<EmptyProducts title="تعرّفي على مجموعات يومياتي" message="تظهر هنا المنتجات التي تتوافر لها بيانات معتمدة. اكتشفي أقسام البيت والجمال والعناية."/>

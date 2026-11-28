@@ -16,11 +16,11 @@ describe("editorial SEO payload preparation, never a release authorization",()=>
   expect(c.proposedSchema["@graph"][0]["@type"]).toBe("BreadcrumbList");
   expect(c.proposedAlternates.every(a=>a.href.endsWith("/c/home"))).toBe(true);
  });
- it("limits sitemap draft to the 35 editorial routes",()=>{
+ it("limits sitemap draft to the 40 editorial routes",()=>{
   const d=editorialSitemapDraft(origin);
   expect(d.releaseAuthorized).toBe(false);
-  expect(d.proposedUrls).toHaveLength(35);
-  expect(new Set(d.proposedUrls).size).toBe(35);
+  expect(d.proposedUrls).toHaveLength(40);
+  expect(new Set(d.proposedUrls).size).toBe(40);
   expect(d.proposedUrls.every(u=>!/(checkout|cart|search|\/p\/)/.test(u))).toBe(true);
  });
  it("rejects preview domains, invalid categories and non-HTTPS origins",()=>{

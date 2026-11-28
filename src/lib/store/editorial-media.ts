@@ -7,7 +7,7 @@
  * The Worker fetches the same AVIF/WebP rendition from the Unsplash CDN and
  * returns it with a one-year immutable cache.
  *
- * Strict allowlist: only the seven licensed photo IDs, known widths and
+ * Strict allowlist: only the eight licensed photo IDs, known widths and
  * qualities. Anything else is 404 — this is not an open proxy.
  */
 import {formatOf,readThrough,type MediaBucket,type MediaContext} from "./media-store";
@@ -15,7 +15,7 @@ export const EDITORIAL_PHOTO_IDS=[
  "photo-1767720580810-58be50f89bf8","photo-1762529716272-b316f61502e7",
  "photo-1765341448915-57b22d2c53ae","photo-1778373620793-a369943bf9b3",
  "photo-1559563458-527698bf5295","photo-1675149476008-83dbfa2ee917",
- "photo-1652349566831-1b41ce15ba6c",
+ "photo-1652349566831-1b41ce15ba6c","photo-1764665818844-7cb4f51935d5",
 ] as const;
 export const EDITORIAL_WIDTHS=[240,360,480,640,768,960,1000,1080,1200,1280,1600,1800,1920] as const;
 export const EDITORIAL_QUALITIES=[62,70,78] as const;

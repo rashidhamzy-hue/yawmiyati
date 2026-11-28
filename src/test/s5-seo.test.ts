@@ -193,3 +193,21 @@ describe("crawler files",()=>{
  });
  it("home URL helper has no trailing slash",()=>{expect(marketUrl("om")).toBe("https://yawmiyati.shop/om");});
 });
+
+describe("mother & kids section",()=>{
+ it("is a full section in every market: name, short line, photo, page and sitemap entry",async()=>{
+  const {storeSections,storeSection}=await import("@/lib/store/sections");
+  const {editorialUpstream}=await import("@/lib/store/editorial-media");
+  for(const m of ["sa","ae","om","eg","iq"] as const){
+   const all=storeSections(m),kids=storeSection(m,"kids")!;
+   expect(all).toHaveLength(7);
+   expect(all.map(s=>s.slug)).toContain("kids");
+   expect(kids.name).toBe("الأم والطفل");
+   expect(kids.caption.length).toBeGreaterThan(3);
+   expect(kids.photo).toContain("photo-1764665818844-7cb4f51935d5");
+   expect(await marketSitemapXml(m,reader({}))).toContain(`<loc>https://yawmiyati.shop/${m}/c/kids</loc>`);
+  }
+  expect(storeSection("sa","garden")).toBeNull();
+  expect(editorialUpstream(new URL("https://yawmiyati.shop/media/photo-1764665818844-7cb4f51935d5?w=960&q=70"))).toContain("images.unsplash.com/photo-1764665818844-7cb4f51935d5");
+ });
+});

@@ -1,6 +1,7 @@
 import type {PublicListing} from "./public-catalog";
-export type SearchCategory="home"|"kitchen"|"beauty"|"fashion"|"wellness"|"organize";
+export type SearchCategory="kids"|"home"|"kitchen"|"beauty"|"fashion"|"wellness"|"organize";
 export const SEARCH_GROUPS=[
+ {slug:"kids",title:"الأم والطفل",terms:["اطفال","طفل","رضع","رضيع","مولود","بيبي","العاب","حضانة","kids","baby","toys"]},
  {slug:"home",title:"المنزل والديكور",terms:["منزل","بيت","ديكور","اثاث","غرفة","home","decor","furniture"]},
  {slug:"kitchen",title:"المطبخ والقهوة",terms:["مطبخ","قهوة","كوب","اكواب","دلة","دله","coffee","kitchen","cup"]},
  {slug:"beauty",title:"الجمال والعناية",terms:["جمال","مكياج","بشرة","عناية","كريم","سيروم","beauty","skincare","serum"]},

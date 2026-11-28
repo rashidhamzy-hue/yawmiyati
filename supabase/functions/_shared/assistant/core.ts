@@ -73,6 +73,7 @@ const NEED_SECTIONS: [RegExp, string[]][] = [
   [/هديه|هدايا|gift/, ["beauty", "home", "wellness", "fashion", "kitchen"]],
   [/امي|ماما|والدتي|حماتي|خالتي|جدتي/, ["home", "kitchen", "wellness", "beauty"]],
   [/صديقتي|صاحبتي|اختي|بنتي|عروس|خطيبتي|زوجتي|مرتي/, ["beauty", "fashion", "wellness"]],
+  [/طفل|اطفال|رضيع|رضع|مولود|بيبي|ولادي|عيالي|baby|kids/, ["kids"]],
   [/مطبخ|طبخ|قهوه|شاي|اكل|kitchen|coffee/, ["kitchen"]],
   [/شعر|بشره|مكياج|تجميل|عنايه|عطر|اظافر|beauty|hair|skin/, ["beauty"]],
   [/ترتيب|تنظيم|تخزين|دولاب|خزانه|organi/, ["organize"]],

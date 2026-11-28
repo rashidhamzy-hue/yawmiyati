@@ -29,6 +29,8 @@ export const editorialRemote={
  "cat-fashion":photo("photo-1559563458-527698bf5295",1000),
  "cat-wellness":photo("photo-1675149476008-83dbfa2ee917",1000),
  "cat-organize":photo("photo-1652349566831-1b41ce15ba6c",1000),
+ // Mother & kids: a white baby dress in a crib, by Marius Muresan on Unsplash (Unsplash License). No people in the frame.
+ "cat-kids":photo("photo-1764665818844-7cb4f51935d5",1000),
 } as const;
 /** Same-origin paths for the page itself (see editorial-media.ts): the Worker serves the
  * Unsplash CDN's AVIF/WebP rendition, so no second connection is opened on mobile. */
