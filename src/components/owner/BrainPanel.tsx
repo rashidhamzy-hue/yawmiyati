@@ -83,7 +83,7 @@ export function BrainPanel({ market, origin, publicKey, token }: Props) {
       {run?.status === "paused_budget" && <button type="button" disabled={busy} onClick={() => act(async () => { await client.resume(market, run.id); void drive(run.id); })} className="inline-flex min-h-10 items-center gap-2 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground"><RotateCw className="h-4 w-4" aria-hidden="true" />Resume (budget allows)</button>}
       {active && <button type="button" disabled={busy} onClick={() => act(() => client.cancel(market, run!.id))} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-destructive/40 px-4 text-sm font-semibold text-destructive"><PauseCircle className="h-4 w-4" aria-hidden="true" />Stop run</button>}
       <label className="ml-auto inline-flex items-center gap-2 text-xs text-muted-foreground" title="Daily automatic updates arrive after the first approved run">
-        <input type="checkbox" disabled checked={!!overview?.settings.autopilot_enabled} className="h-4 w-4" />Autopilot (after first approved run)
+        <input type="checkbox" disabled checked={!!overview?.settings.autopilot_enabled} className="h-4 w-4" />Autopilot (switch it in the morning brief)
       </label>
     </div>
     {(tests.woo || tests.ai) && <ul className="space-y-1 text-sm">{[tests.woo, tests.ai].filter(Boolean).map((t) => <li key={t} className="flex items-center gap-2">{/^(Connected|AI ready)/.test(t!) ? <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" /> : <CircleAlert className="h-4 w-4 text-amber-600" aria-hidden="true" />}{t}</li>)}</ul>}

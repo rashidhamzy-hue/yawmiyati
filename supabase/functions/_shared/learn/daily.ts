@@ -14,10 +14,13 @@ import { EMPTY_COUNTS, productVerdict, type ProductCounts } from "./scorecard.ts
 import { buildBrief, type Brief, type BriefInput, type BriefProduct } from "./brief.ts";
 import { seasonalPlans } from "./seasonal.ts";
 import { loadMarket, rulesBrief } from "../brain/taager-facts.ts";
+import { refreshStaleResearch } from "./research-refresh.ts";
 
 export type DailyDeps = {
   db: Db; market: Market; now?: () => number; fetchImpl?: typeof fetch;
   woo: WooOrderCreds | null; posthog: PosthogEnv | null; phoneHashKey: string | null; dialingCode: string;
+  /** The brain's AI key, used only to refresh stale shop prices inside the daily cap. Absent = that step is skipped. */
+  anthropicKey?: string | null; timeBudgetMs?: number;
   /** FIXTURE ONLY: orders to use instead of the WooCommerce connection. Set only by tests and the local fixture flag. */
   fixtureOrders?: unknown[] | null;
 };
@@ -38,7 +41,7 @@ export async function runDaily(d: DailyDeps): Promise<DailyResult> {
   const attempt = async <T>(name: string, fn: () => Promise<T>, fallback: T): Promise<T> => {
     try { const v = await fn(); steps[name] ??= "ok"; return v; } catch (e) { steps[name] = "failed: " + String(e).slice(0, 160); notes.push(`${name} failed (${String(e).slice(0, 120)}); the rest of the brief is unaffected.`); return fallback; }
   };
-  const settings = (await d.db.select<{ daily_budget_microusd: number; delivery_rate_bps: number | null; stock_max_age_hours: number }>("brain_settings", `select=daily_budget_microusd,delivery_rate_bps,stock_max_age_hours&store_code=eq.${d.market}`))[0]
+  const settings = (await d.db.select<{ daily_budget_microusd: number; delivery_rate_bps: number | null; stock_max_age_hours: number; autopilot_enabled?: boolean; research_model?: string; max_searches_per_product?: number }>("brain_settings", `select=daily_budget_microusd,delivery_rate_bps,stock_max_age_hours,autopilot_enabled,research_model,max_searches_per_product&store_code=eq.${d.market}`))[0]
     ?? { daily_budget_microusd: 0, delivery_rate_bps: null, stock_max_age_hours: 72 };
   const lastRun = await attempt("planning_rate", async () => (await d.db.select<{ summary: Record<string, unknown> }>("brain_runs", `select=summary&store_code=eq.${d.market}&order=created_at.desc&limit=1`))[0]?.summary ?? {}, {});
   const planning = planningBaseBps(settings, lastRun, m);
@@ -84,6 +87,15 @@ export async function runDaily(d: DailyDeps): Promise<DailyResult> {
   const win = await attempt("scorecards", async () => ((await d.db.rpc<Window[]>("scorecard_window", { p_store: d.market, p_days: WINDOW_DAYS })) ?? []).map((w) => ({ ...w, counts: counts(w.counts) })), [] as Window[]);
   const day1 = await attempt("yesterday", async () => ((await d.db.rpc<Window[]>("scorecard_window", { p_store: d.market, p_days: 1 })) ?? []).map((w) => ({ ...w, counts: counts(w.counts) })), [] as Window[]);
   const byId = new Map(listings.map((l) => [l.listing_id, l]));
+
+  // 4b. Shop prices older than 14 days are refreshed first (oldest first, inside the daily cap), so the re-pricing below never works from old prices.
+  const startedAt = Date.now();
+  await attempt("research_refresh", async () => {
+    const r = await refreshStaleResearch({ db: d.db, market: d.market, m, anthropicKey: d.anthropicKey ?? null, fetchImpl: f, now, deadline: startedAt + Math.floor((d.timeBudgetMs ?? 100_000) * 0.6),
+      settings, listings: listings.map((l) => ({ sku: l.sku, hidden_reason: l.hidden_reason })) });
+    steps.research_refresh = r.stopped === "done" || r.stopped === "nothing_stale" ? "ok" : r.stopped;
+    if (r.note) notes.push(r.note);
+  }, undefined);
 
   // 5. Re-price from Taager's current cost and the dated shop prices. Proposals only; the floor itself is enforced by the database.
   const repriceOut = { changes: 0, pauses: 0, examples: [] as { title: string; reason: string }[] };
@@ -174,5 +186,12 @@ export async function runDaily(d: DailyDeps): Promise<DailyResult> {
     ...brief.retire.map((r) => ({ kind: "retire_product", ref: r.listing_id, title: r.title, why: r.why, data: {} })),
   ];
   await d.db.rpc("brain_daily_save", { p_store: d.market, p_day: today, p_brief: brief, p_proposals: proposals });
+  // 9. Autopilot, only when the owner switched it on for this market: the database approves what passes the same
+  // never-a-loss checks as the owner's buttons, and the brief says exactly what it did. Product additions stay with the owner.
+  if (settings.autopilot_enabled === true) await attempt("autopilot", async () => {
+    const done = await d.db.rpc<Record<string, unknown>>("brain_autopilot_apply", { p_store: d.market });
+    if (done && done.enabled === true) { brief.autopilot = { price_changes: Number(done.price_changes) || 0, retired: Number(done.retired) || 0, offers: Number(done.offers) || 0, left_for_owner: Number(done.left_for_owner) || 0, new_products_waiting: Number(done.new_products_waiting) || 0 };
+      await d.db.rpc("brain_brief_merge", { p_store: d.market, p_day: today, p_patch: { autopilot: brief.autopilot } }); }
+  }, undefined);
   return { day: today, brief, proposals: proposals.length, steps };
 }

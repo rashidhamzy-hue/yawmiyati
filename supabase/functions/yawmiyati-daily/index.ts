@@ -6,8 +6,10 @@
 //   CRON_SECRET                         shared with the scheduler through Supabase Vault
 //   WOO_<MARKET>_URL / _KEY / _SECRET   the market's WooCommerce connector (orders); absent = "not connected"
 //   POSTHOG_PERSONAL_API_KEY, POSTHOG_PROJECT_ID, POSTHOG_HOST (default https://us.posthog.com)
+//   ANTHROPIC_API_KEY                   the brain's key: refreshes shop prices older than 14 days, inside the market's daily cap (absent = skipped)
 //   BLACKLIST_HASH_KEY                  key of the one-way phone hash (32+ random characters, never changed once orders exist)
-// It spends no AI money and never publishes, approves or switches a flag.
+// It never publishes or switches a flag. It spends AI money only to refresh stale shop prices, inside the daily cap.
+// It approves by itself only when the owner switched autopilot on for the market (database function brain_autopilot_apply).
 import { createDb } from "../_shared/brain/db.ts";
 import { isMarket, type Market } from "../_shared/brain/markets.ts";
 import { runDaily } from "../_shared/learn/daily.ts";
@@ -59,7 +61,7 @@ Deno.serve(async (req) => {
     const wooUrl = Deno.env.get(p + "URL"), wooKey = Deno.env.get(p + "KEY"), wooSecret = Deno.env.get(p + "SECRET");
     const phKey = Deno.env.get("POSTHOG_PERSONAL_API_KEY"), phProject = Deno.env.get("POSTHOG_PROJECT_ID");
     const result = await runDaily({
-      db, market: store, dialingCode: DIAL[store],
+      db, market: store, dialingCode: DIAL[store], anthropicKey: Deno.env.get("ANTHROPIC_API_KEY") ?? null,
       woo: wooUrl && wooKey && wooSecret ? { origin: wooUrl, key: wooKey, secret: wooSecret } : null,
       posthog: phKey && phProject ? { host: Deno.env.get("POSTHOG_HOST") ?? "https://us.posthog.com", projectId: phProject, apiKey: phKey } : null,
       phoneHashKey: (Deno.env.get("BLACKLIST_HASH_KEY") ?? "").length >= 32 ? Deno.env.get("BLACKLIST_HASH_KEY")! : null,

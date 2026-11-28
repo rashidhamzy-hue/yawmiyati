@@ -75,7 +75,7 @@ export function brainClient(origin: string, publicKey: string, token: string, re
     overview: (m: MarketCode) => { assertMarket(m); return rpc<BrainOverview>("brain_dashboard", { p_store: m }); },
     items: (m: MarketCode, run: string, stage: string | null, offset = 0) => { assertMarket(m); return rpc<BrainItem[] | null>("brain_analysis_page", { p_store: m, p_run: run, p_stage: stage, p_offset: offset }).then((x) => x ?? []); },
     decide: (m: MarketCode, run: string, decision: "approved" | "rejected", items: { product_id: number; variation_id: number }[] | null) => { assertMarket(m); return rpc<number>("brain_decide", { p_store: m, p_run: run, p_decision: decision, p_items: items }); },
-    updateSettings: (m: MarketCode, patch: Partial<Pick<BrainSettings, "autopilot_enabled" | "daily_budget_microusd" | "shortlist_size" | "selection_size">>) => { assertMarket(m); return rpc<BrainSettings>("brain_update_settings", { p_store: m, p_patch: patch }); },
+    updateSettings: (m: MarketCode, patch: Partial<Pick<BrainSettings, "daily_budget_microusd" | "shortlist_size" | "selection_size">>) => { assertMarket(m); return rpc<BrainSettings>("brain_update_settings", { p_store: m, p_patch: patch }); },
     publish: (m: MarketCode, run: string) => { assertMarket(m); return rpc<PublishResult>("brain_publish_approved", { p_store: m, p_run: run }); },
     unpublish: (m: MarketCode, listings: string[] | null) => { assertMarket(m); return rpc<number>("brain_unpublish", { p_store: m, p_listings: listings }); },
     publicationStatus: (m: MarketCode) => { assertMarket(m); return rpc<PublicationStatus>("brain_publication_status", { p_store: m }); },
@@ -99,6 +99,9 @@ export function brainClient(origin: string, publicKey: string, token: string, re
     dailyDecide: (m: MarketCode, ids: string[] | null, decision: "approved" | "rejected") => { assertMarket(m); return rpc<{ decided: number; retired: number; add_product_ids: number[] }>("brain_daily_decide", { p_store: m, p_ids: ids, p_decision: decision }); },
     setPaused: (m: MarketCode, listing: string, paused: boolean, reason: string | null = null) => { assertMarket(m); return rpc<boolean>("brain_set_paused", { p_store: m, p_listing: listing, p_paused: paused, p_reason: reason }); },
     setDailyLoop: (m: MarketCode, enabled: boolean) => { assertMarket(m); return rpc<boolean>("brain_set_daily_loop", { p_store: m, p_enabled: enabled }); },
+    /** The one autopilot switch (owner only). On: the daily loop approves safe price changes, proposed retirements and safe offers by itself. */
+    setAutopilot: (m: MarketCode, on: boolean) => { assertMarket(m); return rpc<boolean>("brain_set_autopilot", { p_store: m, p_on: on }); },
+    autopilotLog: (m: MarketCode, days = 7) => { assertMarket(m); return rpc<{ day: string; kind: string; ref: string; title: string; detail: Record<string, unknown>; at: string }[]>("brain_autopilot_log_list", { p_store: m, p_days: days }); },
     runDailyNow: (m: MarketCode) => { assertMarket(m); return daily<{ day: string; proposals: number; steps: Record<string, string>; headline: string }>(m); },
     step: (m: MarketCode, run: string) => action<{ run: BrainRun; spent_today_microusd: number }>(m, "step", { run_id: run }),
     resume: (m: MarketCode, run: string) => action<{ run: BrainRun | null }>(m, "resume", { run_id: run }),

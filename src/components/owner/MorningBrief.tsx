@@ -57,7 +57,9 @@ export function MorningBrief({ market, origin, publicKey, token, request }: Prop
     </div>
     <p className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
       <label className="inline-flex items-center gap-2"><input type="checkbox" className="h-4 w-4" checked={data?.daily_loop_enabled ?? true} disabled={busy || !data} onChange={(e) => act(() => client.setDailyLoop(market, e.target.checked))} />Daily loop on for this market</label>
-      <label className="inline-flex items-center gap-2" title="Autopilot stays off until you decide to turn it on after the first real weeks of orders"><input type="checkbox" className="h-4 w-4" checked={false} disabled readOnly />Autopilot (off: every proposal waits for you)</label>
+      <label className="inline-flex items-center gap-2" title="Off: every proposal waits for you. On: the daily loop approves safe price changes (up to 15% a day), proposed retirements and safe offers by itself, with the same never-a-loss checks. New products always wait for you."><input type="checkbox" className="h-4 w-4" data-autopilot-switch="" checked={data?.autopilot_enabled ?? false} disabled={busy || !data} onChange={(e) => { const on = e.target.checked;
+        if (on && !window.confirm("Turn autopilot ON for this market?\n\nEvery morning the brain will approve by itself: price changes that still earn the $2 floor and move a price by at most 15%, the retirements it proposes, and offers that are safe at full Taager cost.\n\nNew products, publishing, checkout and every other switch stay with you. You can turn it off here at any time.")) return;
+        void act(() => client.setAutopilot(market, on)); }} />Autopilot {data?.autopilot_enabled ? "ON: safe price changes, retirements and offers are approved for you" : "(off: every proposal waits for you)"}</label>
     </p>
     {error && <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p>}
     {note && <p role="status" className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{note}</p>}
@@ -72,6 +74,10 @@ export function MorningBrief({ market, origin, publicKey, token, request }: Prop
         {b.taager_rules.planning_notes.map((n: string) => <p key={n} className="text-muted-foreground">{n}</p>)}
         {b.taager_rules.customer_copy.map((n: string) => <p key={n} className="text-amber-900">{n}</p>)}
         <p className="text-xs text-muted-foreground">Decide each one in "Taager's rules for this market" above.{b.taager_rules.loyalty ? " " + b.taager_rules.loyalty : ""}</p>
+      </Block>}
+      {b.autopilot && <Block title="Autopilot did this by itself today" tone="border-emerald-300">
+        <p><b>{b.autopilot.price_changes}</b> price changes · <b>{b.autopilot.retired}</b> products retired · <b>{b.autopilot.offers}</b> offers approved</p>
+        <p className="text-muted-foreground">{b.autopilot.left_for_owner} left for you (a move above 15%, or not safe){b.autopilot.new_products_waiting ? ` · ${b.autopilot.new_products_waiting} new products wait for your approval` : ""}.</p>
       </Block>}
       <Block title="Refusals and why">
         <p><b>{b.refusals.refused}</b> refused · <b>{b.refusals.returned}</b> returned · <b>{b.refusals.unreachable}</b> unreachable · <b>{b.refusals.cancelled}</b> cancelled</p>
