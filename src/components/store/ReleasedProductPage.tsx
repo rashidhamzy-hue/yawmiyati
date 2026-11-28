@@ -52,14 +52,14 @@ export function ProductPageView({page,detail,market}:{page:PublicProductPage;det
     <BuyBox market={market} target={{listing_id:detail.listing_id,slug:detail.slug,title:page.title,image:page.images[0]?.id??null,price_minor:price}} offers={page.quantity_offers}/>
     {page.free_delivery&&!page.delivery_included&&<Suspense fallback={null}><ProductFreeDelivery market={market}/></Suspense>}
     <button type="button" className="btn-quiet w-full justify-center text-sm" onClick={()=>openAssistant(assistantCopy(market).productQuestion(page.title))} data-ask-assistant=""><MessageCircle className="h-4 w-4" aria-hidden="true"/>{assistantCopy(market).askAboutProduct}</button>
+    {page.bullets.length>0&&<ul className="space-y-2.5 text-[15px] leading-7">
+     {page.bullets.map((b,i)=><li key={i} className="flex items-start gap-3"><Check className="mt-1.5 h-4 w-4 shrink-0" aria-hidden="true"/><span className="min-w-0 break-words">{b}</span></li>)}
+    </ul>}
     <ul className="ym-card divide-y divide-border px-4 text-sm leading-7">
      <li className="flex items-start gap-3 py-3"><HandCoins className="mt-1 h-5 w-5 shrink-0" strokeWidth={1.6} aria-hidden="true"/><span><span className="font-semibold">{service.paymentHeading}</span><span className="block text-muted-foreground">{copy.reassureCall}</span></span></li>
      <li className="flex items-start gap-3 py-3"><Truck className="mt-1 h-5 w-5 shrink-0" strokeWidth={1.6} aria-hidden="true"/><span className="text-muted-foreground">{service.shipping} {service.delivery}</span></li>
      <li className="flex items-start gap-3 py-3"><RotateCcw className="mt-1 h-5 w-5 shrink-0" strokeWidth={1.6} aria-hidden="true"/><span className="text-muted-foreground">{service.returns}</span></li>
     </ul>
-    {page.bullets.length>0&&<ul className="space-y-2.5 text-[15px] leading-7">
-     {page.bullets.map((b,i)=><li key={i} className="flex items-start gap-3"><Check className="mt-1.5 h-4 w-4 shrink-0" aria-hidden="true"/><span className="min-w-0 break-words">{b}</span></li>)}
-    </ul>}
    </div>
   </div>
   {page.bundle.length>0&&<section aria-label={copy.bundleContents} className="max-w-3xl">
@@ -69,29 +69,32 @@ export function ProductPageView({page,detail,market}:{page:PublicProductPage;det
     <span className="min-w-0 flex-1 break-words leading-6">{b.name}</span><span className="shrink-0 font-bold tabular-nums">× {b.quantity}</span>
    </li>)}</ul>
   </section>}
-  <section aria-label={copy.aboutProduct} className="max-w-3xl">
+  {/* One column on phones; on wide screens the details flow in two columns under the gallery and the buy box. */}
+  <div className="space-y-10 lg:columns-2 lg:gap-12 lg:space-y-0 [&>*]:break-inside-avoid lg:[&>*]:mb-10">
+  <section aria-label={copy.aboutProduct} className="max-w-3xl lg:max-w-none">
    <h2 className="ym-h3 mb-3">{copy.aboutProduct}</h2>
    <p id="product-description" className={"whitespace-pre-wrap break-words text-[15px] leading-8 text-muted-foreground "+(long&&!more?"line-clamp-6":"")}>{page.description}</p>
    {long&&<button type="button" aria-expanded={more} aria-controls="product-description" onClick={()=>setMore(v=>!v)} className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4">{more?copy.readLess:copy.readMore}</button>}
   </section>
-  {page.in_box.length>0&&<section aria-label={copy.inBox} className="max-w-3xl">
+  {page.in_box.length>0&&<section aria-label={copy.inBox} className="max-w-3xl lg:max-w-none">
    <h2 className="ym-h3 mb-3">{copy.inBox}</h2>
    <ul className="ym-card divide-y divide-border px-4 text-sm">{page.in_box.map((b,i)=><li key={i} className="flex items-start gap-3 py-3"><Package className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true"/><span className="min-w-0 break-words">{b}</span></li>)}</ul>
   </section>}
-  {page.how_to_use.length>0&&<section aria-label={copy.howToUse} className="max-w-3xl">
+  {page.how_to_use.length>0&&<section aria-label={copy.howToUse} className="max-w-3xl lg:max-w-none">
    <h2 className="ym-h3 mb-3">{copy.howToUse}</h2>
    <ol className="space-y-2.5 text-[15px] leading-7">{page.how_to_use.map((b,i)=><li key={i} className="flex items-start gap-3"><span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold tabular-nums" aria-hidden="true">{i+1}</span><span className="min-w-0 break-words">{b}</span></li>)}</ol>
   </section>}
-  {page.specs.length>0&&<section aria-label={copy.specs} className="max-w-3xl">
+  {page.specs.length>0&&<section aria-label={copy.specs} className="max-w-3xl lg:max-w-none">
    <h2 className="ym-h3 mb-3">{copy.specs}</h2>
    <dl className="ym-card divide-y divide-border px-4">{page.specs.map((s,i)=><div key={i} className="grid grid-cols-[2fr_3fr] gap-3 py-3 text-sm"><dt className="font-semibold">{s.label}</dt><dd className="min-w-0 break-words text-muted-foreground">{s.value}</dd></div>)}</dl>
   </section>}
-  {page.faq.length>0&&<section aria-label={copy.productFaq} className="max-w-3xl">
+  {page.faq.length>0&&<section aria-label={copy.productFaq} className="max-w-3xl lg:max-w-none">
    <h2 className="ym-h3 mb-3">{copy.productFaq}</h2>
    <div className="space-y-2">{page.faq.map((f,i)=><details key={i} className="group ym-card px-5 py-3">
     <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-[15px] font-semibold marker:hidden">{f.q}<ChevronDown className="h-5 w-5 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true"/></summary>
     <p className="pb-2 pt-2 text-sm leading-8 text-muted-foreground">{f.a}</p></details>)}</div>
   </section>}
+  </div>
   {page.category&&copy.sectionNames[page.category]&&<p className="max-w-3xl"><a href={`/${market}/c/${page.category}`} data-section-link="" className="inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4">{copy.moreFromSection(copy.sectionNames[page.category])}</a></p>}
  </article>;
 }

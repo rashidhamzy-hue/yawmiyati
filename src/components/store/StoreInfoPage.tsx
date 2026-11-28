@@ -92,7 +92,7 @@ export function StoreInfoPage({market,topic}:{market:MarketCode;topic:InfoTopic}
     </div>
    </section>
    <div className="mt-7 grid gap-6 lg:grid-cols-[1fr_1.65fr] lg:gap-9">
-    <aside className="self-start space-y-5">
+    <aside className="order-2 self-start space-y-5 lg:order-1">
      <div className="overflow-hidden rounded-[1.5rem] border bg-card">
       <img src={v.accent} srcSet={editorialSrcSet(v.accent)} sizes="(max-width: 1024px) 100vw, 30vw" alt="" loading="lazy" className="aspect-[16/9] w-full object-cover"/>
       <div className="space-y-3 p-5">
@@ -108,7 +108,7 @@ export function StoreInfoPage({market,topic}:{market:MarketCode;topic:InfoTopic}
       <p className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-primary"><MessageCircle className="h-4 w-4"/> زر المساعد أسفل الشاشة</p>
      </div>
     </aside>
-    <div>
+    <div className="order-1 lg:order-2">
      <div className="rounded-[1.75rem] border bg-card p-5 shadow-soft sm:p-8">
       <div className="mb-7 flex items-center gap-3"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary-soft text-primary"><HelpCircle className="h-6 w-6"/></div><div><p className="text-xs font-bold text-primary">إجابات واضحة</p><h2 className="font-display text-xl font-extrabold">{helpCopy.answerHeading}</h2></div></div>
       <div className="space-y-3">{page.groups.map(([title,description],i)=><details key={title} className="group rounded-[1.25rem] border border-border bg-background px-5 py-4" open={i===0}>

@@ -65,16 +65,15 @@ export function StoreHeader({market}:{market:MarketCode}){
     <details ref={countrySelector} className="group relative">
      <summary aria-controls="yawmiyati-market-options" className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-full border border-border/90 bg-card px-2.5 py-1.5 text-xs font-bold text-foreground shadow-sm transition-colors hover:border-primary/40 hover:bg-primary-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:px-3.5">
       <span className="sr-only">{copy.countryCurrency(identity.fullName,identity.currencyLong)}</span>
-      <span className="text-xl leading-none" aria-hidden="true">{identity.flag}</span>
-      <span className="hidden whitespace-nowrap sm:inline">{identity.name}</span>
-      <span className="hidden h-4 w-px bg-border sm:inline"/>
+      <span className="whitespace-nowrap ps-1">{identity.name}</span>
+      <span className="h-4 w-px bg-border"/>
       <span className="whitespace-nowrap text-[11px] font-extrabold text-primary" dir="rtl">{identity.currencyLabel}</span>
-      <ChevronDown className="hidden h-3.5 w-3.5 text-muted-foreground transition-transform group-open:rotate-180 sm:block" aria-hidden="true"/>
+      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden="true"/>
      </summary>
      <div id="yawmiyati-market-options" className="fixed inset-x-3 top-[calc(env(safe-area-inset-top)+6.75rem)] z-[70] mx-auto max-h-[min(70dvh,560px)] w-auto max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-border bg-card p-2 shadow-2xl [scrollbar-gutter:stable] sm:absolute sm:inset-x-auto sm:left-0 sm:top-full sm:mt-2 sm:mx-0 sm:max-h-[min(70vh,560px)] sm:w-[290px] sm:max-w-[calc(100vw-32px)] sm:shadow-xl">
       <div className="sticky top-0 z-10 rounded-t-xl bg-card px-3 py-2 text-xs font-bold text-muted-foreground">{copy.chooseCountry}</div>
       {countryCodes.map(code=><a key={code} href={"/"+code} onClick={()=>{if(countrySelector.current)countrySelector.current.open=false;}} aria-current={code===market?"page":undefined} className={"flex min-h-12 items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-primary-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary "+(code===market?"bg-primary-soft font-bold text-primary":"text-foreground")}>
-       <span className="text-xl" role="img" aria-label={copy.flagOf(marketIdentity[code].name)}>{marketIdentity[code].flag}</span><span className="flex-1">{marketIdentity[code].name}</span><span className="text-xs text-muted-foreground" dir="rtl">{marketIdentity[code].currencyLabel}</span>
+       <span className="flex-1">{marketIdentity[code].name}</span><span className="text-xs text-muted-foreground" dir="rtl">{marketIdentity[code].currencyLong}</span>
       </a>)}
       <p className="border-t px-3 py-2 text-[11px] leading-5 text-muted-foreground">{copy.countryNote}</p>
      </div>
