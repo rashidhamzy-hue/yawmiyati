@@ -1,4 +1,6 @@
 import {useEffect,useMemo,useState} from "react";
+import {assistantCopy} from "@/lib/store/assistant-copy";
+import {openAssistant} from "@/lib/store/assistant-open";
 import {previewCatalogActive,useOfferVersions} from "@/lib/store/offer-source";
 import {offerListing} from "@/lib/store/offer-version";
 import {SlidersHorizontal} from "lucide-react";
@@ -52,7 +54,8 @@ export function ApprovedCategoryProductGrid({market,slug,categoryTitle}:{market:
    <div className="flex items-center gap-2"><select aria-label={copy.sortLabel} value={sort} onChange={e=>setSort(e.target.value)} className="field min-h-11 min-w-0 flex-1 text-sm sm:max-w-xs">{approved.some(row=>row.popularity_rank!==undefined)&&<option value="popular">الأكثر رواجاً</option>}<option value="featured">{copy.sortFeatured}</option><option value="low">{copy.sortLow}</option><option value="high">{copy.sortHigh}</option></select><button type="button" aria-expanded={filtersOpen} aria-controls="category-filters" onClick={()=>setFiltersOpen(v=>!v)} className="btn-quiet shrink-0"><SlidersHorizontal className="h-4 w-4" aria-hidden="true"/>{copy.filter}{(query||minPrice||maxPrice)?" •":""}</button></div>
    <div id="category-filters" className={(filtersOpen?"grid":"hidden")+" mt-2 gap-2 sm:grid-cols-3"}><input type="search" aria-label="البحث في هذا القسم" placeholder={copy.searchInSection} value={query} onChange={e=>setQuery(e.target.value)} className="field min-h-11 min-w-0 text-sm sm:col-span-2"/><div className="grid grid-cols-2 gap-2"><input inputMode="decimal" aria-label="أقل سعر" placeholder={copy.priceFrom} value={minPrice} onChange={e=>setMinPrice(e.target.value)} className="field min-w-0 text-sm"/><input inputMode="decimal" aria-label="أعلى سعر" placeholder={copy.priceTo} value={maxPrice} onChange={e=>setMaxPrice(e.target.value)} className="field min-w-0 text-sm"/></div></div>
   </div>
-  {invalidPrice&&<p role="alert" className="text-sm text-destructive">{copy.priceRangeError}</p>}{!invalidPrice&&!shown.length&&<p role="status" className="ym-card p-4 text-sm">{copy.noResults}</p>}
+  {invalidPrice&&<p role="alert" className="text-sm text-destructive">{copy.priceRangeError}</p>}{!invalidPrice&&!shown.length&&<div role="status" className="ym-card p-4 text-sm"><p>{copy.noResults}</p>
+   <button type="button" className="mt-3 font-bold underline underline-offset-4" onClick={()=>openAssistant()} data-ask-assistant="">{assistantCopy(market).searchEmptyAsk}</button></div>}
   <div className={gridClass}>
    {shown.slice(0,visibleCount).map((item,i)=><ProductTile key={item.listing_id} item={item} market={market} image={imageByListing.get(item.listing_id)??listingImage(item)} eager={i<2}/>)}
   </div>

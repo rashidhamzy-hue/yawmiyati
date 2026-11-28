@@ -1,41 +1,38 @@
-# Yawmiyati shopping assistant — owner-reviewed integration
+# Yawmiyati shopping assistant (v2, 29 Nov 2026)
 
-## Customer experience
-- One floating, mobile-friendly assistant in the shared five-market storefront, with Arabic greeting, quick questions, interactive chat and local grounded responses even if the paid provider is unavailable.
-- No coming-soon UI or false promises. The assistant answers from currently approved public catalog listings only; it cannot access private supplier costs or customer records.
-- No checkout/order dispatch, personal-data collection, marketing broadcast, or fabricated stock, discounts, delivery dates, refunds or product claims.
-- Assistant messages are ephemeral browser state; no chat transcript storage in the current implementation. A message reminds visitors not to send private information.
+**Status:** source CI-PASSED; budget migration `20261129100000_assistant_budget.sql` tested locally on Postgres 16 with every repo migration (`docs/assistant-budget-test.sql`, rollback-only).
+**Paid AI answers are OFF for visitors** in all five markets (policy rows disabled, zero budget, public flag unset). The owner switches them on at launch.
 
-## Anthropic integration — NOT YET ACTIVE
-Frontend `ShoppingAssistant.tsx` calls `/functions/v1/yawmiyati-shopping-assistant` only if `VITE_YAWMIYATI_SHOP_ASSISTANT_API_ENABLED=true`. This flag is public and must only be set after securing the backend; **never** put Anthropic secrets in VITE variables.
+## What a visitor gets today (free, no AI call)
+The assistant answers in the browser from verified facts only (`assistantAnswer` in `src/lib/store/shop-assistant.ts`, rules in `supabase/functions/_shared/assistant/core.ts`):
+- **Policies:** payment, delivery fee and time, returns, order tracking are the store's own published sentences, word for word (`customer-service-copy.ts`); the confirmation call from `assistant-copy.ts`.
+- **Sales:** it understands a need and a budget ("هدية لأمي بأقل من 200", Arabic digits, ranges), finds matching published products, shows them as product cards with the price, offer / set / free-delivery hints and an add-to-cart button, lists current offers, and says honestly when nothing fits.
+- **Free delivery:** states the approved threshold when one is running, otherwise that there is none.
+- **Human handover:** a WhatsApp link when a number is configured (`SUPPORT_WHATSAPP` in `shop-assistant.ts`, none yet), otherwise the help page.
+- Words are in each market's dialect (`assistant-copy.ts`, part of the market dictionary and its CI guard).
+- Visible from: the floating button on every store page, every market's FAQ ("how do I find…"), empty search / section results, and the product page ("ask about this product").
 
-The Supabase Edge Function is designed to use:
-- `ANTHROPIC_API_KEY` (server secret only)
-- `YAWMIYATI_ASSISTANT_MODEL` (explicit operator-selected model, current verified pricing required)
-- `YAWMIYATI_ASSISTANT_AI_ENABLED=true` (independent server gate)
-- `YAWMIYATI_ASSISTANT_ALLOWED_ORIGINS` (optional comma-separated exact production domains)
-- Built-in `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (server only)
+## Paid answers (edge function `yawmiyati-shopping-assistant`)
+Used only for product advice and open questions; policy questions never reach the model.
+1. Origin must be an allow-listed storefront (`YAWMIYATI_ASSISTANT_ALLOWED_ORIGINS`).
+2. Per-address rate limits in memory only (8 a minute, 60 an hour); injection attempts are answered locally.
+3. Facts: the market's released catalogue and approved offers (`public_catalog`, `public_store_offers`) and the storefront's `/api/store-facts/<market>.json` (the same published sentences). No costs, no supplier data.
+4. Up to 12 matching products go to the model with numbers; it returns JSON (`reply`, product numbers, optional add-to-cart, handover).
+5. **Budget:** `assistant_reserve` reserves the worst-case cost against `shopping_assistant_policy.daily_budget_microusd` before the call; `assistant_settle` records the real tokens and cost in `shopping_assistant_spend` (per-day totals only).
+6. **Verification:** `verifyReply` discards a reply that mentions an amount the store did not give, a percentage, a link or a phone number; the visitor then gets the free local answer.
+7. Three independent switches must all be on: secret `YAWMIYATI_ASSISTANT_AI_ENABLED=true`, the market's policy row (`/admin`, RPC `assistant_owner_set`), and the public flag `VITE_YAWMIYATI_SHOP_ASSISTANT_API_ENABLED=true`.
 
-The default-disabled `shopping_assistant_policy` database table provides an additional independent hard gate, with per-market atomic minute and daily request caps. All values are disabled/0 until the owner approves a concrete maximum budget and model. A model turn is bounded to 300 output tokens and a short verified product list. The rate cap limits count, NOT precise USD charges: actual costs depend on provider billing, input/output tokens, caching and model rates. Before activation, implement real usage/reconciliation and confirm monetary safety. No provider API calls have been made in this build.
+**Model and cost** (prices from platform.claude.com/docs/en/about-claude/pricing, checked 28 Nov 2026): Claude Haiku 5.5, $0.10 per million input tokens and $0.50 per million output tokens for prompts up to 100,000 tokens. One answer is about 2,500 tokens in and 300 out: about $0.0004. Recommended launch cap: **$1 a day per market** (about 2,500 paid answers); `assistant_owner_set` derives the request caps from the budget.
 
-The Edge Function must be deployed with `verify_jwt=false` only after the budget policy and CORS restrictions have been verified. Public API origin checking is defense-in-depth, not a replacement for the server budget cap. Anonymous requests and use of the service key require security review.
+**Privacy:** no transcript, no visitor identifier and no address is stored anywhere. Analytics receive only the kind of question, whether products were found and whether the answer was paid, never the text.
 
-## Readiness checklist
-1. Run GitHub build/tests; review Arabic copy and the assistant on desktop/mobile and all five country routes.
-2. Apply `20261120102000_shopping_assistant_budget_gate.sql` to ONLY staging `skhtunkknshvolturqlm`; verify every policy row is disabled and daily_request_cap=0.
-3. Deploy Edge Function code only after confirming host deployment restrictions, legitimate server secrets and rate quotas; leaving it undeployed is safe because the UI has a local fallback.
-4. With explicit owner authorization and a small test-only budget, configure Anthropic model/pricing and secret server-side. Run synthetic prompts and adversarial tests for hallucinations, prompt injection, shipping claims, budget exhaust and API errors; never use live order details as context.
-5. Activate the public browser feature flag last, after successful model and cost audits. Production rollout requires on-call alerting, usage monitoring, abuse controls and a kill switch.
+## Order status (designed, NOT built: needs orders, gate G3)
+- Entry: "وين طلبي؟" in the assistant or the order page. The visitor types the **order number** and the **last four digits of the phone** used on the order.
+- Server: one RPC `public_order_status(p_store, p_order_number, p_phone_last4)`, rate-limited per order number (5 tries an hour, then locked for an hour), returning only: status (received / confirmed / shipped / delivered / returned), the last status date and the delivery city. Never the name, full phone, address or items.
+- The assistant shows that status in the market's dialect and offers WhatsApp for anything else. No status is ever guessed: unknown order or wrong digits give the same neutral "not found" answer.
 
-## Known limitations
-- Without verified catalog items, assistant cannot recommend real products.
-- Local replies are rules-based and should not be misrepresented as live Anthropic completions.
-- The owner dashboard's AI content-drafting workflow is separate from this consumer shopping assistant; neither requires auto-publishing.
-- The original staged WooCommerce/TasteWP supplier feed is retired; configure only newly approved hosted supplier integrations when ready.
+## Testing paid answers before launch (builder only)
+A market's policy row may carry `eval_token_sha256`. A request with header `x-yawmiyati-eval: <token>` may bring fixture facts and products, needs a budget on that row and does NOT need the visitor switch. Clear the hash and set the budget back to 0 after testing.
 
-## Actual staging evidence (20 November 2026)
-- GitHub PR #54 was merged after build and tests passed. Lovable synchronized to the updated source, including visible customer assistant chat.
-- Migration `20261120102000_shopping_assistant_budget_gate.sql` applied to Yawmiyati staging. All five policies inspected: `enabled=false`, `daily_request_cap=0`, `minute_request_cap=0`.
-- Edge Function `yawmiyati-shopping-assistant` deployed as version 1 with `verify_jwt=true`, **not yet anonymous/publicly callable**. Frontend API flag is unset. Live model invocation remains unavailable by design; local fallback works.
-- Rollback-only quota acceptance test confirms disabled default, one-request daily/minute cap and denial to anonymous database callers. No calls to Anthropic were made.
-- To make public model chat usable later, finish authenticated/anonymous access design, production-origin allowlists, abuse and dollar spending controls, run evals, then request explicit owner permission. Do not silently toggle JWT verification or daily caps.
+## Not built
+Order status (above); streaming replies; `/admin` panel for the switch and spend (RPCs `assistant_owner_status` / `assistant_owner_set` exist); deploying the function from CI (`deploy-brain.yml` covers the brain only).

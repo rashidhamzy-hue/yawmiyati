@@ -4,6 +4,9 @@
  * blocks everything unless the request is on the production host AND the
  * owner launch switch (INDEXING_LIVE) is on.
  */
+import {MARKETS as BRAIN_MARKETS} from "../../../supabase/functions/_shared/brain/markets";
+import {assistantCopy} from "@/lib/store/assistant-copy";
+import {humanLink} from "@/lib/store/shop-assistant";
 import {markets,type MarketCode} from "@/lib/store/markets";
 import {marketIdentity} from "@/lib/store/market-identity";
 import {customerServiceCopy} from "@/lib/store/customer-service-copy";
@@ -135,12 +138,26 @@ const text=(body:string,type:string,maxAge=3600)=>new Response(body,{headers:{
 }});
 
 /** Returns a response for crawler files, or null for every other path. */
+/**
+ * Machine-readable store facts for one market: the same published sentences shoppers read (customer-service-copy.ts),
+ * nothing more. Read by the shopping assistant's server side and by AI search; never a place for unpublished terms.
+ */
+export function storeFacts(market:MarketCode){
+ const copy=customerServiceCopy[market],id=marketIdentity[market];
+ return {market,country:BRAIN_MARKETS[market].countryName,country_ar:id.name,currency:markets[market].currency,minor_digits:markets[market].minorDigits,locale:markets[market].locale,
+  dialect:BRAIN_MARKETS[market].dialect,payment:copy.payment,shipping:copy.shipping,delivery:copy.delivery,returns:copy.returns,
+  confirmation_call:assistantCopy(market).callAnswer,tracking:copy.tracking,human:humanLink(market),
+  sections:SEO_EDITORIAL_SLUGS.map(slug=>({slug,name:planCategorySeo(market,slug)?.title.split(" | ")[0]??slug})),
+  help:marketUrl(market,"/info/help"),policies:marketUrl(market,"/info/shipping-returns")};
+}
 export async function handleSeoRequest(request:Request,read:CatalogReader=defaultCatalog):Promise<Response|null>{
  if(request.method!=="GET"&&request.method!=="HEAD")return null;
  const url=new URL(request.url),path=url.pathname;
  if(path==="/robots.txt")return text(robotsTxt(url.hostname),"text/plain");
  if(path==="/sitemap.xml")return text(sitemapIndexXml(),"application/xml");
  if(path==="/llms.txt")return text(await llmsTxt(read),"text/plain");
+ const facts=/^\/api\/store-facts\/(sa|ae|om|eg|iq)\.json$/.exec(path);
+ if(facts)return text(JSON.stringify(storeFacts(facts[1] as MarketCode)),"application/json");
  const sitemap=/^\/sitemaps\/(sa|ae|om|eg|iq)\.xml$/.exec(path);
  if(sitemap)return text(await marketSitemapXml(sitemap[1] as MarketCode,read),"application/xml");
  const feed=/^\/feeds\/google-(sa|ae|om|eg|iq)\.xml$/.exec(path);
