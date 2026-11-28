@@ -1,3 +1,4 @@
+import {pageCopy} from "@/lib/store/page-copy";
 import {useEffect,useMemo,useState} from "react";
 import {assistantCopy} from "@/lib/store/assistant-copy";
 import {openAssistant} from "@/lib/store/assistant-open";
@@ -19,7 +20,7 @@ const {origin,key}=publicBrowserConfig(import.meta.env.VITE_YAWMIYATI_SUPABASE_U
  */
 export function ApprovedCategoryProductGrid({market,slug,categoryTitle}:{market:MarketCode;slug:PublicCategorySlug;categoryTitle:string}){
  const [catalog,setCatalog]=useState<PublicListing[]|null>(null);
- const copy=shopCopy(market);
+ const copy=shopCopy(market),pc=pageCopy(market);
  const [visibleCount,setVisibleCount]=useState(16);
  const [filtersOpen,setFiltersOpen]=useState(false);
  const offers=useOfferVersions(market);
@@ -42,17 +43,17 @@ export function ApprovedCategoryProductGrid({market,slug,categoryTitle}:{market:
  try{minMinor=minPrice?parseMinorUnits(market,minPrice):undefined;maxMinor=maxPrice?parseMinorUnits(market,maxPrice):undefined;}catch{invalidPrice=true;}
  if(minMinor!==undefined&&maxMinor!==undefined&&minMinor>maxMinor)invalidPrice=true;
  const shown=useMemo(()=>{const normalized=normalizeSearch(query);const result=approved.filter(x=>{const price=Number(x.price_minor);return (!normalized||normalizeSearch(x.title).includes(normalized))&&(minMinor===undefined||price>=minMinor)&&(maxMinor===undefined||price<=maxMinor);});if(sort==="popular")result.sort((a,b)=>(a.popularity_rank??Number.MAX_SAFE_INTEGER)-(b.popularity_rank??Number.MAX_SAFE_INTEGER));if(sort==="low"||sort==="high")result.sort((a,b)=>{const x=BigInt(a.price_minor),y=BigInt(b.price_minor);return (x===y?0:x<y?-1:1)*(sort==="low"?1:-1);});return result;},[approved,query,sort,minPrice,maxPrice,market]);
- if(offers.state==="loading"||(offers.state==="off"&&catalog===null))return <section aria-label="منتجات القسم" className="mt-6 min-h-[33rem] sm:min-h-[24rem]" aria-busy="true"><GridSkeleton count={4}/></section>;
- if(!approved.length)return <section aria-label="منتجات القسم" className="ym-card mt-6 flex min-h-[33rem] flex-col items-center justify-center px-5 py-10 text-center sm:min-h-[24rem]"><h2 className="ym-h3">{copy.sectionEmptyTitle}</h2><p className="ym-body mt-2">{copy.sectionEmptyBody}</p><a href={"/"+market+"/search"} className="btn-outline mt-5">{copy.allProducts}</a></section>;
- return <section aria-label="منتجات القسم" className="mt-6 space-y-4">
+ if(offers.state==="loading"||(offers.state==="off"&&catalog===null))return <section aria-label={pc.sectionProducts} className="mt-6 min-h-[33rem] sm:min-h-[24rem]" aria-busy="true"><GridSkeleton count={4}/></section>;
+ if(!approved.length)return <section aria-label={pc.sectionProducts} className="ym-card mt-6 flex min-h-[33rem] flex-col items-center justify-center px-5 py-10 text-center sm:min-h-[24rem]"><h2 className="ym-h3">{copy.sectionEmptyTitle}</h2><p className="ym-body mt-2">{copy.sectionEmptyBody}</p><a href={"/"+market+"/search"} className="btn-outline mt-5">{copy.allProducts}</a></section>;
+ return <section aria-label={pc.sectionProducts} className="mt-6 space-y-4">
   <div className="flex items-end justify-between gap-3">
-   <h2 className="ym-h2">منتجات {categoryTitle}</h2>
+   <h2 className="ym-h2">{pc.productsOf(categoryTitle)}</h2>
    <span className="text-xs text-muted-foreground">{copy.productsCount(approved.length)}</span>
   </div>
-  {offers.state==="ready"&&<p role="note" className="rounded-xl border border-dashed p-3 text-xs">منتجات للمعاينة فقط، لا يمكن إرسال طلب فعلي.</p>}
+  {offers.state==="ready"&&<p role="note" className="rounded-xl border border-dashed p-3 text-xs">{pc.previewOnly}</p>}
   <div>
-   <div className="flex items-center gap-2"><select aria-label={copy.sortLabel} value={sort} onChange={e=>setSort(e.target.value)} className="field min-h-11 min-w-0 flex-1 text-sm sm:max-w-xs">{approved.some(row=>row.popularity_rank!==undefined)&&<option value="popular">الأكثر رواجاً</option>}<option value="featured">{copy.sortFeatured}</option><option value="low">{copy.sortLow}</option><option value="high">{copy.sortHigh}</option></select><button type="button" aria-expanded={filtersOpen} aria-controls="category-filters" onClick={()=>setFiltersOpen(v=>!v)} className="btn-quiet shrink-0"><SlidersHorizontal className="h-4 w-4" aria-hidden="true"/>{copy.filter}{(query||minPrice||maxPrice)?" •":""}</button></div>
-   <div id="category-filters" className={(filtersOpen?"grid":"hidden")+" mt-2 gap-2 sm:grid-cols-3"}><input type="search" aria-label="البحث في هذا القسم" placeholder={copy.searchInSection} value={query} onChange={e=>setQuery(e.target.value)} className="field min-h-11 min-w-0 text-sm sm:col-span-2"/><div className="grid grid-cols-2 gap-2"><input inputMode="decimal" aria-label="أقل سعر" placeholder={copy.priceFrom} value={minPrice} onChange={e=>setMinPrice(e.target.value)} className="field min-w-0 text-sm"/><input inputMode="decimal" aria-label="أعلى سعر" placeholder={copy.priceTo} value={maxPrice} onChange={e=>setMaxPrice(e.target.value)} className="field min-w-0 text-sm"/></div></div>
+   <div className="flex items-center gap-2"><select aria-label={copy.sortLabel} value={sort} onChange={e=>setSort(e.target.value)} className="field min-h-11 min-w-0 flex-1 text-sm sm:max-w-xs">{approved.some(row=>row.popularity_rank!==undefined)&&<option value="popular">{pc.mostPopular}</option>}<option value="featured">{copy.sortFeatured}</option><option value="low">{copy.sortLow}</option><option value="high">{copy.sortHigh}</option></select><button type="button" aria-expanded={filtersOpen} aria-controls="category-filters" onClick={()=>setFiltersOpen(v=>!v)} className="btn-quiet shrink-0"><SlidersHorizontal className="h-4 w-4" aria-hidden="true"/>{copy.filter}{(query||minPrice||maxPrice)?" •":""}</button></div>
+   <div id="category-filters" className={(filtersOpen?"grid":"hidden")+" mt-2 gap-2 sm:grid-cols-3"}><input type="search" aria-label={pc.searchInThisSection} placeholder={copy.searchInSection} value={query} onChange={e=>setQuery(e.target.value)} className="field min-h-11 min-w-0 text-sm sm:col-span-2"/><div className="grid grid-cols-2 gap-2"><input inputMode="decimal" aria-label={pc.lowestPrice} placeholder={copy.priceFrom} value={minPrice} onChange={e=>setMinPrice(e.target.value)} className="field min-w-0 text-sm"/><input inputMode="decimal" aria-label={pc.highestPrice} placeholder={copy.priceTo} value={maxPrice} onChange={e=>setMaxPrice(e.target.value)} className="field min-w-0 text-sm"/></div></div>
   </div>
   {invalidPrice&&<p role="alert" className="text-sm text-destructive">{copy.priceRangeError}</p>}{!invalidPrice&&!shown.length&&<div role="status" className="ym-card p-4 text-sm"><p>{copy.noResults}</p>
    <button type="button" className="mt-3 font-bold underline underline-offset-4" onClick={()=>openAssistant()} data-ask-assistant="">{assistantCopy(market).searchEmptyAsk}</button></div>}

@@ -1,6 +1,6 @@
 import {EditorialImport} from "../components/store/EditorialImport";
 import { AccountOfferReview } from "../components/store/AccountOfferReview";
-import { OfferSelectionDemo } from "../components/store/OfferSelectionDemo";
+import { OfferSelectionDemo } from "../components/owner/OfferSelectionDemo";
 import {publicBrowserConfig} from "@/lib/store/staging-public-config";
 import { createFileRoute } from "@tanstack/react-router";
 import {AlertTriangle,BarChart3,Boxes,ChartNoAxesCombined,ClipboardCheck,ExternalLink,LockKeyhole,LogOut,PackageSearch,PauseCircle,RefreshCw,Settings2,ShieldCheck,ShoppingBag,Users,Wallet,type LucideIcon} from "lucide-react";
