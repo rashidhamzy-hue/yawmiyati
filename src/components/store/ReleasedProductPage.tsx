@@ -26,7 +26,7 @@ export function ProductPageView({page,detail,market}:{page:PublicProductPage;det
  // An approved time-limited price that is still running replaces the normal price everywhere on the page.
  const sale=page.sale&&BigInt(page.sale.price_minor)<BigInt(detail.price_minor)?page.sale:null;
  const price=sale?String(sale.price_minor):detail.price_minor;
- return <article dir="rtl" aria-label="تفاصيل المنتج" className="space-y-10">
+ return <article dir="rtl" aria-label={copy.productDetails} className="space-y-10">
   <div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
    <div className="min-w-0 lg:sticky lg:top-28 lg:self-start"><ProductGallery market={market} images={page.images} videos={page.videos}/></div>
    <div className="min-w-0 space-y-5">

@@ -57,7 +57,7 @@ export function StoreOffersPage({market}:{market:MarketCode}){
  const nothing=catalog.state==="ready"&&!sets.length&&!ready.length&&!deals.length&&!offers.free_delivery;
  return <StoreFrame market={market}>
   <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 lg:px-8" data-offers-page="">
-   <nav aria-label="مسار الصفحة" className="mb-3 text-sm text-muted-foreground"><a href={"/"+market} className="hover:underline">{copy.breadcrumbHome}</a> / {copy.offersNav}</nav>
+   <nav aria-label={copy.breadcrumb} className="mb-3 text-sm text-muted-foreground"><a href={"/"+market} className="hover:underline">{copy.breadcrumbHome}</a> / {copy.offersNav}</nav>
    <header className="max-w-2xl"><h1 className="ym-h1">{copy.offersTitle}</h1><p className="ym-body mt-2">{copy.offersIntro}</p></header>
    {offers.free_delivery&&rows.length>0&&<p className="mt-5 flex items-center gap-3 rounded-2xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground" data-free-delivery-banner=""><Truck className="h-5 w-5 shrink-0" strokeWidth={1.6} aria-hidden="true"/>{copy.freeDeliveryFrom(formatPrice(offers.free_delivery.threshold_minor,market))}</p>}
    {catalog.state==="loading"&&<div className="mt-8"><GridSkeleton count={8}/></div>}
@@ -76,7 +76,7 @@ export function StoreSetPage({market,slug}:{market:MarketCode;slug:string}){
  const set=resolveSets(offers.bundles,rows).find(s=>s.bundle.slug===slug);
  return <StoreFrame market={market}>
   <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 lg:px-8" data-set-page="">
-   <nav aria-label="مسار الصفحة" className="mb-4 text-sm text-muted-foreground"><a href={"/"+market} className="hover:underline">{copy.breadcrumbHome}</a> / <a href={"/"+market+"/offers"} className="hover:underline">{copy.offersNav}</a></nav>
+   <nav aria-label={copy.breadcrumb} className="mb-4 text-sm text-muted-foreground"><a href={"/"+market} className="hover:underline">{copy.breadcrumbHome}</a> / <a href={"/"+market+"/offers"} className="hover:underline">{copy.offersNav}</a></nav>
    {catalog.state==="loading"?<div className="grid gap-6 lg:grid-cols-2" aria-busy="true"><div className="ym-skeleton aspect-[2/1]"/><div className="space-y-3"><div className="ym-skeleton h-8 w-3/4"/><div className="ym-skeleton h-6 w-1/3"/><div className="ym-skeleton h-14"/></div></div>
    :!set?<div className="ym-card px-5 py-12 text-center" role="status"><h1 className="ym-h3">{copy.setNotFoundTitle}</h1><a href={"/"+market+"/offers"} className="btn-outline mt-5">{copy.offersNav}</a></div>
    :<article className="grid gap-6 lg:grid-cols-2 lg:gap-12">

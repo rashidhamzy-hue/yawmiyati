@@ -20,13 +20,13 @@ const navLinks=(c:ChromeCopy)=>[[c.navSections,"#discover"],[c.navAll,"/search"]
 function OfferCartLink({market}:{market:MarketCode}){
  const offers=useOfferVersions(market),cart=useOfferCart(market);
  if(offers.state!=="ready"||!cart.lines.length)return null;
- return <a href={"/"+market+"/cart"} aria-label={"السلة، "+cart.lines.length+" منتج"} className="tap relative grid place-items-center rounded-full border border-border bg-card transition-colors hover:border-primary/40 hover:text-primary"><ShoppingBag className="h-[19px] w-[19px]"/><span className="absolute -left-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-extrabold text-primary-foreground" data-offer-cart-count>{cart.lines.length}</span></a>;
+ return <a href={"/"+market+"/cart"} aria-label={shopCopy(market).cartWith(cart.lines.length)} className="tap relative grid place-items-center rounded-full border border-border bg-card transition-colors hover:border-primary/40 hover:text-primary"><ShoppingBag className="h-[19px] w-[19px]"/><span className="absolute -left-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-extrabold text-primary-foreground" data-offer-cart-count>{cart.lines.length}</span></a>;
 }
 /** Cart shortcut for released products chosen in this browser; hidden while the cart is empty. */
 function ShopCartLink({market}:{market:MarketCode}){
  const count=cartCount(useShopCart(market));
  if(!count)return null;
- return <a href={"/"+market+"/cart"} aria-label={shopCopy(market).cart+"، "+shopCopy(market).itemsCount(count)} className="tap relative grid place-items-center rounded-full border border-border bg-card transition-colors hover:border-primary/40" data-shop-cart-link=""><ShoppingBag className="h-[19px] w-[19px]"/><span className="absolute -left-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-bold text-primary-foreground">{count}</span></a>;
+ return <a href={"/"+market+"/cart"} aria-label={shopCopy(market).cart+shopCopy(market).listSeparator+shopCopy(market).itemsCount(count)} className="tap relative grid place-items-center rounded-full border border-border bg-card transition-colors hover:border-primary/40" data-shop-cart-link=""><ShoppingBag className="h-[19px] w-[19px]"/><span className="absolute -left-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-bold text-primary-foreground">{count}</span></a>;
 }
 function MobileCartOrHelp({market}:{market:MarketCode}){
  const count=cartCount(useShopCart(market)),path="/"+market;
@@ -59,7 +59,7 @@ export function StoreHeader({market}:{market:MarketCode}){
  const identity=marketIdentity[market],copy=chromeCopy(market);
  return <><header className="sticky top-0 z-50 border-b border-border/70 bg-background/95">
   <div className="mx-auto flex min-h-[60px] max-w-7xl items-center gap-3 px-4 sm:min-h-[76px] sm:gap-5 sm:px-6 lg:px-8">
-   <a href={path} className="shrink-0 font-display text-[1.8rem] font-extrabold tracking-tight text-primary sm:text-[2rem]" aria-label={copy.homeOf(identity.name)}>يومياتي<span className="text-gold">.</span></a>
+   <a href={path} className="shrink-0 font-display text-[1.8rem] font-extrabold tracking-tight text-primary sm:text-[2rem]" aria-label={copy.homeOf(identity.name)}>{copy.brand}<span className="text-gold">.</span></a>
    <nav aria-label={copy.mainNav} className="mr-5 hidden items-center gap-7 text-sm font-bold lg:flex">{navLinks(copy).map(([title,hash])=><a href={path+(hash.startsWith("/")?hash:hash)} key={hash} className="transition-colors hover:text-primary">{title}</a>)}</nav>
    <div className="mr-auto flex items-center gap-2">
     <details ref={countrySelector} className="group relative">
@@ -91,7 +91,7 @@ export function StoreFooter({market}:{market:MarketCode}){
  const path="/"+market,identity=marketIdentity[market],copy=chromeCopy(market);
  return <><footer className="bg-foreground pb-16 text-background md:pb-0">
   <div className="mx-auto grid max-w-7xl gap-6 px-4 py-9 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.4fr_1fr_1fr] lg:px-8">
-   <div><a href={path} className="font-display text-3xl font-extrabold">يومياتي<span className="text-gold">.</span></a><p className="mt-4 max-w-xs text-sm leading-8 text-white/75">{marketExperience[market].footerDescription}</p><p className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-2 text-xs text-white/80">{identity.fullName} <span className="text-white/40">|</span> {identity.currencyLabel}</p></div>
+   <div><a href={path} className="font-display text-3xl font-extrabold">{copy.brand}<span className="text-gold">.</span></a><p className="mt-4 max-w-xs text-sm leading-8 text-white/75">{marketExperience[market].footerDescription}</p><p className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-2 text-xs text-white/80">{identity.fullName} <span className="text-white/40">|</span> {identity.currencyLabel}</p></div>
    <nav aria-label={copy.footerLinks}><h2 className="font-bold">{copy.footerDiscover}</h2><div className="mt-4 grid gap-3 text-sm text-white/75"><a href={path+"#discover"} className="hover:text-white">{copy.footerBySection}</a><a href={path+"/search"} className="hover:text-white">{copy.navAll}</a><a href={path+"/offers"} className="hover:text-white">{copy.footerOffers}</a><a href={path+"/story"} className="hover:text-white">{copy.navStory}</a><a href={path+"/info/help"} className="hover:text-white">{copy.footerHelp}</a></div></nav>
    <nav aria-label={copy.footerPolicies}><h2 className="font-bold">{copy.footerInfo}</h2><div className="mt-4 grid gap-3 text-sm text-white/75"><a href={path+"/info/shipping-returns"} className="hover:text-white">{copy.footerShipping}</a><a href={path+"/info/privacy"} className="hover:text-white">{copy.footerPrivacy}</a><a href={path+"/info/terms"} className="hover:text-white">{copy.footerTerms}</a></div><div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-0">{countryCodes.map(code=><a key={code} href={"/"+code} aria-label={copy.storeOf(marketIdentity[code].fullName)} aria-current={market===code?"page":undefined} className={"inline-flex min-h-11 items-center text-sm transition-colors hover:text-white focus-visible:outline-offset-2 "+(market===code?"font-bold text-white underline underline-offset-8":"text-white/75")}>{marketIdentity[code].name}</a>)}</div></nav>
   </div>
