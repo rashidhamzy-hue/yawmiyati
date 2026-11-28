@@ -6,6 +6,7 @@ import { SENTRY_DSN, IGNORE_ERRORS, scrubEvent, sentryEnvironment } from "./lib/
 import { renderErrorPage } from "./lib/error-page";
 import { posthogProxyTarget, proxyPosthog } from "./lib/analytics/posthog-proxy";
 import { handleSeoRequest, robotsHeaderFor } from "./lib/seo/endpoints";
+import { handleMetaEvents, type CapiEnv } from "./lib/analytics/meta-capi.server";
 import { handleEditorialMedia } from "./lib/store/editorial-media";
 import { handleProductMedia } from "./lib/store/product-media";
 import { handleVisitorCountry, rootRedirect } from "./lib/store/visitor-country";
@@ -110,6 +111,9 @@ const handler = {
     const geo = handleVisitorCountry(request) ?? rootRedirect(request);
     if (geo) return withRobotsHeader(geo, robotsHeader);
     try {
+      // Server half of the Meta events (same event id as the browser Pixel). Sends nothing without its two secrets.
+      const meta = await handleMetaEvents(request, env as CapiEnv);
+      if (meta) return meta;
       const seo = await handleSeoRequest(request);
       if (seo) return withRobotsHeader(seo, robotsHeader);
       const handler = await getServerEntry();
