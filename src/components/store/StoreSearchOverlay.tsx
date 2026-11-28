@@ -56,6 +56,8 @@ export function StoreSearchOverlay({market,open,onClose}:{market:MarketCode;open
   return()=>{alive=false;clearTimeout(timer);};
  },[open,market,q,isolated]);
  useEffect(()=>{const term=q.trim();if(!open||term.length<2)return;const t=setTimeout(()=>track("search_typed",{query:term.slice(0,80)}),1500);return()=>clearTimeout(t);},[q,open]);
+ // A search that finds no product at all: what she wanted and we do not sell (the brain reads these for new products).
+ useEffect(()=>{const term=q.trim();if(!open||term.length<2||!visibleItems)return;const t=setTimeout(()=>{if(smartCatalogSearch(term,visibleItems,1).length===0)track("search_no_results",{market,query:term.slice(0,80)});},1800);return()=>clearTimeout(t);},[q,open,visibleItems,market]);
  if(!open)return null;
  const localResults=visibleItems?smartCatalogSearch(q,visibleItems,10):[];
  const remoteResults=serverResults?.market===market&&serverResults.query===q?serverResults.rows:[];
