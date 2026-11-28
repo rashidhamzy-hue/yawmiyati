@@ -7,8 +7,8 @@ import type {Db} from "../../supabase/functions/_shared/brain/db.ts";
 // ---- In-memory PostgREST double: supports exactly the filters the runner uses ----
 type Row=Record<string,unknown>;
 function fakeDb(){
- const t:Record<string,Row[]>={brain_settings:[],brain_runs:[],brain_cost_ledger:[],supplier_offers:[],supplier_capability_reports:[],brain_product_analysis:[],taager_catalog:[]};
- const pk:Record<string,string[]>={supplier_offers:["store_code","provider","product_id","variation_id"],brain_product_analysis:["run_id","product_id","variation_id"],supplier_capability_reports:["run_id"],brain_settings:["store_code"]};
+ const t:Record<string,Row[]>={brain_settings:[],brain_runs:[],brain_cost_ledger:[],supplier_offers:[],supplier_capability_reports:[],brain_product_analysis:[],taager_catalog:[],market_price_evidence:[],market_research_cache:[]};
+ const pk:Record<string,string[]>={supplier_offers:["store_code","provider","product_id","variation_id"],brain_product_analysis:["run_id","product_id","variation_id"],supplier_capability_reports:["run_id"],brain_settings:["store_code"],market_price_evidence:["store_code","sku","url"],market_research_cache:["store_code","sku"]};
  const val=(v:string)=>v==="null"?null:/^-?\d+$/.test(v)?Number(v):v;
  function filter(rows:Row[],q:string){
   const p=new URLSearchParams(q);let out=rows;
@@ -18,7 +18,7 @@ function fakeDb(){
    const [op,...rest]=v.split(".");const arg=rest.join(".");
    if(op==="eq")out=out.filter(r=>String(r[k])===String(val(arg)));
    else if(op==="is")out=out.filter(r=>r[k]===null||r[k]===undefined);
-   else if(op==="in"){const set=arg.replace(/[()]/g,"").split(",");out=out.filter(r=>set.includes(String(r[k])));}
+   else if(op==="in"){const set=arg.replace(/[()"]/g,"").split(",");out=out.filter(r=>set.includes(String(r[k])));}
   }
   const order=p.get("order");
   if(order){const [col,dir]=order.split(",")[0].split(".");out=[...out].sort((a,b)=>((Number(b[col])||0)-(Number(a[col])||0))*(dir==="desc"?1:-1));}
@@ -116,6 +116,19 @@ describe("Yawmiyati Brain end to end (fake Taager store, fake Claude)",()=>{
   expect(summary.cost.projection.five_stores_cycle_usd).toBeGreaterThan(0);
   expect(summary.decision.selected).toBe(6);
   expect(summary.merchandising.featured.length).toBeGreaterThan(0);
+  // Shop prices are cached with their date and source page; the per-product summary keeps cheapest, median and cost.
+  expect(t.market_research_cache).toHaveLength(11);expect(t.market_price_evidence).toHaveLength(11);
+  expect(t.market_research_cache[0]).toMatchObject({store_code:"sa",basis:"exact",shops:1,web_searches:2});
+  expect(Number(t.market_research_cache[0].cost_microusd)).toBeGreaterThan(0);
+  expect(String(t.market_price_evidence[0].url)).toMatch(/^https:\/\/www\.amazon\.sa\/dp\//);
+  // A second run within 14 days pays for no research again (idempotent, cheap daily loop).
+  t.brain_runs.push({id:"run-2",store_code:"sa",stage:"ingest",status:"running",cursor:{},progress:{},summary:{},locked_until:null});
+  let again=await step(deps,"run-2");
+  for(let i=0;i<20&&again.status==="running";i++)again=await step(deps,"run-2");
+  expect(again.status).toBe("awaiting_review");
+  expect(calls.research).toBe(11);
+  expect((again.progress as Record<string,number>).research_from_cache).toBe(11);
+  expect(a.filter(r=>r.run_id==="run-2"&&r.stage==="selected")).toHaveLength(6);
  });
 
  it("pauses instead of overspending when the daily budget is reached",async()=>{

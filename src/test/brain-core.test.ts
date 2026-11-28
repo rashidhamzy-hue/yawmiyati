@@ -6,7 +6,7 @@ import {capabilityReport,economicsInputs,familyKey,heuristicMapping,offerKind,ti
 import {decidePrice,expectedPerOrder,floorMinor,freeDeliveryThreshold,marginBps,marketReference,netPerDelivered,pricePoints,profitDelivered,quantityOffers,reprice,undeliveredCostPerDelivered} from "../../supabase/functions/_shared/brain/economics.ts";
 import {audienceCheck,mapCategory,prefilter,riskCheck,selectFinal,merchandise} from "../../supabase/functions/_shared/brain/selection.ts";
 import {costOf,extractJson,estimateMax} from "../../supabase/functions/_shared/brain/anthropic.ts";
-import {parseContent,parseResearch,parseMapping} from "../../supabase/functions/_shared/brain/prompts.ts";
+import {evidenceRows,parseContent,parseResearch,parseMapping,researchPrompt} from "../../supabase/functions/_shared/brain/prompts.ts";
 
 const sa=MARKETS.sa;
 const woo=(over:Record<string,unknown>={})=>({id:101,name:"خفاقة حليب كهربائية",type:"simple",status:"publish",sku:"TG-101",price:"89.00",regular_price:"89.00",sale_price:"",
@@ -275,6 +275,25 @@ describe("AI plumbing",()=>{
   expect(r.listings).toHaveLength(2);
   expect(r.listings[0]).toMatchObject({price_minor:12900,cited:true,confidence:0.9});
   expect(r.listings[1]).toMatchObject({cited:false,confidence:0.3});
+ });
+ it("records each shop's delivery charge and credibility, and keeps only sourced, claim-free facts",()=>{
+  const r=parseResearch({listings:[
+   {retailer:"Noon",url:"https://www.noon.com/p/1",price:"119",delivery:"12.00",currency:"SAR",match:"exact",confidence:0.9,credible:true},
+   {retailer:"Reseller",url:"https://www.noon.com/p/2",price:"39",delivery:null,currency:"SAR",match:"exact",confidence:0.9,credible:false},
+   {retailer:"Noon",url:"https://www.noon.com/p/1#reviews",price:"119",currency:"SAR",match:"exact",confidence:0.9}],
+   facts:[{kind:"material",fact:"Stainless steel whisk head",url:"https://www.noon.com/p/1"},
+    {kind:"use",fact:"Clinically proven to treat hair loss",url:"https://www.noon.com/p/1"},
+    {kind:"size",fact:"About 24 cm long",url:"https://unseen.example/x"},
+    {kind:"weird",fact:"Runs on two AA batteries",url:"notaurl"}],
+   buyer_questions:["Does it need batteries?","Is it dishwasher safe?"]},sa,["https://www.noon.com/p/1","https://www.noon.com/p/2"]);
+  expect(r.listings[0]).toMatchObject({delivery_minor:1200,credible:true});expect(r.listings[1]).toMatchObject({delivery_minor:null,credible:false});
+  expect(r.facts.map(f=>[f.kind,f.cited])).toEqual([["material",true],["size",false]]);
+  expect(r.buyer_questions).toHaveLength(2);
+  expect(r.listings).toHaveLength(2);
+  expect(marketReference(r.listings)).toMatchObject({cheapest_minor:11900+1200,count:1,ignored:1});
+  const rows=evidenceRows("sa","TG-1",r,"2026-11-28T10:00:00.000Z");
+  expect(rows).toHaveLength(2);expect(rows[0]).toMatchObject({store_code:"sa",sku:"TG-1",url:"https://www.noon.com/p/1",price_minor:11900,delivery_minor:1200,credible:true,cited:true,source:"web_search",seen_at:"2026-11-28T10:00:00.000Z"});
+  expect(researchPrompt({title:"x",sku:"1",categories:[],attributes:[],description:"",short_description:"",images:[],videos:[],meta:{}} as never,sa).system).toMatch(/YOUR OWN plain English words \(never copy a sentence\)/);
  });
  it("validates store content and flags supplier names, prices and claims",()=>{
   const ok=parseContent({title:"خفاقة حليب كهربائية",description:"رغوة ناعمة لقهوتك.",seo:{title:"خفاقة حليب",meta_description:"وصف",keywords:["خفاقة حليب"],slug:"Milk Frother!"},category:"kitchen"});

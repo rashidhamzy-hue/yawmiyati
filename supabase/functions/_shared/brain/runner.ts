@@ -7,11 +7,11 @@ import { normalizeWoo, type OfferRow } from "./woo-normalize.ts";
 import { normalizeTaager, TAAGER_MAPPING, type TaagerCatalogRow } from "./taager-normalize.ts";
 import { capabilityReport, offerKind, type FieldMapping } from "./catalog-analysis.ts";
 import { prefilter, finalScore, selectFinal, merchandise, type StoreCategory } from "./selection.ts";
-import { decidePrice, freeDeliveryThreshold, type PriceDecision } from "./economics.ts";
+import { decidePrice, freeDeliveryThreshold, marketReference, type PriceDecision } from "./economics.ts";
 import { quantityOffersDual, salePlan, taagerFacts, type StockPoint } from "./taager-economics.ts";
 import { orderPictures, parsePictureVerdicts, picturePrompt } from "./bundles.ts";
 import { callClaude, estimateMax, extractJson, type Metered } from "./anthropic.ts";
-import { contentPrompt, mappingPrompt, parseContent, parseMapping, parseResearch, researchPrompt } from "./prompts.ts";
+import { contentPrompt, evidenceRows, mappingPrompt, parseContent, parseMapping, parseResearch, researchPrompt } from "./prompts.ts";
 import type { Db } from "./db.ts";
 
 export type WooCreds = { origin: string; key: string; secret: string };
@@ -207,30 +207,62 @@ async function budgetOk(d: Deps, run: Run, settings: Settings, estimate: number)
   return (await spentToday(d.db, run.store_code)) + estimate <= settings.daily_budget_microusd;
 }
 
+/** Shop prices are reused for this long before a product is researched (and paid for) again. */
+export const RESEARCH_MAX_AGE_DAYS = 14;
+
 async function stageResearch(d: Deps, run: Run, m: MarketFacts, settings: Settings, deadline: number) {
   if (!d.anthropicKey) throw Error("missing_anthropic_key");
   const conc = d.concurrency ?? 4;
+  const now = (d.now ?? Date.now)();
   while (Date.now() < deadline - 60_000) {
     const batch = await d.db.select<Analysis>("brain_product_analysis", `select=*&run_id=eq.${run.id}&stage=eq.shortlisted&order=prefilter_score.desc&limit=${conc}`);
     if (!batch.length) { run.stage = "decide"; return; }
-    const est = estimateMax(settings.research_model, 3000, 1500, settings.max_searches_per_product) * batch.length;
-    if (!(await budgetOk(d, run, settings, est))) { run.status = "paused_budget"; return; }
     const offers = await loadOffersByKeys(d.db, run.store_code, batch, runSource(run));
+    // Dated cache first: a product researched within 14 days costs nothing again (idempotent re-runs, cheap daily loop).
+    const fresh = new Map<string, Record<string, unknown>>();
+    try {
+      const skus = batch.map((a) => offers.get(key(a))?.sku).filter((x): x is string => !!x);
+      if (skus.length) {
+        const since = new Date(now - RESEARCH_MAX_AGE_DAYS * 86_400_000).toISOString();
+        const rows = await d.db.select<{ sku: string; research: Record<string, unknown> }>("market_research_cache",
+          `select=sku,research&store_code=eq.${run.store_code}&sku=in.(${skus.map((x) => `"${x.replace(/"/g, "")}"`).join(",")})&researched_at=gte.${since}&limit=${skus.length}`);
+        for (const r of rows) fresh.set(r.sku, r.research);
+      }
+    } catch { /* no cache table yet: research everything */ }
+    const paid = batch.filter((a) => { const sku = offers.get(key(a))?.sku; return !(sku && fresh.has(sku)); });
+    const est = estimateMax(settings.research_model, 3400, 2200, settings.max_searches_per_product) * paid.length;
+    if (paid.length && !(await budgetOk(d, run, settings, est))) { run.status = "paused_budget"; return; }
     await pool(batch, conc, async (a) => {
       const o = offers.get(key(a));
       let research: Record<string, unknown>, cost = 0;
+      const cached = o?.sku ? fresh.get(o.sku) : undefined;
       try {
         if (!o) throw Error("offer_missing");
-        const res = await callClaude({ apiKey: d.anthropicKey!, model: settings.research_model, maxTokens: 1500, temperature: 0,
-          webSearch: { maxUses: settings.max_searches_per_product, country: m.country }, fetchImpl: d.fetchImpl, ...researchPrompt(o, m) });
-        await recordCost(d.db, run, "research", key(a), res.metered);
-        cost = res.metered.cost_microusd;
-        research = { ...parseResearch(extractJson(res.text), m, res.searchedUrls), searches: res.metered.web_searches, cost_microusd: cost };
+        if (cached) research = { ...cached, from_cache: true, cost_microusd: 0 };
+        else {
+          const res = await callClaude({ apiKey: d.anthropicKey!, model: settings.research_model, maxTokens: 2200, temperature: 0,
+            webSearch: { maxUses: settings.max_searches_per_product, country: m.country }, fetchImpl: d.fetchImpl, ...researchPrompt(o, m) });
+          await recordCost(d.db, run, "research", key(a), res.metered);
+          cost = res.metered.cost_microusd;
+          const parsed = parseResearch(extractJson(res.text), m, res.searchedUrls);
+          const at = new Date(now).toISOString();
+          research = { ...parsed, searches: res.metered.web_searches, cost_microusd: cost, researched_at: at };
+          if (o.sku) {
+            try {
+              const ref = marketReference(parsed.listings);
+              const ev = evidenceRows(run.store_code, o.sku, parsed, at);
+              if (ev.length) await d.db.upsert("market_price_evidence", ev, "store_code,sku,url");
+              await d.db.upsert("market_research_cache", [{ store_code: run.store_code, sku: o.sku, research, researched_at: at, cost_microusd: cost, web_searches: res.metered.web_searches,
+                basis: ref.basis, shops: ref.count, shops_ignored: ref.ignored, median_minor: ref.median_minor, cheapest_minor: ref.cheapest_minor, cheapest_retailer: ref.cheapest_retailer }], "store_code,sku");
+            } catch { /* the cache is a saving, never a blocker */ }
+          }
+        }
       } catch (e) { research = { error: String(e).slice(0, 300), listings: [], demand_signals: [] }; }
       await d.db.patch("brain_product_analysis", `run_id=eq.${run.id}&product_id=eq.${a.product_id}&variation_id=eq.${a.variation_id}`,
         { research, stage: "researched", cost_microusd: Number(a.cost_microusd ?? 0) + cost, updated_at: new Date().toISOString() });
     });
     run.progress.researched = Number(run.progress.researched ?? 0) + batch.length;
+    run.progress.research_from_cache = Number(run.progress.research_from_cache ?? 0) + (batch.length - paid.length);
   }
 }
 
