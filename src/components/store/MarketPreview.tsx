@@ -24,6 +24,10 @@ import {fetchPublicCatalog,fetchPublicDetail,fetchPublicSearch,formatListingPric
 import {previewCatalogActive,useOfferVersions} from "@/lib/store/offer-source";
 import {offerListing} from "@/lib/store/offer-version";
 import {OfferProductPanel,FixtureNotice} from "./OfferProductPanel";
+import {ProductTile,GridSkeleton,gridClass} from "./ProductTile";
+import {HomeShelves} from "./HomeShelves";
+import {byRank} from "@/lib/store/store-catalog";
+import {shopCopy} from "@/lib/store/shop-copy";
 
 const {origin,key}=publicBrowserConfig(import.meta.env["VITE_YAWMIYATI_SUPABASE_URL"],import.meta.env["VITE_YAWMIYATI_SUPABASE_PUBLISHABLE_KEY"]);
 const categories=[
@@ -56,15 +60,7 @@ function BrowseProducts({market}:{market:MarketCode}){
  </nav>;
 }
 function ShopCard({item,market,image}:{item:PublicListing;market:MarketCode;image?:{url:string;alt:string}|null}){
- const href=`/${market}/p/${encodeURIComponent(item.slug)}`;
- return <article className="group h-full overflow-hidden rounded-xl border border-border/70 bg-card shadow-soft transition-shadow hover:shadow-md">
-  <a href={href} aria-label={item.title} className="flex h-full min-h-36 flex-col gap-3 p-4 focus-visible:outline focus-visible:outline-primary sm:p-5">
-   {image?<img src={image.url} alt={image.alt} loading="lazy" decoding="async" width={360} height={360} className="-mx-4 -mt-4 aspect-square w-[calc(100%+2rem)] max-w-none bg-surface object-contain sm:-mx-5 sm:-mt-5 sm:w-[calc(100%+2.5rem)]"/>:<div className="-mx-4 -mt-4 flex aspect-square w-[calc(100%+2rem)] flex-col items-center justify-center gap-3 bg-muted/60 text-center text-xs font-bold text-muted-foreground sm:-mx-5 sm:-mt-5 sm:w-[calc(100%+2.5rem)]"><Package className="h-8 w-8 text-primary/60" aria-hidden="true"/><span>صورة المنتج غير متاحة</span></div>}
-   <h3 className="line-clamp-2 min-h-12 text-sm font-bold leading-6 group-hover:text-primary sm:text-base">{item.title}</h3>
-   <p className="mt-auto text-lg font-extrabold text-primary">{formatListingPrice(item,market)}</p>
-   <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">تفاصيل المنتج <ArrowLeft size={14} aria-hidden="true"/></span>
-  </a>
- </article>;
+ return <ProductTile item={item} market={market} image={image}/>;
 }
 export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{market:MarketCode;slug?:string;searchOnly?:boolean;initialSearch?:string}){
  const [rows,setRows]=useState<PublicListing[]|null>(null),[detail,setDetail]=useState<PublicDetail|null>(null);
@@ -110,7 +106,7 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
   const timer=setTimeout(()=>{void fetchPublicSearch(origin,key,market,term).then(result=>{if(alive)setRemoteSearch({query:term,rows:result});}).catch(()=>{if(alive)setRemoteSearch(null);});},280);
   return()=>{alive=false;clearTimeout(timer);};
  },[market,rows,slug,term,offers.state]);
- const localMatches=rows?(term.trim()?smartCatalogSearch(term,rows,100):!searchOnly&&!slug?curateCatalog(rows,experience.categoryOrder):rows):[];
+ const localMatches=rows?(term.trim()?smartCatalogSearch(term,rows,100):!searchOnly&&!slug?curateCatalog(byRank(rows),experience.categoryOrder):rows):[];
  useEffect(()=>setVisibleCount(16),[market,term]);
  const remoteMatches=remoteSearch?.query===term?remoteSearch.rows:[];
  const matchedIds=new Set(localMatches.map(x=>x.listing_id));
@@ -138,11 +134,11 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
     </section>}
    {!slug&&!searchOnly&&<>
     <section id="discover" aria-labelledby="discover-title" className="mx-auto max-w-7xl scroll-mt-24 px-4 pt-5 sm:px-6 lg:px-8">
-    <div role="region" aria-label="الدفع والتوصيل والاسترجاع" className="mb-5">
-     <div className="grid grid-cols-3 divide-x divide-x-reverse overflow-hidden rounded-2xl border bg-card py-3 text-center">
-      {([{Icon:HandCoins,label:customerServiceCopy[market].paymentHeading},{Icon:Truck,label:customerServiceCopy[market].shippingHeading},{Icon:ShieldCheck,label:customerServiceCopy[market].returnsHeading}]).map(({Icon,label})=><a key={label} href={path+"/info/shipping-returns"} className="flex min-h-14 flex-col items-center justify-center gap-2 px-2 text-xs font-bold leading-5 text-primary"><Icon className="h-6 w-6" aria-hidden="true"/>{label}</a>)}
+    <div role="region" aria-label="الدفع والتوصيل والاسترجاع" className="mb-6">
+     <div className="grid grid-cols-3 divide-x divide-x-reverse divide-border rounded-2xl bg-card py-2.5 text-center ring-1 ring-border">
+      {([{Icon:HandCoins,label:customerServiceCopy[market].paymentHeading},{Icon:Truck,label:customerServiceCopy[market].shippingHeading},{Icon:ShieldCheck,label:customerServiceCopy[market].returnsHeading}]).map(({Icon,label})=><a key={label} href={path+"/info/shipping-returns"} className="flex min-h-12 flex-col items-center justify-center gap-1.5 px-1.5 text-[11px] font-semibold leading-4 text-foreground sm:flex-row sm:gap-2.5 sm:text-sm"><Icon className="h-5 w-5 shrink-0" strokeWidth={1.6} aria-hidden="true"/>{label}</a>)}
      </div>
-     <p className="mt-3 text-center text-xs leading-6 text-muted-foreground">{customerServiceCopy[market].shipping}</p>
+     <p className="mt-2.5 text-center text-xs leading-6 text-muted-foreground">{customerServiceCopy[market].shipping}</p>
     </div>
      <div className="flex items-center justify-between gap-3"><h2 id="discover-title" className="font-display text-lg font-extrabold sm:text-xl">{experience.discoverTitle}</h2><span className="hidden text-xs text-muted-foreground sm:inline">{experience.discoveryNote}</span></div>
      <nav aria-label="تسوقي حسب القسم" className="storefront-category-strip mt-3">{orderedCategories.map(c=><a key={c.slug} href={path+"/c/"+c.slug} className="group flex min-w-0 flex-col items-center gap-2 rounded-lg px-1 py-1 text-center"><div className="aspect-square w-full overflow-hidden rounded-2xl bg-muted"><img src={c.picture} srcSet={editorialSrcSet(c.picture)} sizes="(max-width: 640px) 110px, 180px" alt="" width={80} height={80} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"/></div><h3 className="text-xs font-bold leading-5 group-hover:text-primary sm:text-sm">{c.name}</h3></a>)}</nav>
@@ -151,18 +147,18 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
 
    <section id="collection" className={"mx-auto max-w-7xl scroll-mt-24 px-4 pb-8 sm:px-6 lg:px-8 "+(searchOnly||slug?"pt-8 sm:pt-12":"pt-6 sm:pt-8")}>
     {slug&&<nav aria-label="مسار التنقل" className="mb-4 flex flex-wrap items-center gap-2 text-xs font-bold text-muted-foreground sm:text-sm"><a href={path} className="inline-flex min-h-9 items-center text-primary hover:underline">الرئيسية</a><span aria-hidden="true">/</span>{(()=>{const categorySlug=offerVersion?.category_slug??detail?.approved_category_slugs?.[0]??null;const category=categories.find(c=>c.slug===categorySlug);return category?<><a href={path+"/c/"+category.slug} className="inline-flex min-h-9 items-center text-primary hover:underline">{category.name}</a><span aria-hidden="true">/</span></>:<><a href={path+"/search"} className="inline-flex min-h-9 items-center text-primary hover:underline">كل المنتجات</a><span aria-hidden="true">/</span></>;})()}<span aria-current="page" className="text-foreground">تفاصيل المنتج</span></nav>}
-    <div className="flex flex-wrap items-end justify-between gap-5">{homePage?<h2 className="font-display text-xl font-extrabold sm:text-3xl">{experience.collectionTitle}</h2>:searchOnly?null:slug&&offerVersion?null:<SectionIntro eyebrow={shopName} title="تفاصيل المنتج"/>}</div>
+    <div className="flex flex-wrap items-end justify-between gap-5">{homePage?<h2 className="ym-h2">{experience.collectionTitle}</h2>:searchOnly?null:slug&&offerVersion?null:<SectionIntro eyebrow={shopName} title="تفاصيل المنتج"/>}</div>
     {searchOnly&&(!rows||error||!origin||!key)&&<div className="mb-5 space-y-3"><p className="text-[11px] font-extrabold text-primary">{shopName}</p><h1 className="font-display text-2xl font-extrabold sm:text-3xl">كل المنتجات</h1><label className="block text-sm font-bold">ابحثي في المنتجات<input type="search" aria-label="بحث المنتجات المعتمدة" maxLength={120} value={term} onChange={e=>setTerm(e.target.value)} placeholder="ابحثي باسم المنتج أو القسم" className="field mt-2 min-h-12 w-full"/></label></div>}
     {searchOnly&&rows!==null&&!error?<ApprovedCatalogBrowser market={market} products={rows} images={Object.fromEntries(rows.map(row=>[row.listing_id,imageFor(row)]))}/>:browseEmpty?<BrowseProducts market={market}/>:homePage&&error?<><BrowseProducts market={market}/><div role="alert" className="mx-auto max-w-7xl px-4 pb-6 text-center text-sm text-muted-foreground"><p>تعذّر تحديث المنتجات الآن. يمكنك تصفّح الأقسام أو المحاولة مجدداً.</p><Button variant="outline" className="mt-3 min-h-10" onClick={()=>setAttempt(v=>v+1)}>إعادة المحاولة</Button></div></>:offers.state==="off"&&(!origin||!key)?<EmptyProducts title="تعرّفي على مجموعات يومياتي" message="تظهر هنا المنتجات التي تتوافر لها بيانات معتمدة. اكتشفي أقسام البيت والجمال والعناية."/>
     :error?<div role="alert" className="mt-8 rounded-3xl border bg-card p-8 text-center"><h3 className="font-bold">تعذّر تحميل المنتجات في الوقت الحالي</h3><Button variant="outline" className="mt-4 min-h-11" onClick={()=>setAttempt(v=>v+1)}>إعادة المحاولة</Button></div>
-    :rows===null?<div role="status" aria-live="polite" className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">{Array.from({length:4},(_,i)=><div key={i} className="animate-pulse rounded-2xl border bg-card p-3"><div className="aspect-square rounded-xl bg-muted"/><div className="mt-3 h-4 w-3/4 rounded bg-muted"/><div className="mt-3 h-4 w-1/2 rounded bg-muted"/></div>)}</div>
+    :rows===null?<div className="mt-6"><GridSkeleton count={slug?4:8}/></div>
     :slug&&offerVersion&&offerVersions?<div className="mt-8"><OfferProductPanel key={offerVersion.version_id} market={market} version={offerVersion} versions={offerVersions}/>
-      <div className="mt-8"><h3 className="mb-4 font-display text-xl font-extrabold">اختيارات أخرى من يومياتي</h3><div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{recommendOffers(offerVersion,offerVersions).map(v=><ShopCard key={v.listing_id} item={offerListing(v)} market={market} image={v.image}/>)}</div></div></div>
+      <div className="mt-8"><h3 className="mb-4 font-display text-xl font-extrabold">اختيارات أخرى من يومياتي</h3><div className={gridClass}>{recommendOffers(offerVersion,offerVersions).map(v=><ShopCard key={v.listing_id} item={offerListing(v)} market={market} image={v.image}/>)}</div></div></div>
     :slug&&offerVersions?<EmptyProducts title="هذا المنتج غير موجود في الكتالوج" message="قد تتغير حالة المنتجات بحسب اعتماد البيانات والتوافر."/>
     :slug?detail?<div className="mt-8"><ReleasedEditorial key={market+slug} origin={origin} apiKey={key} market={market} slug={slug} fallback={<ReleasedProductPage key={detail.listing_id} origin={origin} apiKey={key} market={market} detail={detail} fallback={<ApprovedProductGallery market={market} detail={detail}/>}/>}/>
-      <div className="mt-8"><h3 className="mb-4 font-display text-xl font-extrabold">اختيارات أخرى من يومياتي</h3>{relatedVerifiedProducts(detail,rows).length?<div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{relatedVerifiedProducts(detail,rows).map(item=><ShopCard key={item.listing_id} item={item} market={market} image={imageFor(item)}/>)}</div>:<p className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">تصفحي المزيد من الأقسام والمنتجات المعتمدة في يومياتي.</p>}</div></div>
+      <div className="mt-8"><h3 className="mb-4 font-display text-xl font-extrabold">اختيارات أخرى من يومياتي</h3>{relatedVerifiedProducts(detail,rows).length?<div className={gridClass}>{relatedVerifiedProducts(detail,rows).map(item=><ShopCard key={item.listing_id} item={item} market={market} image={imageFor(item)}/>)}</div>:<p className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">تصفحي المزيد من الأقسام والمنتجات المعتمدة في يومياتي.</p>}</div></div>
     :<EmptyProducts title="هذا المنتج غير موجود في الكتالوج" message="قد تتغير حالة المنتجات بحسب اعتماد البيانات والتوافر."/>
-    :matching.length?<>{offerVersions&&<div className="mt-5"><FixtureNotice/></div>}<div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">{matching.slice(0,visibleCount).map(item=><ShopCard key={item.listing_id} item={item} market={market} image={imageFor(item)}/>)}</div>{matching.length>visibleCount&&<div className="mt-6 text-center"><p className="mb-3 text-xs text-muted-foreground">{Math.min(visibleCount,matching.length)} / {matching.length}</p><button type="button" className="btn-outline" onClick={()=>setVisibleCount(n=>n+16)}>عرض المزيد من المنتجات</button></div>}</>
+    :matching.length?<>{offerVersions&&<div className="mt-5"><FixtureNotice/></div>}{homePage&&!term.trim()&&!offerVersions?<HomeShelves market={market} rows={matching} categories={orderedCategories.map(c=>({slug:c.slug,name:c.name}))}/>:<><div className={"mt-6 "+gridClass}>{matching.slice(0,visibleCount).map((item,i)=><ShopCard key={item.listing_id} item={item} market={market} image={imageFor(item)}/>)}</div>{matching.length>visibleCount&&<div className="mt-8 text-center"><p className="mb-3 text-xs text-muted-foreground">{Math.min(visibleCount,matching.length)} / {matching.length}</p><button type="button" className="btn-outline" onClick={()=>setVisibleCount(n=>n+16)}>عرض المزيد من المنتجات</button></div>}</>}</>
     :<EmptyProducts title={rows.length?"لم نجد منتجات مطابقة":"من هنا تبدأ اختياراتك"} message={rows.length?"جرّبي البحث بكلمة مختلفة.":"تصفّحي الأقسام واستكشفي الأفكار اللي تعجبك."}/>}
    </section>
    {!slug&&!searchOnly&&<>
