@@ -14,18 +14,18 @@ export function ProductTile({item,market,image,eager=false,showOffer=false,class
  const copy=shopCopy(market),picture=image===undefined?listingImage(item):image,href=productHref(market,item.slug);
  return <article className={"group relative min-w-0 "+className} data-product-tile="">
   <a href={href} aria-label={item.title} className="flex h-full flex-col rounded-2xl">
-   <span className="relative block aspect-square overflow-hidden rounded-2xl bg-surface">
+   <div className="relative aspect-square overflow-hidden rounded-2xl bg-surface">
     {picture?<img src={picture.url} alt={picture.alt||item.title} width={360} height={360} loading={eager?"eager":"lazy"} decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"/>
      :<span className="grid h-full w-full place-items-center font-display text-2xl text-muted-foreground/50" aria-hidden="true">يومياتي</span>}
     {(item.kind==="bundle"||(showOffer&&item.offer))&&<span className="pointer-events-none absolute start-2 top-2 flex flex-col items-start gap-1">
      {item.kind==="bundle"&&<span className="ym-chip ym-chip-ink"><Layers className="h-3 w-3" aria-hidden="true"/>{copy.bundleChip}</span>}
      {showOffer&&item.offer&&item.kind!=="bundle"&&<span className="ym-chip bg-card/95 shadow-sm"><Tag className="h-3 w-3" aria-hidden="true"/>{copy.offerChip}</span>}
     </span>}
-   </span>
-   <span className="flex flex-1 flex-col px-0.5 pt-2.5">
+   </div>
+   <div className="flex flex-1 flex-col px-0.5 pt-2.5">
     <h3 className="line-clamp-2 min-h-[2.75rem] font-sans text-[13px] font-medium leading-[1.375rem] text-foreground group-hover:underline sm:text-sm">{item.title}</h3>
-    <span className="ym-price mt-1.5 block text-[15px] sm:text-base">{formatPrice(item.price_minor,market)}</span>
-   </span>
+    <p className="ym-price mt-1.5 text-[15px] sm:text-base">{formatPrice(item.price_minor,market)}</p>
+   </div>
   </a>
  </article>;
 }
