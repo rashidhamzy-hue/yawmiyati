@@ -18,6 +18,7 @@ import { captureError } from "@/lib/monitoring/sentry-client";
 import { CONSENT_PRECHECK_SCRIPT } from "@/lib/analytics/analytics";
 import {img} from "@/lib/store/images";
 import {chromeCopy,marketFromPath} from "@/lib/store/chrome-copy";
+import {pageCopy} from "@/lib/store/page-copy";
 import {ArrowRight,RefreshCw,Search} from "lucide-react";
 
 function useChrome(){
@@ -31,7 +32,7 @@ function NotFoundComponent() {
    <div className="mx-auto max-w-5xl overflow-hidden rounded-[2rem] border bg-card shadow-soft lg:grid lg:grid-cols-2">
     <img src={img["cat-home"]} alt={copy.notFoundAlt} width={1200} height={800} className="h-56 w-full object-cover lg:h-full" loading="lazy"/>
     <div className="flex flex-col justify-center px-7 py-12 sm:px-12">
-     <a href={home} className="font-display text-2xl font-extrabold text-primary">يومياتي<span className="text-gold">.</span></a>
+     <a href={home} className="font-display text-2xl font-extrabold text-primary">{copy.brand}<span className="text-gold">.</span></a>
      <p className="mt-7 text-sm font-bold text-muted-foreground">{copy.notFoundBadge}</p>
      <h1 className="ym-h2 mt-3">{copy.notFoundTitle}</h1>
      <p className="ym-body mt-4">{copy.notFoundBody}</p>
@@ -46,7 +47,7 @@ function ErrorComponent({error,reset}:ErrorComponentProps){
  useEffect(()=>{reportLovableError(error,{boundary:"tanstack_root_error_component"});captureError(error,{boundary:"tanstack_root_error_component"});},[error]);
  return <main dir="rtl" className="min-h-screen bg-background px-4 py-12 text-foreground sm:py-20">
   <div className="mx-auto max-w-3xl rounded-[2rem] border bg-card p-7 text-center shadow-soft sm:p-14">
-   <a href={home} className="font-display text-2xl font-extrabold text-primary">يومياتي<span className="text-gold">.</span></a>
+   <a href={home} className="font-display text-2xl font-extrabold text-primary">{copy.brand}<span className="text-gold">.</span></a>
    <h1 className="ym-h2 mt-8">{copy.errorTitle}</h1>
    <p className="ym-body mt-4">{copy.errorBody}</p>
    <div className="mt-7 flex flex-wrap justify-center gap-3"><button type="button" onClick={()=>{router.invalidate();reset();}} className="btn-primary"><RefreshCw className="h-4 w-4" aria-hidden="true"/>{copy.errorRetry}</button><a href={home} className="btn-outline">{copy.errorHome}</a></div>
@@ -62,12 +63,12 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "يومياتي" },
-      { name: "description", content: "يومياتي — تجربة عربية للمنزل والجمال والعناية" },
+      { title: chromeCopy("sa").brand },
+      { name: "description", content: pageCopy("sa").metaDescription },
       { name: "robots", content: "noindex,nofollow" }, // M4A: fail closed until launch authorization
       
-      { property: "og:title", content: "يومياتي" },
-      { property: "og:description", content: "يومياتي — تجربة عربية للمنزل والجمال والعناية" },
+      { property: "og:title", content: chromeCopy("sa").brand },
+      { property: "og:description", content: pageCopy("sa").metaDescription },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       

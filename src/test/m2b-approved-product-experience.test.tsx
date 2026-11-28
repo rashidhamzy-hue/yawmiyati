@@ -82,7 +82,7 @@ describe("M2B approved UI",()=>{
     const articles=container.querySelectorAll("article");
     expect(within(articles[0] as HTMLElement).getByText(sa[0].title)).toBeTruthy();
     fireEvent.change(screen.getByRole("searchbox",{name:"بحث المنتجات"}),{target:{value:"لا يوجد"}});
-    expect(screen.getByText("ما لقينا منتجات تطابق اختياراتك")).toBeTruthy();
+    expect(screen.getByText("ما لقينا منتجات مطابقة")).toBeTruthy();
     fireEvent.change(screen.getByRole("searchbox",{name:"بحث المنتجات"}),{target:{value:""}});
     fireEvent.change(screen.getByRole("textbox",{name:"أقل سعر"}),{target:{value:"abc"}});
     expect(screen.getByRole("alert")).toBeTruthy();

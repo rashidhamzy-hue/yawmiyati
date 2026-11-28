@@ -1,4 +1,5 @@
 import {describe,it,expect,vi} from "vitest";
+import {pageCopy} from "../lib/store/page-copy";
 import {render,screen,fireEvent,waitFor} from "@testing-library/react";
 import {readFileSync} from "node:fs";
 import {StoreHeader,StoreFooter} from "../components/store/StoreChrome";
@@ -66,7 +67,7 @@ describe("M10C mobile storefront details",()=>{
   expect(category.container.textContent).not.toMatch(/لا يدّعي تصنيف|معلومات معتمدة/);
   category.unmount();
   const guard=render(<StoreCommerceGuard market={market} type="checkout"/>);
-  expect(guard.container.textContent).toContain("تصفّحي الأقسام");
+  expect(guard.container.textContent).toContain(pageCopy(market).browseHint); // each market in its own words
   expect(guard.container.textContent).not.toMatch(/بناءً على بيانات معتمدة/);
  });
  it("assistant visibility moves composer above mobile nav and removes global state on close/unmount",async()=>{

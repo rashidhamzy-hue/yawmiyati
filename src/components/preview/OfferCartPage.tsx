@@ -6,7 +6,7 @@ import { formatMinor, priceOfferCart, type ApprovedOfferVersion, type PricedLine
 import { cartSuggestions } from "@/lib/store/offer-recommendations";
 import { addOfferLine, removeOfferLine, setOfferZone, updateOfferLine, useOfferCart } from "@/lib/store/offer-cart";
 import { FixtureNotice } from "./OfferProductPanel";
-import { CodCheckoutForm } from "./CodCheckoutForm";
+import { CodCheckoutForm } from "@/components/store/CodCheckoutForm";
 
 const money = (market: MarketCode, minor: bigint) => minor > 0n ? formatMinor(market, minor) : "مشمول";
 function selectableCartPacks(row:PricedLine,zoneId:string|null){

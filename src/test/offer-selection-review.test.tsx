@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
-import { OfferSelectionDemo } from "../components/store/OfferSelectionDemo";
+import { OfferSelectionDemo } from "../components/owner/OfferSelectionDemo";
 
 afterEach(cleanup);
 

@@ -85,7 +85,7 @@ function hardcoded(file: string): number {
   }
   return n;
 }
-/** Sentences still written inside components on 28 Nov 2026. Lower a number when you move text to the dictionary; never raise one. */
+/** No customer-facing sentence lives in a storefront component (ceiling file is empty since session 4). Preview-only and owner components sit in src/components/preview and src/components/owner. */
 const CEILING: Record<string, number> = JSON.parse(readFileSync(join(import.meta.dir, "market-dictionary-ceiling.json"), "utf8"));
 const dirs = ["src/components/store", "src/components/analytics"];
 const counts: Record<string, number> = {};

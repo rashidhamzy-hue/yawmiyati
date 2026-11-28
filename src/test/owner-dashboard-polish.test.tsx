@@ -6,7 +6,7 @@ const cur:Record<string,string>={sa:"SAR",ae:"AED",om:"OMR",eg:"EGP",iq:"IQD"};
 vi.mock("@/components/store/CommercialReview",()=>({CommercialReview:()=> <div>commercial-review</div>}));
 vi.mock("../components/store/EditorialImport",()=>({EditorialImport:()=> <div>editorial-import</div>}));
 vi.mock("../components/store/AccountOfferReview",()=>({AccountOfferReview:()=> <div>offer-review</div>}));
-vi.mock("../components/store/OfferSelectionDemo",()=>({OfferSelectionDemo:()=> <div>offer-demo</div>}));
+vi.mock("../components/owner/OfferSelectionDemo",()=>({OfferSelectionDemo:()=> <div>offer-demo</div>}));
 vi.mock("@/components/store/OwnerActionQueue",()=>({OwnerActionQueue:()=> <div>action-queue</div>}));
 vi.mock("../lib/store/dashboard-client",()=>({dashboardClient:()=>({
  signIn:async()=>"token-1",signInSession:async()=>({access:"token-1",refresh:null,expiresIn:3600}),

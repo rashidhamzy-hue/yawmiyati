@@ -33,7 +33,7 @@ describe("Yawmiyati premium storefront",()=>{
  });
  it("keeps a protected product detail unavailable without a configured catalog",()=>{
   render(<MarketPreview market="ae" slug="not-a-product"/>);
-  expect(screen.getByText("تعرّفي على مجموعات يومياتي")).toBeTruthy();
+  expect(screen.getByText("تعرّفي على أقسام يومياتي")).toBeTruthy();
   expect(screen.queryByText(/سعر تجريبي/)).toBeNull();
  });
 });
