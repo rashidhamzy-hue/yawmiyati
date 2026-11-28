@@ -6,7 +6,7 @@ import type {MarketCode} from "./markets";
 const base={
  seeAll:"عرض الكل",allProducts:"كل المنتجات",loadMore:"عرض المزيد",retry:"إعادة المحاولة",
  bundleChip:"طقم",offerChip:"وفّري أكثر",videoChip:"فيديو",
- loadError:"تعذّر تحميل المنتجات الآن.",noResults:"لا توجد منتجات مطابقة.",
+ loadError:"تعذّر تحميل المنتجات الآن.",noResults:"لا توجد نتائج مطابقة.",
  sectionEmptyTitle:"لا توجد منتجات في هذا القسم الآن",sectionEmptyBody:"تصفّحي بقية الأقسام أو كل المنتجات.",
  sortLabel:"ترتيب المنتجات",sortFeatured:"اختيارات يومياتي",sortLow:"السعر: الأقل أولاً",sortHigh:"السعر: الأعلى أولاً",
  filter:"تصفية",searchInSection:"ابحثي في هذا القسم",priceFrom:"من السعر",priceTo:"إلى السعر",priceRangeError:"تحققي من نطاق السعر.",
