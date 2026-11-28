@@ -7,6 +7,8 @@ import {catalogConfig,useStoreCatalog} from "@/lib/store/store-catalog";
 import {useStoreOffers,type StoreBundle} from "@/lib/store/store-offers";
 import {MAX_LINE_QUANTITY,cartCount,lineId,priceForQuantity,setLineQuantity,useShopCart,type CartLine,type QuantityOffer} from "@/lib/store/shop-cart";
 import {deliveryFee,egyptDestinations} from "@/lib/store/delivery-fees";
+import {freeDeliveryState} from "@/lib/store/free-delivery";
+import {FreeDeliveryBar} from "./FreeDelivery";
 import {cartAddOns} from "@/lib/store/recommendations";
 import {customerServiceCopy} from "@/lib/store/customer-service-copy";
 import {shopCopy} from "@/lib/store/shop-copy";
@@ -38,7 +40,7 @@ export function priceCart(lines:readonly CartLine[],rows:readonly PublicListing[
  const ok=priced.filter(p=>p.available);
  return {lines:priced,subtotal:ok.reduce((s,p)=>s+p.total,0n),saving:ok.reduce((s,p)=>s+p.saving,0n),blocked:priced.some(p=>!p.available)};
 }
-function useLineOffers(market:MarketCode,lines:readonly CartLine[]){
+export function useLineOffers(market:MarketCode,lines:readonly CartLine[]){
  const [map,setMap]=useState<Map<string,QuantityOffer[]>>(new Map());
  const wanted=lines.filter(l=>l.kind==="item").map(l=>(l as {listing_id:string}).listing_id+"|"+l.slug).sort().join(",");
  useEffect(()=>{
@@ -63,24 +65,24 @@ export function ShopCartPage({market,type}:{market:MarketCode;type:"cart"|"check
  const priced=useMemo(()=>priceCart(cart.lines,rows,offers.bundles,lineOffers),[cart.lines,rows,offers.bundles,lineOffers]);
  // The order bar owns the thumb zone here too (same rule as product pages).
  useEffect(()=>{document.body.classList.add("yawmiyati-product-page");return()=>document.body.classList.remove("yawmiyati-product-page");},[]);
- useEffect(()=>{if(type==="checkout"&&cart.lines.length)track("checkout_viewed",{market,lines:cart.lines.length});},[type,market,cart.lines.length]);
+ const fd=useMemo(()=>freeDeliveryState(priced.lines,offers,lineOffers,priced.blocked),[priced,offers,lineOffers]);
+ // Funnel + order value with and without free delivery (the brain uses it to tune the threshold later). No personal data.
+ const ready=catalog.state==="ready",subtotalText=priced.subtotal.toString(),usesOffer=priced.saving>0n,hasSet=cart.lines.some(l=>l.kind==="bundle");
+ useEffect(()=>{if(ready&&cart.lines.length)track(type==="checkout"?"checkout_viewed":"cart_viewed",{market,lines:cart.lines.length,value_minor:subtotalText,
+  free_delivery:fd.free,free_delivery_why:fd.why??"",free_delivery_offered:fd.offered,quantity_offer:usesOffer,set:hasSet});},[type,market,cart.lines.length,ready,subtotalText,fd.free,fd.why,fd.offered,usesOffer,hasSet]);
  if(catalog.state==="loading")return <section className="mx-auto max-w-3xl px-4 py-8" aria-busy="true"><div className="ym-skeleton h-8 w-32"/><div className="mt-6 space-y-3">{[0,1].map(i=><div key={i} className="ym-skeleton h-24"/>)}</div></section>;
  if(catalog.state==="error")return <section className="mx-auto max-w-3xl px-4 py-16 text-center"><p className="ym-body" role="alert">{copy.loadError}</p><button type="button" className="btn-outline mt-5" onClick={catalog.retry}>{copy.retry}</button></section>;
- const fee=deliveryFee(market,destination),threshold=offers.free_delivery?BigInt(offers.free_delivery.threshold_minor):null;
- const free=threshold!==null&&priced.subtotal>=threshold&&!priced.blocked;
+ const fee=deliveryFee(market,destination);
+ // Free delivery comes only from owner-approved rules: a product with delivery in its price, or enough ELIGIBLE products.
+ const free=fd.free;
  const total=free?priced.subtotal:fee===null?null:priced.subtotal+BigInt(fee);
- const left=threshold!==null&&!free?threshold-priced.subtotal:0n;
- const progress=threshold!==null?Math.min(100,Number(priced.subtotal*100n/threshold)):0;
  const inCartRows=priced.lines.flatMap(p=>p.row?[p.row]:[]);
  const addOns=cartAddOns(inCartRows,rows,3);
  const title=(p:PricedLine)=>p.row?.title??p.bundle?.title??p.line.title;
  const picture=(p:PricedLine)=>p.row?.image??p.line.image??(p.bundle?rows.find(r=>r.listing_id===p.bundle!.items[0]!.listing_id)?.image:undefined)??null;
 
  const summary=<div className="ym-card space-y-3 p-4 sm:p-5" data-cart-summary="">
-  {threshold!==null&&<div className="rounded-xl bg-primary-soft px-3.5 py-3" data-free-delivery="">
-   <p className={"flex items-center gap-2 text-sm font-semibold "+(free?"text-success":"")}>{free?<Check className="h-4 w-4" aria-hidden="true"/>:<Truck className="h-4 w-4" aria-hidden="true"/>}{free?copy.freeDeliveryReached:copy.freeDeliveryLeft(formatPrice(left,market))}</p>
-   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-border" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress} aria-label={copy.freeDeliveryReached}><div className={"h-full rounded-full transition-all duration-500 "+(free?"bg-success":"bg-foreground")} style={{width:progress+"%"}}/></div>
-  </div>}
+  <FreeDeliveryBar market={market} state={fd} where="cart"/>
   {market==="eg"&&<label className="block text-sm font-semibold">{copy.destination}
    <select value={destination} onChange={e=>chooseDestination(e.target.value)} className="field mt-1.5 text-base"><option value="">{copy.chooseDestination}</option>{egyptDestinations.map(d=><option key={d} value={d}>{d}</option>)}</select>
   </label>}

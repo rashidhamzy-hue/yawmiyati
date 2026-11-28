@@ -14,8 +14,24 @@ export type PublicListing={listing_id:string;slug:string;title:string;price_mino
  /** "bundle" only for a supplier-declared bundle whose contents are known. */
  kind?:"bundle";
  /** True when an owner-approved quantity offer exists for this listing. */
- offer?:boolean};
-export function parsePublicListings(data:unknown,market:MarketCode):PublicListing[]{
+ offer?:boolean;
+ /**
+  * An owner-approved time-limited price that is running now. price_minor above is then the offer price;
+  * list_price_minor is the normal price. was_price_minor is present only when the product really was on the
+  * store at that price before (the only case a crossed-out price may be shown).
+  */
+ sale?:{ends_at:string;list_price_minor:string;was_price_minor?:string};
+ /** Counts toward the approved free-delivery basket right now. */
+ free_delivery?:boolean;
+ /** The delivery fee is inside this product's price (an order with it ships free). */
+ delivery_included?:boolean;
+ /** Introduced by the supplier within the last 30 days. */
+ is_new?:boolean;
+ /** Stock at the supplier is moving fast these days (supplier-wide signal, not a sales claim about this store). */
+ trending?:boolean};
+const futureIso=(v:unknown,now:number):v is string=>typeof v==="string"&&v.length<=40&&Number.isFinite(Date.parse(v))&&Date.parse(v)>now;
+const minorNumber=(v:unknown):v is number=>Number.isSafeInteger(v)&&(v as number)>0;
+export function parsePublicListings(data:unknown,market:MarketCode,now:number=Date.now()):PublicListing[]{
  if(!Array.isArray(data)||data.length>100)throw Error("Invalid catalog response");
  const seen=new Set<string>();
  return data.map(raw=>{
@@ -35,7 +51,13 @@ export function parsePublicListings(data:unknown,market:MarketCode):PublicListin
   if(r.rank!==undefined&&r.rank!==null&&(!Number.isSafeInteger(r.rank)||Number(r.rank)<1))throw Error("Invalid merchandising rank");
   if(r.kind!==undefined&&r.kind!==null&&r.kind!=="bundle")throw Error("Invalid listing kind");
   if(r.offer!==undefined&&r.offer!==null&&typeof r.offer!=="boolean")throw Error("Invalid offer flag");
-  return {listing_id:r.listing_id,slug:r.slug,title:r.title,price_minor:r.price_minor,currency:r.currency,
+  // A running offer price is used only while it is really lower and its end date is still ahead (fail closed to the normal price).
+  const onSale=minorNumber(r.sale_price_minor)&&r.sale_price_minor<Number(r.price_minor)&&futureIso(r.sale_ends_at,now);
+  const was=onSale&&minorNumber(r.was_price_minor)&&r.was_price_minor>(r.sale_price_minor as number)?String(r.was_price_minor):null;
+  return {listing_id:r.listing_id,slug:r.slug,title:r.title,price_minor:onSale?String(r.sale_price_minor):r.price_minor,currency:r.currency,
+    ...(onSale?{sale:{ends_at:r.sale_ends_at as string,list_price_minor:r.price_minor,...(was?{was_price_minor:was}:{})}}:{}),
+    ...(r.free_delivery===true?{free_delivery:true}:{}),...(r.delivery_included===true?{delivery_included:true}:{}),
+    ...(r.is_new===true?{is_new:true}:{}),...(r.trending===true?{trending:true}:{}),
     ...(declared?{approved_category_slugs:[...(categories as PublicCategorySlug[])]}:{}),
     ...(r.popularity_rank!==undefined?{popularity_rank:r.popularity_rank as number}:{}),
     ...(typeof r.image==="string"?{image:r.image}:{}),
@@ -137,11 +159,14 @@ export type PublicProductPage={listing_id:string;category:PublicCategorySlug|nul
  seo:{title:string;description:string};images:{id:string;alt:string}[];
  videos:string[];
  /** Brain-built "N for X" offers, already re-checked against the supplier's current cost by the database. */
- quantity_offers:{quantity:number;price_minor:number}[];
+ quantity_offers:{quantity:number;price_minor:number;free_delivery?:boolean}[];
  /** What a bundle contains, from the supplier's declared bundle items only. */
  bundle:{name:string;quantity:number;image:string|null}[];
  /** "low" only when the supplier itself reports low quantity for this product right now. Never invented. */
- stock_signal:"low"|null};
+ stock_signal:"low"|null;
+ /** Owner-approved time-limited price running now; was_price_minor only when that price was really charged before. */
+ sale:{price_minor:number;ends_at:string;was_price_minor:number|null}|null;
+ free_delivery:boolean;delivery_included:boolean};
 const text=(v:unknown,max:number)=>typeof v==="string"?v.trim().slice(0,max):"";
 const list=(v:unknown,max:number)=>Array.isArray(v)?v.slice(0,max):[];
 const record=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==="object"&&!Array.isArray(v);
@@ -163,10 +188,13 @@ export function parsePublicProductPage(data:unknown,market:MarketCode,listingId:
   videos:[...new Set(list(data.videos,3).filter(isProductVideoId))],
   quantity_offers:list(data.quantity_offers,4).filter(record)
    .filter(q=>Number.isInteger(q.quantity)&&(q.quantity as number)>=2&&(q.quantity as number)<=5&&Number.isSafeInteger(q.price_minor)&&(q.price_minor as number)>0)
-   .map(q=>({quantity:q.quantity as number,price_minor:q.price_minor as number})),
+   .map(q=>({quantity:q.quantity as number,price_minor:q.price_minor as number,...(q.free_delivery===true?{free_delivery:true}:{})})),
   bundle:list(data.bundle,12).filter(record).filter(b=>text(b.name,160)&&Number.isInteger(b.quantity)&&(b.quantity as number)>=1&&(b.quantity as number)<=50)
    .map(b=>({name:text(b.name,160),quantity:b.quantity as number,image:isProductMediaId(b.image)?b.image as string:null})),
-  stock_signal:data.stock_signal==="low"?"low":null};
+  stock_signal:data.stock_signal==="low"?"low":null,
+  sale:record(data.sale)&&minorNumber(data.sale.price_minor)&&futureIso(data.sale.ends_at,Date.now())
+   ?{price_minor:data.sale.price_minor,ends_at:data.sale.ends_at,was_price_minor:minorNumber(data.sale.was_price_minor)&&data.sale.was_price_minor>data.sale.price_minor?data.sale.was_price_minor:null}:null,
+  free_delivery:data.free_delivery===true,delivery_included:data.delivery_included===true};
 }
 export async function fetchPublicProductPage(origin:string,key:string,market:MarketCode,slug:string,listingId:string,request:typeof fetch=fetch):Promise<PublicProductPage|null>{
  if(typeof slug!=="string"||!slug||slug.length>200||/[/?#\\]/.test(slug))throw Error("Invalid product slug");

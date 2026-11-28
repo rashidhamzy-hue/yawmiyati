@@ -63,7 +63,10 @@ const BANNED: [RegExp, string][] = [
   [/خصم \d+ ?٪|خصم ٪|تخفيضات حتى|الأكثر مبيعاً|الأكثر مبيعا|الأعلى تقييماً|\d+ ?تقييم|عميلة سعيدة|ضمان استرجاع المال/, "unproven claim (discount, best seller, ratings, guarantee)"],
   [/شحن مجاني لكل الطلبات|توصيل مجاني لكل الطلبات|توصيل مجاني دائماً/, "blanket free delivery"],
 ];
-for (const m of MARKETS) for (const e of dict[m]) for (const [re, why] of BANNED) if (re.test(e.text)) fail(`[banned] ${m}.${e.key}: ${why}: "${e.text.slice(0, 70)}"`);
+// The one place an end-of-offer line is allowed: the countdown rendered ONLY from an owner-approved offer's real end date
+// (public_product_page.sale.ends_at, itself tied to the supplier sale's end). Any other urgency wording stays banned.
+const REAL_END_DATE_KEY = /^shop\.offerEndsIn\(\)$/;
+for (const m of MARKETS) for (const e of dict[m]) for (const [re, why] of BANNED) if (re.test(e.text) && !(why === "invented urgency" && REAL_END_DATE_KEY.test(e.key))) fail(`[banned] ${m}.${e.key}: ${why}: "${e.text.slice(0, 70)}"`);
 
 // ---- 4. Dialect markers that belong to one market only ----
 const B = "(?<![\\u0600-\\u06FF\\u0750-\\u077F])", A = "(?![\\u0600-\\u06FF\\u0750-\\u077F])"; // Arabic word boundaries
