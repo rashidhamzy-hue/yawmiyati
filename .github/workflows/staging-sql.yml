@@ -1,0 +1,37 @@
+# Applies ONE repository migration to the STAGING database, or runs ONE rollback-only test file there.
+# Started by hand only (workflow_dispatch), from main only, and only for the staging project below.
+# It reads the SQL from the repository at the checked-out commit, so what runs is exactly what was reviewed and merged.
+#   kind=migration : supabase/migrations/<file>.sql inside one transaction, then recorded in the migration history.
+#                    Refuses a migration whose version is already recorded.
+#   kind=test      : docs/<name>-test.sql, which must contain "rollback;" and no "commit".
+# Needs the repository secret SUPABASE_ACCESS_TOKEN (the same one the function deploy uses).
+name: Staging SQL
+on:
+  workflow_dispatch:
+    inputs:
+      kind:
+        type: choice
+        options: [migration, test]
+        required: true
+      file:
+        description: "File name only, e.g. 20261130120000_order_tracking_scorecards.sql or daily-loop-test.sql"
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: staging-sql
+  cancel-in-progress: false
+jobs:
+  run:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT: skhtunkknshvolturqlm
+      KIND: ${{ inputs.kind }}
+      FILE: ${{ inputs.file }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run on staging
+        run: node scripts/staging-sql.mjs
