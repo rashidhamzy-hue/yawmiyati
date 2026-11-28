@@ -13,7 +13,7 @@ import { normalizeTaager, TAAGER_MAPPING } from "../supabase/functions/_shared/b
 import { MARKETS, minorToDecimal, minorToUsd, type Market } from "../supabase/functions/_shared/brain/markets.ts";
 import { prefilter } from "../supabase/functions/_shared/brain/selection.ts";
 import { decidePrice, expectedPerOrder, profitDelivered } from "../supabase/functions/_shared/brain/economics.ts";
-import { plannedSuccessBps } from "../supabase/functions/_shared/brain/runner.ts";
+import { plannedSuccessBps, taagerMarketSuccessBps } from "../supabase/functions/_shared/brain/runner.ts";
 import type { OfferRow } from "../supabase/functions/_shared/brain/woo-normalize.ts";
 
 const [input, output, topArg] = process.argv.slice(2);
@@ -46,12 +46,13 @@ for (const block of parseTaagerFile(readFileSync(input, "utf8"))) {
   const offers = block.rows.map((r) => normalizeTaager(mk, m, { market: mk, ...r, synced_at: "", price_changed_at: null }));
   const byKey = new Map(offers.map((o) => [`${o.product_id}:${o.variation_id}`, o]));
   const rows = prefilter(offers, TAAGER_MAPPING, m, 80);
+  const base = taagerMarketSuccessBps(offers) ?? m.defaultDeliveryRateBps;
   const count = (s: string) => rows.filter((r) => r.stage === s).length;
   const reasons: Record<string, number> = {};
   for (const r of rows) for (const x of r.reasons) if (!x.startsWith("spread")) reasons[x] = (reasons[x] ?? 0) + 1;
   const cards: Card[] = rows.filter((r) => r.stage === "shortlisted").sort((a, b) => b.prefilter_score - a.prefilter_score).slice(0, TOP).map((r) => {
     const o = byKey.get(`${r.product_id}:${r.variation_id}`)!;
-    const rate = plannedSuccessBps(o, m.defaultDeliveryRateBps);
+    const rate = plannedSuccessBps(o, base);
     const price = decidePrice({ inputs: r.economics as never, competitors: [], m, deliveryRateBps: rate });
     return { o, score: r.prefilter_score, kind: r.offer_kind, flags: r.flags, price, rate };
   });

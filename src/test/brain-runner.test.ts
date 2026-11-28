@@ -1,5 +1,5 @@
 import {describe,expect,it} from "vitest";
-import {step} from "../../supabase/functions/_shared/brain/runner.ts";
+import {step,taagerMarketSuccessBps,planningBaseBps,plannedSuccessBps} from "../../supabase/functions/_shared/brain/runner.ts";
 import {decidePrice} from "../../supabase/functions/_shared/brain/economics.ts";
 import {MARKETS} from "../../supabase/functions/_shared/brain/markets.ts";
 import type {Db} from "../../supabase/functions/_shared/brain/db.ts";
@@ -192,5 +192,21 @@ describe("Yawmiyati Brain on Taager merchant data",()=>{
  it("treats Taager's maximum as a reference, not a cap",()=>{
   const over=decidePrice({inputs:{cost_minor:3500,floor_minor:6000,suggested_minor:null,max_minor:6500},competitors:[{retailer:"amazon.sa",url:"https://amazon.sa/x",price_minor:14900,match:"exact",confidence:0.9}],m:MARKETS.sa});
   expect(over.state).toBe("priced");expect(over.price_minor!).toBeGreaterThan(6500);expect(over.taager_position).toBe("above_maximum");
+ });
+});
+
+describe("planning delivery rate from Taager's figures",()=>{
+ const offer=(bps:number|null)=>({meta:{taager_success_rate_bps:bps}}) as unknown as Parameters<typeof taagerMarketSuccessBps>[0][number];
+ it("uses the market median only with enough products",()=>{
+  expect(taagerMarketSuccessBps(Array.from({length:19},()=>offer(3000)))).toBeNull();
+  const rates=[...Array.from({length:10},()=>offer(2000)),...Array.from({length:11},()=>offer(4000)),offer(null),offer(0)];
+  expect(taagerMarketSuccessBps(rates)).toBe(4000);
+ });
+ it("prefers the owner setting, then Taager's median, then the market default",()=>{
+  expect(planningBaseBps({delivery_rate_bps:6000},{prefilter:{taager_success_median_bps:3200}},MARKETS.sa)).toBe(6000);
+  expect(planningBaseBps({delivery_rate_bps:null},{prefilter:{taager_success_median_bps:3200}},MARKETS.sa)).toBe(3200);
+  expect(planningBaseBps({},{},MARKETS.sa)).toBe(MARKETS.sa.defaultDeliveryRateBps);
+  expect(plannedSuccessBps(offer(5000) as never,3000)).toBe(4000);
+  expect(plannedSuccessBps(offer(null) as never,3000)).toBe(3000);
  });
 });

@@ -176,6 +176,7 @@ async function stagePrefilter(d: Deps, run: Run, m: MarketFacts, settings: Setti
   }
   const by = (s: string) => rows.filter((r) => r.stage === s).length;
   run.summary.prefilter = { evaluated: rows.length, shortlisted: by("shortlisted"), excluded: by("excluded"), killed: by("killed"),
+    taager_success_median_bps: taagerMarketSuccessBps(offers),
     top_exclusion_reasons: Object.entries(rows.flatMap((r) => r.stage === "excluded" ? r.reasons.filter((x) => !x.startsWith("spread")) : []).reduce((a, x) => ((a[x] = (a[x] ?? 0) + 1), a), {} as Record<string, number>)).sort((a, b) => b[1] - a[1]).slice(0, 8) };
   run.stage = by("shortlisted") ? "research" : "review";
   if (!by("shortlisted")) run.status = "awaiting_review";
@@ -213,6 +214,26 @@ async function stageResearch(d: Deps, run: Run, m: MarketFacts, settings: Settin
 }
 
 /** Taager's measured confirmation×delivery rate is blended 50/50 with the planning rate (sample sizes are not published). */
+/**
+ * Market planning rate from Taager's own figures: the median of confirmed × delivered across products that have
+ * data in this catalogue read. Needs at least 20 such products; otherwise null (use the owner setting or market default).
+ * Confirmed × delivered is the cautious reading (delivered orders out of placed orders); G1 test orders confirm it.
+ */
+export function taagerMarketSuccessBps(offers: OfferRow[]): number | null {
+  const rates = offers.map((o) => o.meta["taager_success_rate_bps"]).filter((r): r is number => typeof r === "number" && r > 0 && r <= 10000).sort((a, b) => a - b);
+  if (rates.length < 20) return null;
+  const mid = rates.length >> 1;
+  return rates.length % 2 ? rates[mid] : Math.round((rates[mid - 1] + rates[mid]) / 2);
+}
+
+/** Owner setting first, then Taager's market median from this run's catalogue, then the market default. */
+export function planningBaseBps(settings: { delivery_rate_bps?: number | null }, summary: Record<string, unknown>, m: MarketFacts): number {
+  if (typeof settings.delivery_rate_bps === "number") return settings.delivery_rate_bps;
+  const fromTaager = (summary.prefilter as { taager_success_median_bps?: unknown } | undefined)?.taager_success_median_bps;
+  return typeof fromTaager === "number" && fromTaager > 0 ? fromTaager : m.defaultDeliveryRateBps;
+}
+
+/** A product's own Taager figure is blended half-and-half with the market base (Taager gives no order counts). */
 export function plannedSuccessBps(o: OfferRow | undefined, base: number): number {
   const measured = o?.meta["taager_success_rate_bps"];
   if (typeof measured !== "number" || measured <= 0 || measured > 10000) return base;
@@ -226,7 +247,7 @@ async function stageDecide(d: Deps, run: Run, m: MarketFacts, settings: Settings
     const research = (a.research ?? {}) as { listings?: { retailer: string; url: string; price_minor: number; match: "exact" | "similar"; confidence: number }[]; demand_signals?: unknown[]; risks?: string[] };
     const listings = research.listings ?? [];
     const decision = decidePrice({ inputs: a.economics as { cost_minor: number | null; floor_minor: number | null; suggested_minor: number | null; max_minor?: number | null }, competitors: listings, m,
-      deliveryRateBps: plannedSuccessBps(offers.get(key(a)), settings.delivery_rate_bps ?? m.defaultDeliveryRateBps) });
+      deliveryRateBps: plannedSuccessBps(offers.get(key(a)), planningBaseBps(settings, run.summary, m)) });
     const retailers = new Set(listings.filter((l) => l.confidence >= 0.5).map((l) => l.retailer)).size;
     const score = finalScore(decision, { retailers_found: retailers, exact_matches: listings.filter((l) => l.match === "exact").length, demand_signals: (research.demand_signals ?? []).length, risks: research.risks ?? [] }, offers.get(key(a))?.images.length ?? 0);
     return { a, decision, score };
