@@ -2,7 +2,7 @@
 // the loop goes on. The loop spends no AI money: it re-prices from the dated shop-price cache and works on counts.
 // It never publishes, never approves, never switches a flag. What it may do by itself is hide a product whose
 // finished orders are mostly refused (reversible in /admin) and file proposals for the owner.
-import { MARKETS, minorToUsd, type Market } from "../brain/markets.ts";
+import { minorToUsd, type Market } from "../brain/markets.ts";
 import type { Db } from "../brain/db.ts";
 import { decidePrice, reprice, type CompetitorEvidence } from "../brain/economics.ts";
 import { prefilter } from "../brain/selection.ts";
@@ -13,6 +13,7 @@ import { fetchDayFunnel, type PosthogEnv } from "./posthog.ts";
 import { EMPTY_COUNTS, productVerdict, type ProductCounts } from "./scorecard.ts";
 import { buildBrief, type Brief, type BriefInput, type BriefProduct } from "./brief.ts";
 import { seasonalPlans } from "./seasonal.ts";
+import { loadMarket, rulesBrief } from "../brain/taager-facts.ts";
 
 export type DailyDeps = {
   db: Db; market: Market; now?: () => number; fetchImpl?: typeof fetch;
@@ -28,9 +29,12 @@ const NEW_PER_DAY = 5, WINDOW_DAYS = 14;
 const counts = (c: unknown): ProductCounts => ({ ...EMPTY_COUNTS, ...(c && typeof c === "object" ? c as Partial<ProductCounts> : {}) });
 
 export async function runDaily(d: DailyDeps): Promise<DailyResult> {
-  const now = (d.now ?? Date.now)(), m = MARKETS[d.market], f = d.fetchImpl ?? fetch;
+  const now = (d.now ?? Date.now)(), f = d.fetchImpl ?? fetch;
+  // Market figures after Taager's own information pages; falls back to the figures on file when none are stored.
+  const { m, stored: pageFacts } = await loadMarket(d.db, d.market);
   const today = new Date(now).toISOString().slice(0, 10), yesterday = new Date(now - 86_400_000).toISOString().slice(0, 10);
   const steps: Record<string, string> = {}, notes: string[] = [];
+  notes.push(...m.factsNotes);
   const attempt = async <T>(name: string, fn: () => Promise<T>, fallback: T): Promise<T> => {
     try { const v = await fn(); steps[name] ??= "ok"; return v; } catch (e) { steps[name] = "failed: " + String(e).slice(0, 160); notes.push(`${name} failed (${String(e).slice(0, 120)}); the rest of the brief is unaffected.`); return fallback; }
   };
@@ -162,6 +166,7 @@ export async function runDaily(d: DailyDeps): Promise<DailyResult> {
       unknown_status: n("unknown"), profit_delivered_minor: orderRows.filter((o) => o.status === "delivered").reduce((s, o) => s + (Number(o.profit_minor) || 0), 0) },
     sync: { last_sync_at: lastSync, max_age_hours: settings.stock_max_age_hours, orders_connected: ordersConnected, analytics_connected: !!d.posthog && steps.analytics === "ok", order_sync_error: orderError },
     reprice: repriceOut, paused_today: pausedToday, add, search_gaps: searchGaps, offers_waiting: offersWaiting,
+    taager_rules: rulesBrief(d.market, pageFacts, new Date(now - 7 * 86_400_000).toISOString()),
     seasonal: seasonalPlans(now, d.market, onStore), spend_today_usd: Math.round(spent / 1e4) / 100, daily_cap_usd: Math.round(settings.daily_budget_microusd / 1e4) / 100, notes,
   });
   const proposals = [

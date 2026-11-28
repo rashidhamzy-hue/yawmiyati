@@ -8,6 +8,7 @@ import {
   type TaagerCatalogSummary,
 } from "@/lib/store/taager-import";
 import type { MarketCode } from "@/lib/store/markets";
+import { preparePages, taagerPagesClient, type PreparedPages } from "@/lib/store/taager-pages";
 
 /** Blob.text with a FileReader fallback for older browsers. */
 function readText(file: File): Promise<string> {
@@ -37,6 +38,15 @@ export function TaagerImport({ market, origin, publicKey, token }: Props) {
       return null;
     }
   }, [origin, publicKey, token]);
+  const pagesClient = useMemo(() => {
+    try {
+      return taagerPagesClient(origin, publicKey, token);
+    } catch {
+      return null;
+    }
+  }, [origin, publicKey, token]);
+  const [pagesReady, setPagesReady] = useState<PreparedPages[]>([]);
+  const [pagesNote, setPagesNote] = useState("");
   const [summary, setSummary] = useState<TaagerCatalogSummary | null>(null);
   const [blocks, setBlocks] = useState<ParsedTaagerSync[]>([]);
   const [fileName, setFileName] = useState("");
@@ -72,10 +82,31 @@ export function TaagerImport({ market, origin, publicKey, token }: Props) {
     setFileName("");
     setError("");
     setDone("");
+    setPagesReady([]);
+    setPagesNote("");
   }, [market]);
   useEffect(() => {
     void load();
   }, [load]);
+
+  /** Store Taager's information pages and the facts read from them. Never fails the catalogue import: a problem becomes a note. */
+  const importPages = useCallback(
+    async (list: PreparedPages[]) => {
+      if (!pagesClient || !list.length) return "";
+      const lines: string[] = [];
+      for (const p of list) {
+        try {
+          const r = await pagesClient.importPages(p);
+          lines.push(`${NAMES[p.market]}: ${p.pages.length} pages (${r.pages_new} new, ${r.pages_changed} changed), ${p.facts.length} rules read${r.waiting ? `, ${r.waiting} waiting for you` : ""}`);
+        } catch (e) {
+          lines.push(`${NAMES[p.market]}: pages not stored (${(e as Error).message})`);
+        }
+      }
+      window.dispatchEvent(new CustomEvent("yawmiyati:taager-pages-updated"));
+      return "Information pages: " + lines.join(" · ");
+    },
+    [pagesClient],
+  );
 
   /** Import blocks one country at a time; returns a short result line per country. */
   const importBlocks = useCallback(
@@ -121,6 +152,8 @@ export function TaagerImport({ market, origin, publicKey, token }: Props) {
       try {
         const list = parseTaagerFile(data.file);
         const lines = await importBlocks(list, fullRead);
+        const pages = await importPages(preparePages(data.file));
+        if (pages) lines.push(pages);
         if (id) seen.current.add(id);
         const at = new Date().toLocaleTimeString("en-GB");
         if (alive.current) setLiveLog((l) => [`${at} · ${lines.join(" · ") || "no products"}`, ...l].slice(0, 20));
@@ -134,7 +167,7 @@ export function TaagerImport({ market, origin, publicKey, token }: Props) {
     const handler = (e: MessageEvent) => void onMessage(e);
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [live, client, importBlocks]);
+  }, [live, client, importBlocks, importPages]);
 
   async function pick(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -144,8 +177,12 @@ export function TaagerImport({ market, origin, publicKey, token }: Props) {
     setDone("");
     if (!file) return;
     setFileName(file.name);
+    setPagesReady([]);
+    setPagesNote("");
     try {
-      const list = parseTaagerFile(await readText(file));
+      const text = await readText(file);
+      const list = parseTaagerFile(text);
+      setPagesReady(preparePages(text));
       if (!list.some((p) => p.rows.length)) throw Error("The file has no products in it.");
       if (list.length === 1 && list[0].market !== market)
         throw Error(`This file is for ${NAMES[list[0].market]}, not ${NAMES[market]}. Switch the market above or pick the right file.`);
@@ -161,7 +198,9 @@ export function TaagerImport({ market, origin, publicKey, token }: Props) {
     setDone("");
     try {
       const lines = await importBlocks(list, () => isFull);
+      const pages = await importPages(pagesReady.filter((p) => list.some((b) => b.market === p.market)));
       if (!alive.current) return;
+      setPagesNote(pages);
       setDone(lines.join(" · "));
       setBlocks([]);
     } catch (err) {
@@ -243,6 +282,11 @@ export function TaagerImport({ market, origin, publicKey, token }: Props) {
               </li>
             ))}
           </ul>
+          {pagesReady.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Taager information pages in this file: {pagesReady.map((p) => `${NAMES[p.market]} ${p.pages.length} pages, ${p.facts.length} rules read${p.facts.some((f) => f.decision === "pending") ? " (some differ from our figures)" : ""}`).join(" · ")}. They are stored with the import.
+            </p>
+          )}
           {blocks.some((p) => p.stats.skipped > 0) && <p className="text-xs text-muted-foreground">Lines without a SKU were skipped.</p>}
           <label className="flex items-start gap-2">
             <input type="checkbox" checked={isFull} onChange={(e) => setIsFull(e.target.checked)} disabled={busy} className="mt-1" />
@@ -277,6 +321,11 @@ export function TaagerImport({ market, origin, publicKey, token }: Props) {
         <p role="status" className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700">
           <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
           Imported ({done}). The brain will use these numbers on its next run.
+        </p>
+      )}
+      {pagesNote && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {pagesNote} See "Taager's rules for this market" below.
         </p>
       )}
       {error && (
