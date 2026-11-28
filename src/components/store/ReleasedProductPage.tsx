@@ -1,9 +1,10 @@
 import {useEffect,useState,type ReactNode} from "react";
-import {Check,ChevronDown,HandCoins,RotateCcw,Truck} from "lucide-react";
+import {Check,ChevronDown,HandCoins,Package,RotateCcw,Tag,Truck} from "lucide-react";
 import {type MarketCode} from "@/lib/store/markets";
 import {customerServiceCopy} from "@/lib/store/customer-service-copy";
 import {fetchPublicProductPage,formatListingPrice,type PublicDetail,type PublicProductPage} from "@/lib/store/public-catalog";
-import {productMediaPath} from "@/lib/store/product-media";
+import {productMediaPath,productVideoPath} from "@/lib/store/product-media";
+import {formatMinor} from "@/lib/store/offer-version";
 
 /**
  * Product page for a released listing whose owner-approved page comes from `public_product_page`.
@@ -14,6 +15,9 @@ export function ProductPageView({page,detail,market}:{page:PublicProductPage;det
  const [selected,setSelected]=useState(0);
  const copy=customerServiceCopy[market];
  const image=page.images[selected]??page.images[0];
+ const single=BigInt(detail.price_minor);
+ // Only offers that are really cheaper than buying the same number singly.
+ const offers=page.quantity_offers.map(o=>({...o,saving:single*BigInt(o.quantity)-BigInt(o.price_minor)})).filter(o=>o.saving>0n);
  return <article dir="rtl" aria-label="تفاصيل المنتج" className="space-y-8">
   <div className="grid gap-6 lg:grid-cols-2 lg:gap-10">
    <div className="space-y-3">
@@ -32,6 +36,13 @@ export function ProductPageView({page,detail,market}:{page:PublicProductPage;det
      {page.subtitle&&<p className="text-sm leading-7 text-muted-foreground sm:text-base">{page.subtitle}</p>}
     </div>
     <p className="text-2xl font-extrabold text-primary">{formatListingPrice(detail,market)}</p>
+    {offers.length>0&&<section aria-label="عروض الكمية" className="space-y-2">
+     <h2 className="inline-flex items-center gap-2 text-sm font-bold"><Tag className="h-4 w-4 text-primary" aria-hidden="true"/>اطلبي أكثر ووفّري</h2>
+     <ul className="grid gap-2 sm:grid-cols-2">{offers.map(o=><li key={o.quantity} className="rounded-xl border bg-card px-4 py-3 text-sm">
+      <p className="font-bold">{o.quantity===2?"قطعتين":`${o.quantity} قطع`} بـ {formatMinor(market,BigInt(o.price_minor))}</p>
+      <p className="text-xs text-muted-foreground">توفّرين {formatMinor(market,o.saving)} مقارنة بشراء كل قطعة وحدها</p>
+     </li>)}</ul>
+    </section>}
     <ul className="grid gap-2 rounded-2xl border bg-card p-4 text-sm leading-7">
      <li className="flex items-start gap-3"><HandCoins className="mt-1 h-5 w-5 shrink-0 text-primary" aria-hidden="true"/><span>{copy.paymentHeading}</span></li>
      <li className="flex items-start gap-3"><Truck className="mt-1 h-5 w-5 shrink-0 text-primary" aria-hidden="true"/><span>{copy.shipping} {copy.delivery}</span></li>
@@ -43,6 +54,18 @@ export function ProductPageView({page,detail,market}:{page:PublicProductPage;det
     <p className="rounded-xl bg-muted px-4 py-3 text-sm leading-7 text-muted-foreground">{copy.preCheckoutNotice}</p>
    </div>
   </div>
+  {page.bundle.length>0&&<section aria-label="محتويات العرض" className="max-w-3xl">
+   <h2 className="mb-3 inline-flex items-center gap-2 font-display text-xl font-extrabold"><Package className="h-5 w-5 text-primary" aria-hidden="true"/>محتويات العرض</h2>
+   <ul className="grid gap-2 sm:grid-cols-2">{page.bundle.map((b,i)=><li key={i} className="flex items-center gap-3 rounded-xl border bg-card p-3 text-sm">
+    {b.image?<img src={productMediaPath(b.image,360)} alt="" width={56} height={56} loading="lazy" decoding="async" className="h-14 w-14 shrink-0 rounded-lg bg-[#efe6d7] object-cover"/>:<span className="h-14 w-14 shrink-0 rounded-lg bg-[#efe6d7]" aria-hidden="true"/>}
+    <span className="min-w-0 flex-1 break-words leading-6">{b.name}</span><span className="shrink-0 font-bold tabular-nums">× {b.quantity}</span>
+   </li>)}</ul>
+  </section>}
+  {page.videos.length>0&&<section aria-label="فيديو المنتج" className="max-w-3xl space-y-3">
+   <h2 className="font-display text-xl font-extrabold">شاهدي المنتج</h2>
+   {page.videos.slice(0,2).map(v=><video key={v} controls playsInline preload="none" poster={page.images[0]?productMediaPath(page.images[0].id):undefined}
+     className="aspect-square w-full max-w-md rounded-2xl border bg-[#efe6d7] object-contain"><source src={productVideoPath(v)} type="video/mp4"/></video>)}
+  </section>}
   <section aria-label="وصف المنتج" className="max-w-3xl space-y-3">
    <h2 className="font-display text-xl font-extrabold">عن المنتج</h2>
    <p className="whitespace-pre-wrap break-words text-sm leading-8 text-muted-foreground sm:text-base">{page.description}</p>

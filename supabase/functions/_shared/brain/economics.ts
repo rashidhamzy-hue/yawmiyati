@@ -78,6 +78,7 @@ export type PriceDecision = {
   conversion_factor?: number;
   delivery_rate_bps?: number;
   needs_owner_review?: boolean;
+  quantity_offers?: QuantityOffer[];
   /** Where the price sits against Taager's own minimum / maximum (reference only; unproven with Taager until G1). */
   taager_position?: "below_minimum" | "within" | "above_maximum" | "unknown";
   taager_minimum_minor?: number | null;
@@ -141,8 +142,34 @@ export function decidePrice(args: {
     margin_on_price_pct: Math.round((best.profit / best.price) * 1000) / 10,
     competitor_reference_minor: compTotal, competitor_basis: basis, competitor_count: basis === "exact" ? strong.length : weak.length,
     positioning, conversion_factor: Math.round(best.f * 100) / 100, delivery_rate_bps: rate,
-    needs_owner_review: thin || basis === "none", taager_position, taager_minimum_minor: floor_minor, notes,
+    needs_owner_review: thin || basis === "none", taager_position, taager_minimum_minor: floor_minor,
+    quantity_offers: quantityOffers(best.price, inputs, m), notes,
   };
+}
+
+export type QuantityOffer = { quantity: number; price_minor: number; saving_minor: number; profit_delivered_minor: number };
+
+/**
+ * "2 for X" / "3 for X" offers built from our own single price (Taager's tier data is not trusted: it is
+ * inconsistent in the 27 Nov sync). Each offer is a rounded price about 10% (2 pieces) or 15% (3 pieces)
+ * under buying singly, and must earn at least as much as one single sale while counting the FULL unit cost
+ * for every piece, so it stays profitable whatever Taager charges for multi-piece orders. One delivery fee.
+ */
+export function quantityOffers(price: number, inp: ProfitInputs, m: MarketFacts): QuantityOffer[] {
+  const single = profitDelivered(price, inp, m);
+  if (single <= 0) return [];
+  const out: QuantityOffer[] = [];
+  for (const [q, off] of [[2, 0.10], [3, 0.15]] as const) {
+    const target = Math.floor(q * price * (1 - off));
+    const scaled = { cost_minor: inp.cost_minor * q, floor_minor: inp.floor_minor === null ? null : inp.floor_minor * q };
+    const points = pricePoints(scaled.cost_minor + 1, target, m);
+    if (!points.length) continue;
+    const x = Math.max(...points);
+    const profit = profitDelivered(x, scaled, m);
+    if (x >= q * price || profit < single) continue;
+    out.push({ quantity: q, price_minor: x, saving_minor: q * price - x, profit_delivered_minor: profit });
+  }
+  return out;
 }
 
 /**

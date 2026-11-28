@@ -70,7 +70,7 @@ const handler = {
       try { return await proxyPosthog(request, proxyTarget); }
       catch { return new Response(null, { status: 502 }); }
     }
-    if (new URL(request.url).pathname.startsWith("/media/p/")) {
+    if (/^\/media\/[pv]\//.test(new URL(request.url).pathname)) {
       try { return (await handleProductMedia(request))!; }
       catch { return new Response(null, { status: 502 }); }
     }

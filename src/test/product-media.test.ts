@@ -40,3 +40,23 @@ describe("product pictures",()=>{
   expect((await handleProductMedia(new Request("https://shop.example/media/p/"+id),gone as unknown as typeof fetch))!.status).toBe(404);
  });
 });
+
+describe("product videos",()=>{
+ const vid="aaaaaaaa-1111-2222-3333-444444444444.mp4";
+ it("streams supplier videos with range support and our own headers only",async()=>{
+  const upstream=vi.fn(async()=>new Response("part",{status:206,headers:{"content-type":"video/mp4","content-range":"bytes 0-3/100","content-length":"4","server":"Google Frontend"}}));
+  const res=await handleProductMedia(new Request("https://shop.example/media/v/"+vid,{headers:{range:"bytes=0-3"}}),upstream as unknown as typeof fetch);
+  expect(res!.status).toBe(206);expect(res!.headers.get("content-range")).toBe("bytes 0-3/100");expect(res!.headers.get("server")).toBeNull();
+  const [target,init]=upstream.mock.calls[0] as unknown as [string,RequestInit];
+  expect(target).toBe("https://media.taager.com/"+vid);expect((init.headers as Record<string,string>).range).toBe("bytes=0-3");
+ });
+ it("refuses other names, sizes, queries, bad ranges and non-video answers",async()=>{
+  const never=vi.fn();
+  for(const bad of ["/media/v/x.mp4","/media/v/360/"+vid,"/media/v/"+vid+"?a=1","/media/v/aaaaaaaa-1111-2222-3333-444444444444.mov"])
+   expect((await handleProductMedia(new Request("https://shop.example"+bad),never as unknown as typeof fetch))!.status).toBe(404);
+  expect((await handleProductMedia(new Request("https://shop.example/media/v/"+vid,{headers:{range:"bytes=0-1,5-9"}}),never as unknown as typeof fetch))!.status).toBe(416);
+  expect(never).not.toHaveBeenCalled();
+  const html=vi.fn(async()=>new Response("<html>",{status:200,headers:{"content-type":"text/html"}}));
+  expect((await handleProductMedia(new Request("https://shop.example/media/v/"+vid),html as unknown as typeof fetch))!.status).toBe(502);
+ });
+});

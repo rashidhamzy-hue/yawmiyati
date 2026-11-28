@@ -53,6 +53,13 @@ Every paid call → `brain_cost_ledger` (tokens, web searches, exact micro-USD a
 - **Pictures:** the storefront Worker serves `/media/p/<uuid>.<ext>` (full) and `/media/p/360/<uuid>.<ext>` (cards) by fetching the same file from Taager's media host and caching it at Cloudflare for 30 days (`src/lib/store/product-media.ts`). Shoppers never see the supplier host; Supabase serves no picture bytes (no egress). Trade-off: a picture Taager deletes disappears after the cache expires. Copying published pictures to Cloudflare R2 is the follow-up once R2 is enabled on the account (free tier, needs the owner to turn it on).
 - **Storefront:** cards show the first picture; the product page renders `ReleasedProductPage` (gallery, price, COD/delivery/returns lines from the shared customer copy, bullets, description, specs, FAQ). No order can be placed from it.
 
+## Product page extras (28 Nov 2026)
+**Status:** migration `20261128060000_brain_product_extras.sql` APPLIED to staging; `docs/brain-product-extras-test.sql` passed on staging (rolled back).
+- **Quantity offers:** `quantityOffers()` in `economics.ts` builds "2 for X" (~10% off) and "3 for X" (~15% off) from our single price. Each must earn at least one single sale's profit while counting the FULL unit cost for every piece (Taager's own tier data is inconsistent and not used). The publish step keeps only offers above quantity × cost and below quantity × price; `public_product_page` re-checks them against Taager's current cost on every read. **Checkout must support quantities before these can be ordered (G3).**
+- **Videos:** up to 3 per product, supplier media host only, served from `/media/v/<uuid>.mp4` (range requests pass through; full responses edge-cached). YouTube and Google Drive links are skipped.
+- **Bundle contents:** from Taager's declared `bundleItems` only, resolved by SKU to a catalogue name and picture (M11-safe); unresolved items are left out.
+- **SEO:** the product route's server render now reads the approved page: SEO title/description, `og:*` tags and the first picture (as `https://yawmiyati.shop/media/p/<id>`) in Product JSON-LD.
+
 ## Not built yet (next)
 1. Product videos, Taager quantity offers (tiers) and bundle contents on the product page; SEO head (title/description/image) from the approved page on the server render; R2 copies of published pictures.
 2. **Autopilot scheduler** (daily: refresh stock/prices, add N products/store, retire weak ones) — toggle exists, disabled.
