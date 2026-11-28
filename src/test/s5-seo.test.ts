@@ -116,6 +116,33 @@ describe("crawler files",()=>{
   expect(xml).not.toContain("demo-x");
   expect(xml).not.toMatch(/\/cart|\/checkout|\/search/);
  });
+ it("sitemap lists the offers page and sets only while the store has a set on sale",async()=>{
+  const none=await marketSitemapXml("eg",reader({}),async()=>[]);
+  expect(none).not.toMatch(/\/offers|\/set\//);
+  const xml=await marketSitemapXml("eg",reader({}),async()=>["coffee-corner","coffee-corner","demo-set","Bad Slug","sim-x"]);
+  expect(xml).toContain("<loc>https://yawmiyati.shop/eg/offers</loc>");
+  expect(xml.match(/<loc>https:\/\/yawmiyati\.shop\/eg\/set\//g)).toHaveLength(1);
+  expect(xml).toContain("<loc>https://yawmiyati.shop/eg/set/coffee-corner</loc>");
+  const down=await marketSitemapXml("eg",reader({}),async()=>{throw Error("down");});
+  expect(down).toContain("<loc>https://yawmiyati.shop/eg/story</loc>");
+ });
+ it("store chooser is x-default for home pages and is listed once, in the default market's sitemap",async()=>{
+  const sa=await marketSitemapXml("sa",reader({})),ae=await marketSitemapXml("ae",reader({}));
+  expect(sa).toContain("<loc>https://yawmiyati.shop/</loc>");
+  expect(ae).not.toContain("<loc>https://yawmiyati.shop/</loc>");
+  expect(ae).toContain('<loc>https://yawmiyati.shop/ae</loc><xhtml:link rel="alternate" hreflang="ar-SA" href="https://yawmiyati.shop/sa"/>');
+  expect(ae).toContain('hreflang="x-default" href="https://yawmiyati.shop/"/>');
+  expect(ae).toContain('hreflang="x-default" href="https://yawmiyati.shop/sa/story"/>');
+ });
+ it("every market's set and offers routes carry their own canonical and stay noindex",async()=>{
+  const {readFileSync}=await import("node:fs");
+  for(const m of ["sa","ae","om","eg","iq"]){
+   const set=readFileSync(`src/routes/${m}.set.$slug.tsx`,"utf8"),offers=readFileSync(`src/routes/${m}.offers.tsx`,"utf8");
+   expect(set).toContain(`canonicalLink("${m}","/set/"+params.slug)`);
+   expect(offers).toContain(`canonicalLink("${m}","/offers")`);
+   for(const file of [set,offers])expect(file).toContain('{name:"robots",content:"noindex,nofollow"}');
+  }
+ });
  it("an unreachable catalog still yields a valid sitemap",async()=>{
   const xml=await marketSitemapXml("ae",async()=>{throw Error("down");});
   expect(xml).toContain("<loc>https://yawmiyati.shop/ae/story</loc>");
