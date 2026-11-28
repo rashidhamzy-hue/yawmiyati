@@ -1,11 +1,8 @@
--- NOTE (28 Nov 2026, later): quantity offers now also need the owner to approve that exact offer; see docs/store-offers-test.sql,
--- NOTE (29 Nov 2026): the quantity-offer assertions here predate owner approval of offers (20261128120000_store_offers.sql)
--- and no longer hold; quantity offers are covered by docs/store-offers-test.sql and docs/brain-commerce-v2-test.sql.
--- which supersedes the quantity-offer assertions below.
 -- Rollback-only fixture test for supabase/migrations/20261128060000_brain_product_extras.sql (staging only).
--- Proves: supplier-hosted videos only (deduplicated, max 3), quantity offers kept only above full unit cost and
--- below buying singly, re-checked against Taager's current cost on every read; bundle contents only from
--- declared bundleItems that resolve to a catalogue row.
+-- Proves: supplier-hosted videos only (deduplicated, max 3); the brain's quantity proposals are kept privately only
+-- when above full unit cost and below buying singly, and never reach a visitor until the owner approves that exact
+-- offer (owner approval, re-checks and Taager prices are covered by docs/store-offers-test.sql and
+-- docs/brain-commerce-v2-test.sql); bundle contents only from declared bundleItems that resolve to a catalogue row.
 begin;
 do $$
 declare u uuid; r uuid; res jsonb; pg jsonb; s text;
@@ -35,13 +32,11 @@ begin
  select slug into s from public.public_catalog('sa') limit 1;
  pg:=public.public_product_page('sa',s);
  if pg->'videos'<>'["aaaaaaaa-1111-2222-3333-444444444444.mp4","bbbbbbbb-1111-2222-3333-444444444444.mp4"]'::jsonb then raise exception 'videos %',pg->'videos'; end if;
- if pg->'quantity_offers'<>'[{"quantity":2,"price_minor":22900}]'::jsonb then raise exception 'offers %',pg->'quantity_offers'; end if;
+ if (select extras->'quantity_offers' from public.brain_listings where store_code='sa' and sku='FIXBUNDLE1')<>'[{"quantity":2,"price_minor":22900}]'::jsonb
+  then raise exception 'private proposals %',(select extras from public.brain_listings where store_code='sa' and sku='FIXBUNDLE1'); end if;
+ if pg->'quantity_offers'<>'[]'::jsonb then raise exception 'unapproved offer is public %',pg->'quantity_offers'; end if;
  if pg->'bundle'<>'[{"name":"سيروم الشعر","quantity":2,"image":"cccccccc-1111-2222-3333-444444444444.jpg"}]'::jsonb then raise exception 'bundle %',pg->'bundle'; end if;
  if pg::text like '%FIX%' or pg::text ilike '%taager%' or pg::text like '%youtube%' then raise exception 'leak %',pg; end if;
- -- Taager raises the unit cost to 120: 2 for 229 would now lose money on full unit cost -> offer hidden, product still shown.
- update public.taager_catalog set financials=jsonb_set(financials,'{originalPrice}','120') where market='sa' and sku='FIXBUNDLE1';
- pg:=public.public_product_page('sa',s);
- if pg is null or pg->'quantity_offers'<>'[]'::jsonb then raise exception 'offer not re-checked %',pg; end if;
  perform public.brain_set_release('sa',false);
  raise notice 'brain product extras fixture: all checks passed';
 end $$;
