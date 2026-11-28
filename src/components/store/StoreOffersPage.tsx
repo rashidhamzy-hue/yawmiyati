@@ -29,9 +29,11 @@ function AddSet({market,set,wide=false,compact=false}:{market:MarketCode;set:Res
  return inCart?<a href={"/"+market+"/cart"} className={"btn-outline whitespace-nowrap "+(wide?"w-full":"")+(compact?" min-h-11 px-3 text-sm":"")}><Check className="h-4 w-4" aria-hidden="true"/>{copy.viewCart}</a>
   :<button type="button" onClick={add} className={"btn-primary whitespace-nowrap "+(wide?"w-full":"")+(compact?" min-h-11 px-3 text-sm":"")} data-add-set="">{copy.addSet}</button>;
 }
+/** The set's cover: a layout of the pieces' own pictures only (two side by side, one large + two, or a 2 x 2 grid). */
 function Pieces({set,size}:{set:Resolved;size:"card"|"page"}){
- return <div className={"grid gap-1.5 overflow-hidden rounded-2xl bg-surface "+(set.parts.length===2?"grid-cols-2":"grid-cols-3")}>
-  {set.parts.map(p=><div key={p.row.listing_id} className="aspect-square overflow-hidden bg-surface">{p.row.image&&<img src={productMediaPath(p.row.image,360)} alt={p.row.title} width={360} height={360} loading={size==="page"?"eager":"lazy"} decoding="async" className="h-full w-full object-cover"/>}</div>)}
+ const n=set.parts.length;
+ return <div className={"grid aspect-[2/1] gap-1.5 overflow-hidden rounded-2xl bg-surface "+(n===3?"grid-cols-2 grid-rows-2 sm:aspect-[2/1] aspect-square":n>=4?"grid-cols-2 grid-rows-2 aspect-square":"grid-cols-2")} data-set-cover={n}>
+  {set.parts.slice(0,4).map((p,i)=><div key={p.row.listing_id} className={"min-h-0 overflow-hidden bg-surface "+(n===3&&i===0?"row-span-2":"")}>{p.row.image&&<img src={productMediaPath(p.row.image,360)} alt={p.row.title} width={360} height={360} loading={size==="page"?"eager":"lazy"} decoding="async" className="h-full w-full object-cover"/>}</div>)}
  </div>;
 }
 function SetCard({market,set}:{market:MarketCode;set:Resolved}){
@@ -80,7 +82,7 @@ export function StoreSetPage({market,slug}:{market:MarketCode;slug:string}){
    :<article className="grid gap-6 lg:grid-cols-2 lg:gap-12">
      <div className="min-w-0"><Pieces set={set} size="page"/></div>
      <div className="min-w-0 space-y-5">
-      <div className="space-y-2"><span className="ym-chip ym-chip-ink"><Layers className="h-3 w-3" aria-hidden="true"/>{copy.setChip}</span><h1 className="ym-h2 break-words">{set.bundle.title}</h1></div>
+      <div className="space-y-2"><span className="ym-chip ym-chip-ink"><Layers className="h-3 w-3" aria-hidden="true"/>{copy.setChip}</span><h1 className="ym-h2 break-words">{set.bundle.title}</h1>{set.bundle.tagline&&<p className="ym-body">{set.bundle.tagline}</p>}<p className="text-sm text-muted-foreground">{copy.setPieces(set.parts.length)}</p></div>
       <div><p className="flex flex-wrap items-baseline gap-x-3"><span className="ym-price text-[1.75rem] leading-none">{formatPrice(set.bundle.price_minor,market)}</span><span className="text-sm text-muted-foreground">{copy.insteadOf(formatPrice(set.separate,market))}</span></p>
        <p className="mt-2 text-sm font-semibold text-sale">{copy.setSave(formatPrice(set.saving,market))}</p></div>
       <AddSet market={market} set={set} wide/>

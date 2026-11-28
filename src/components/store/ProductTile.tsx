@@ -1,12 +1,13 @@
-import {Layers,Tag} from "lucide-react";
+import {Layers,Tag,Truck} from "lucide-react";
 import type {ReactNode} from "react";
-import type {MarketCode} from "@/lib/store/markets";
+import {markets,type MarketCode} from "@/lib/store/markets";
 import {formatPrice,type PublicListing} from "@/lib/store/public-catalog";
 import {productMediaPath} from "@/lib/store/product-media";
 import {shopCopy} from "@/lib/store/shop-copy";
 
 export type TileImage={url:string;alt:string}|null|undefined;
 export const listingImage=(item:PublicListing):TileImage=>item.image?{url:productMediaPath(item.image,360),alt:item.title}:null;
+const shortDate=(iso:string,market:MarketCode)=>{try{return new Intl.DateTimeFormat(markets[market].locale+"-u-ca-gregory",{day:"numeric",month:"long",timeZone:"UTC"}).format(new Date(iso));}catch{return iso.slice(0,10);}};
 export const productHref=(market:MarketCode,slug:string)=>`/${market}/p/${encodeURIComponent(slug)}`;
 
 /** One product card for every grid and rail. Shows only what the released listing carries. */
@@ -17,14 +18,18 @@ export function ProductTile({item,market,image,eager=false,showOffer=false,class
    <div className="relative aspect-square overflow-hidden rounded-2xl bg-surface">
     {picture?<img src={picture.url} alt={picture.alt||item.title} width={360} height={360} loading={eager?"eager":"lazy"} decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"/>
      :<span className="grid h-full w-full place-items-center font-display text-2xl text-muted-foreground/50" aria-hidden="true">يومياتي</span>}
-    {(item.kind==="bundle"||(showOffer&&item.offer))&&<span className="pointer-events-none absolute start-2 top-2 flex flex-col items-start gap-1">
+    {(item.kind==="bundle"||(showOffer&&item.offer)||item.delivery_included||item.is_new)&&<span className="pointer-events-none absolute start-2 top-2 flex flex-col items-start gap-1">
      {item.kind==="bundle"&&<span className="ym-chip ym-chip-ink"><Layers className="h-3 w-3" aria-hidden="true"/>{copy.bundleChip}</span>}
      {showOffer&&item.offer&&item.kind!=="bundle"&&<span className="ym-chip bg-card/95 shadow-sm"><Tag className="h-3 w-3" aria-hidden="true"/>{copy.offerChip}</span>}
+     {item.delivery_included&&<span className="ym-chip bg-card/95 text-success shadow-sm" data-delivery-included=""><Truck className="h-3 w-3" aria-hidden="true"/>{copy.deliveryIncludedChip}</span>}
+     {item.is_new&&item.kind!=="bundle"&&!item.delivery_included&&<span className="ym-chip bg-card/95 shadow-sm">{copy.newChip}</span>}
     </span>}
    </div>
    <div className="flex flex-1 flex-col px-0.5 pt-2.5">
     <h3 className="line-clamp-2 min-h-[2.75rem] font-sans text-[13px] font-medium leading-[1.375rem] text-foreground group-hover:underline sm:text-sm">{item.title}</h3>
-    <p className="ym-price mt-1.5 text-[15px] sm:text-base">{formatPrice(item.price_minor,market)}</p>
+    <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2"><span className={"ym-price text-[15px] sm:text-base "+(item.sale?"text-sale":"")}>{formatPrice(item.price_minor,market)}</span>
+     {item.sale?.was_price_minor&&<s className="text-xs text-muted-foreground">{formatPrice(item.sale.was_price_minor,market)}</s>}</p>
+    {item.sale&&<p className="mt-0.5 text-[11px] font-medium text-sale" data-offer-until="">{copy.offerUntil(shortDate(item.sale.ends_at,market))}</p>}
    </div>
   </a>
  </article>;

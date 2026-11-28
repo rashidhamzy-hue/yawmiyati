@@ -1,4 +1,4 @@
-import {useEffect,useState,type ReactNode} from "react";
+import {lazy,Suspense,useEffect,useState,type ReactNode} from "react";
 import {Check,ChevronDown,HandCoins,Package,RotateCcw,Truck} from "lucide-react";
 import {type MarketCode} from "@/lib/store/markets";
 import {customerServiceCopy} from "@/lib/store/customer-service-copy";
@@ -7,6 +7,9 @@ import {productMediaPath} from "@/lib/store/product-media";
 import {shopCopy} from "@/lib/store/shop-copy";
 import {ProductGallery} from "./ProductGallery";
 import {BuyBox} from "./BuyBox";
+import {OfferUntil} from "./FreeDelivery";
+// The cart-progress bar reads the cart and its offers: loaded after the page, only for products that count.
+const ProductFreeDelivery=lazy(()=>import("./FreeDelivery"));
 
 /**
  * Product page for a released listing whose owner-approved page comes from `public_product_page`.
@@ -18,6 +21,9 @@ export function ProductPageView({page,detail,market}:{page:PublicProductPage;det
  const [more,setMore]=useState(false);
  const long=page.description.length>420;
  const pieces=page.bundle.reduce((n,b)=>n+b.quantity,0);
+ // An approved time-limited price that is still running replaces the normal price everywhere on the page.
+ const sale=page.sale&&BigInt(page.sale.price_minor)<BigInt(detail.price_minor)?page.sale:null;
+ const price=sale?String(sale.price_minor):detail.price_minor;
  return <article dir="rtl" aria-label="تفاصيل المنتج" className="space-y-10">
   <div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
    <div className="min-w-0 lg:sticky lg:top-28 lg:self-start"><ProductGallery market={market} images={page.images} videos={page.videos}/></div>
@@ -30,8 +36,15 @@ export function ProductPageView({page,detail,market}:{page:PublicProductPage;det
      <h1 className="ym-h2 break-words">{page.title}</h1>
      {page.subtitle&&<p className="ym-body">{page.subtitle}</p>}
     </div>
-    <p className="ym-price text-[1.75rem] leading-none">{formatPrice(detail.price_minor,market)}</p>
-    <BuyBox market={market} target={{listing_id:detail.listing_id,slug:detail.slug,title:page.title,image:page.images[0]?.id??null,price_minor:detail.price_minor}} offers={page.quantity_offers}/>
+    <div className="space-y-1.5">
+     <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1"><span className={"ym-price text-[1.75rem] leading-none "+(sale?"text-sale":"")} data-price="">{formatPrice(price,market)}</span>
+      {/* Crossed out only when the database confirms the product was sold at that price before the offer. */}
+      {sale?.was_price_minor&&<s className="text-base text-muted-foreground" data-was-price="">{formatPrice(String(sale.was_price_minor),market)}</s>}</p>
+     {sale&&<OfferUntil market={market} endsAt={sale.ends_at}/>}
+     {page.delivery_included&&<p className="flex items-center gap-2 text-sm font-semibold text-success" data-delivery-included=""><Truck className="h-4 w-4" aria-hidden="true"/>{copy.deliveryIncludedNote}</p>}
+    </div>
+    <BuyBox market={market} target={{listing_id:detail.listing_id,slug:detail.slug,title:page.title,image:page.images[0]?.id??null,price_minor:price}} offers={page.quantity_offers}/>
+    {page.free_delivery&&!page.delivery_included&&<Suspense fallback={null}><ProductFreeDelivery market={market}/></Suspense>}
     <ul className="ym-card divide-y divide-border px-4 text-sm leading-7">
      <li className="flex items-start gap-3 py-3"><HandCoins className="mt-1 h-5 w-5 shrink-0" strokeWidth={1.6} aria-hidden="true"/><span><span className="font-semibold">{service.paymentHeading}</span><span className="block text-muted-foreground">{copy.reassureCall}</span></span></li>
      <li className="flex items-start gap-3 py-3"><Truck className="mt-1 h-5 w-5 shrink-0" strokeWidth={1.6} aria-hidden="true"/><span className="text-muted-foreground">{service.shipping} {service.delivery}</span></li>
