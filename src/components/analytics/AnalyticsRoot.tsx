@@ -22,11 +22,11 @@ export function AnalyticsRoot(){
  useEffect(()=>{trackPageview();},[pathname]);
  if(!askConsent||pathname.startsWith("/admin"))return null;
  const decide=(v:"granted"|"denied")=>{setConsent(v);setAskConsent(false);};
- return <div data-consent-banner="" role="region" aria-label="خصوصية التصفح" className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-[80] mx-auto max-w-md rounded-2xl border border-border bg-card p-4 text-sm shadow-2xl sm:bottom-6">
-  <p className="leading-7 text-foreground">نستخدم أدوات قياس مجهولة الهوية لتحسين تجربة التسوق. هل توافقين على حفظ تفضيلاتك؟</p>
-  <div className="mt-3 flex gap-2">
-   <button type="button" onClick={()=>decide("granted")} className="min-h-11 flex-1 rounded-full bg-primary px-4 font-extrabold text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">موافقة</button>
-   <button type="button" onClick={()=>decide("denied")} className="min-h-11 flex-1 rounded-full border border-border px-4 font-bold text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">لا، شكراً</button>
+ return <div data-consent-banner="" role="region" aria-label="خصوصية التصفح" className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+var(--mobile-nav-height,0px)+0.75rem)] z-[80] mx-auto flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-border bg-card px-4 py-3 text-[13px] shadow-lift sm:bottom-5">
+  <p className="min-w-[13rem] flex-1 leading-6 text-foreground">نستخدم أدوات قياس مجهولة الهوية لتحسين تجربة التسوق. هل توافقين على حفظ تفضيلاتك؟</p>
+  <div className="flex shrink-0 gap-2">
+   <button type="button" onClick={()=>decide("granted")} className="min-h-11 rounded-full bg-primary px-5 font-bold text-primary-foreground">موافقة</button>
+   <button type="button" onClick={()=>decide("denied")} className="min-h-11 rounded-full border border-border px-4 font-semibold text-foreground">لا، شكراً</button>
   </div>
  </div>;
 }

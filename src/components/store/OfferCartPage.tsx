@@ -42,7 +42,7 @@ export function OfferCartPage({ market, type, versions }: { market: MarketCode; 
 
     {priced.lines.length===0&&<div role="status" className="mt-6 rounded-2xl border border-border bg-card px-6 py-8 text-center"><h2 className="font-display text-xl font-extrabold">سلتك فارغة</h2><p className="mt-2 text-sm leading-7 text-muted-foreground">تصفّحي الأقسام لاختيار المنتجات، ولن يُرسل أي طلب من بيئة الاختبار.</p><a href={path+"#discover"} className="btn-outline mt-5 inline-flex min-h-11 items-center">استكشفي الأقسام <ArrowLeft className="h-4 w-4" aria-hidden="true"/></a></div>}
     <ul className="mt-6 space-y-3" aria-label="منتجات السلة">{priced.lines.map((row, i) => <li key={i} className="flex gap-4 rounded-2xl border bg-card p-4" data-cart-line={row.line.slug + ":" + row.line.pack_id}>
-      {row.version?.image && <img src={row.version.image.url} alt="" className="h-20 w-20 shrink-0 rounded-xl bg-[#efe6d7] object-contain" />}
+      {row.version?.image && <img src={row.version.image.url} alt="" className="h-20 w-20 shrink-0 rounded-xl bg-surface object-contain" />}
       <div className="min-w-0 flex-1 space-y-1 text-sm">
         <a href={path + "/p/" + encodeURIComponent(row.line.slug)} className="block font-extrabold hover:text-primary">{row.version?.title ?? row.line.slug}</a>
         <p className="text-muted-foreground">{row.pack?.label ?? "عبوة غير متاحة"}</p>

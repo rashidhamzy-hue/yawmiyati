@@ -21,12 +21,12 @@ export function ProductPageView({page,detail,market}:{page:PublicProductPage;det
  return <article dir="rtl" aria-label="تفاصيل المنتج" className="space-y-8">
   <div className="grid gap-6 lg:grid-cols-2 lg:gap-10">
    <div className="space-y-3">
-    <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border bg-[#efe6d7]">
+    <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border bg-surface">
      {image&&<img key={image.id} src={productMediaPath(image.id)} alt={image.alt} width={800} height={800} fetchPriority="high" decoding="async" className="h-full w-full object-contain"/>}
     </div>
     {page.images.length>1&&<div role="group" aria-label="معرض صور المنتج" className="flex gap-2 overflow-x-auto pb-1">
      {page.images.map((img,index)=><button key={img.id} type="button" aria-label={`عرض الصورة ${index+1}`} aria-pressed={index===selected} onClick={()=>setSelected(index)}
-       className={"h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 bg-[#efe6d7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary "+(index===selected?"border-primary":"border-transparent")}>
+       className={"h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 bg-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary "+(index===selected?"border-primary":"border-transparent")}>
        <img src={productMediaPath(img.id,360)} alt="" width={64} height={64} loading="lazy" decoding="async" className="h-full w-full object-cover"/></button>)}
     </div>}
    </div>
@@ -57,14 +57,14 @@ export function ProductPageView({page,detail,market}:{page:PublicProductPage;det
   {page.bundle.length>0&&<section aria-label="محتويات العرض" className="max-w-3xl">
    <h2 className="mb-3 inline-flex items-center gap-2 font-display text-xl font-extrabold"><Package className="h-5 w-5 text-primary" aria-hidden="true"/>محتويات العرض</h2>
    <ul className="grid gap-2 sm:grid-cols-2">{page.bundle.map((b,i)=><li key={i} className="flex items-center gap-3 rounded-xl border bg-card p-3 text-sm">
-    {b.image?<img src={productMediaPath(b.image,360)} alt="" width={56} height={56} loading="lazy" decoding="async" className="h-14 w-14 shrink-0 rounded-lg bg-[#efe6d7] object-cover"/>:<span className="h-14 w-14 shrink-0 rounded-lg bg-[#efe6d7]" aria-hidden="true"/>}
+    {b.image?<img src={productMediaPath(b.image,360)} alt="" width={56} height={56} loading="lazy" decoding="async" className="h-14 w-14 shrink-0 rounded-lg bg-surface object-cover"/>:<span className="h-14 w-14 shrink-0 rounded-lg bg-surface" aria-hidden="true"/>}
     <span className="min-w-0 flex-1 break-words leading-6">{b.name}</span><span className="shrink-0 font-bold tabular-nums">× {b.quantity}</span>
    </li>)}</ul>
   </section>}
   {page.videos.length>0&&<section aria-label="فيديو المنتج" className="max-w-3xl space-y-3">
    <h2 className="font-display text-xl font-extrabold">شاهدي المنتج</h2>
    {page.videos.slice(0,2).map(v=><video key={v} controls playsInline preload="none" poster={page.images[0]?productMediaPath(page.images[0].id):undefined}
-     className="aspect-square w-full max-w-md rounded-2xl border bg-[#efe6d7] object-contain"><source src={productVideoPath(v)} type="video/mp4"/></video>)}
+     className="aspect-square w-full max-w-md rounded-2xl border bg-surface object-contain"><source src={productVideoPath(v)} type="video/mp4"/></video>)}
   </section>}
   <section aria-label="وصف المنتج" className="max-w-3xl space-y-3">
    <h2 className="font-display text-xl font-extrabold">عن المنتج</h2>
