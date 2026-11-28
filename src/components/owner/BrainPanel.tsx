@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- brain JSON payloads are rendered defensively */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { BrainCircuit, CheckCircle2, ChevronDown, CircleAlert, ExternalLink, Loader2, Play, PauseCircle, PlugZap, RotateCw, Sparkles, XCircle } from "lucide-react";
+import { offersClient } from "@/lib/store/offers-client";
 import { brainClient, BRAIN_STAGES, money, usd, type BrainItem, type BrainOverview, type BrainRun } from "@/lib/store/brain-client";
 import type { MarketCode } from "@/lib/store/markets";
 import { StorePublication } from "./StorePublication";
@@ -15,6 +16,7 @@ export function BrainPanel({ market, origin, publicKey, token }: Props) {
   const [busy, setBusy] = useState(false);
   const [driving, setDriving] = useState(false);
   const [tests, setTests] = useState<{ woo?: string; ai?: string }>({});
+  const [buildCount, setBuildCount] = useState(100);
   const alive = useRef(true);
   useEffect(() => () => { alive.current = false; }, []);
 
@@ -70,8 +72,13 @@ export function BrainPanel({ market, origin, publicKey, token }: Props) {
         className="inline-flex min-h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold hover:bg-muted disabled:opacity-50"><PlugZap className="h-4 w-4" aria-hidden="true" />Test WooCommerce</button>
       <button type="button" disabled={busy} onClick={() => act(async () => { const r = await client.testAi(market); setTests((t) => ({ ...t, ai: r.ok ? `AI ready · test cost ${usd(r.cost_microusd)}` : "AI not ready: " + r.error })); })}
         className="inline-flex min-h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold hover:bg-muted disabled:opacity-50"><Sparkles className="h-4 w-4" aria-hidden="true" />Test AI</button>
-      {!active && <button type="button" disabled={busy || driving} onClick={() => act(async () => { const r = await client.start(market); void drive(r.run.id); })}
-        className="inline-flex min-h-10 items-center gap-2 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"><Play className="h-4 w-4" aria-hidden="true" />Start full test run</button>}
+      {!active && <span className="inline-flex items-center gap-2 rounded-full border bg-background py-1 pe-1 ps-4" data-build-store="">
+        <label htmlFor="build-count" className="text-sm font-semibold">Build store →</label>
+        <input id="build-count" type="number" min={1} max={200} step={1} value={buildCount} onChange={(e) => setBuildCount(Math.max(1, Math.min(200, Math.round(Number(e.target.value) || 1))))} className="h-9 w-20 rounded-lg border px-2 text-sm tabular-nums" aria-label="Number of products to build" />
+        <span className="text-sm text-muted-foreground">products</span>
+        <button type="button" disabled={busy || driving} onClick={() => act(async () => { const r = await client.buildStore(market, buildCount); void drive(r.run.id); })}
+          className="inline-flex min-h-10 items-center gap-2 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"><Play className="h-4 w-4" aria-hidden="true" />Build store</button>
+      </span>}
       {run?.status === "running" && !driving && <button type="button" onClick={() => void drive(run.id)} className="inline-flex min-h-10 items-center gap-2 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground"><RotateCw className="h-4 w-4" aria-hidden="true" />Continue run</button>}
       {run?.status === "paused_budget" && <button type="button" disabled={busy} onClick={() => act(async () => { await client.resume(market, run.id); void drive(run.id); })} className="inline-flex min-h-10 items-center gap-2 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground"><RotateCw className="h-4 w-4" aria-hidden="true" />Resume (budget allows)</button>}
       {active && <button type="button" disabled={busy} onClick={() => act(() => client.cancel(market, run!.id))} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-destructive/40 px-4 text-sm font-semibold text-destructive"><PauseCircle className="h-4 w-4" aria-hidden="true" />Stop run</button>}
@@ -91,8 +98,12 @@ export function BrainPanel({ market, origin, publicKey, token }: Props) {
         <b className="capitalize">{run.status.replace("_", " ")}</b>
         {run.progress.ingested !== undefined && <span>· {String(run.progress.ingested)} offers read{run.progress.woo_total_products ? ` of ${run.progress.woo_total_products} products` : ""}</span>}
         {run.progress.researched !== undefined && <span>· {String(run.progress.researched)} researched</span>}
-        {run.progress.content_written !== undefined && <span>· {String(run.progress.content_written)} pages written</span>}
+        {run.progress.content_written !== undefined && <span>· {String(run.progress.content_written)}{run.progress.target ? ` of ${String(run.progress.target)}` : ""} pages written</span>}
+        {Number(run.progress.research_from_cache ?? 0) + Number(run.progress.content_reused ?? 0) > 0 && <span>· {Number(run.progress.research_from_cache ?? 0) + Number(run.progress.content_reused ?? 0)} reused at no cost</span>}
+        {run.progress.cost_microusd !== undefined && <span className="font-semibold" data-run-cost="">· this build so far {usd(Number(run.progress.cost_microusd))}</span>}
       </p>
+      {run.progress.target !== undefined && <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label="Build progress" aria-valuemin={0} aria-valuemax={Number(run.progress.target)} aria-valuenow={Number(run.progress.content_written ?? 0)}>
+        <span className="block h-full rounded-full bg-primary" style={{ width: Math.min(100, (Number(run.progress.content_written ?? 0) / Math.max(1, Number(run.progress.target))) * 100) + "%" }} /></div>}
       {run.status === "paused_budget" && <p className="mt-2 text-sm text-amber-800">Paused: today's AI budget is used up. It can resume tomorrow, or after you raise the daily cap.</p>}
       {run.status === "running" && !driving && <p className="mt-2 text-sm text-muted-foreground">The run moves forward while this page is open. Press Continue run.</p>}
       {run.error && <p className="mt-2 text-sm text-destructive">Error: {run.error}</p>}
@@ -103,7 +114,15 @@ export function BrainPanel({ market, origin, publicKey, token }: Props) {
     {run?.summary?.cost && <CostSummary cost={run.summary.cost} />}
     {items.length > 0 && run && <SelectedList items={items} market={market} busy={busy} fromTaager={(run.summary as { source?: string }).source === "taager_api"}
       decide={(decision, list) => act(() => client.decide(market, run.id, decision, list))} />}
-    <StorePublication client={client} market={market} runId={run?.id ?? null} approved={items.filter((i) => i.owner_decision === "approved").length} />
+    <StorePublication client={client} market={market} runId={run?.id ?? null} approved={items.filter((i) => i.owner_decision === "approved").length}
+      afterPublish={async () => {
+        // One queue: as soon as products are on the store, the brain works out quantity offers, sets, delivery-included
+        // and the free-delivery rule and files them as proposals. Nothing shows to shoppers until each is approved.
+        const p = await offersClient(origin, publicKey, token).propose(market);
+        window.dispatchEvent(new CustomEvent("yawmiyati:offers-updated", { detail: { market } }));
+        const n = p.quantity.length + p.bundles.length + p.sales.length + p.delivery_included.length + (p.free_delivery ? 1 : 0);
+        return n ? `${n} offers worked out for these products (${p.quantity.length} quantity, ${p.bundles.length} sets, ${p.delivery_included.length} delivery included${p.free_delivery ? ", a free-delivery rule" : ""}).` : "No safe offer could be built from these products yet.";
+      }} />
   </section>;
 }
 

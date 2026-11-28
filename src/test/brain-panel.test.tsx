@@ -42,6 +42,34 @@ describe("Brain panel",()=>{
  });
 });
 
+describe("Build store command",()=>{
+ it("starts one build for the chosen number of products and shows progress and cost in dollars",async()=>{
+  const calls:string[]=[];
+  const building={...run,id:"r2",stage:"content",status:"awaiting_review",progress:{researched:15,content_written:4,target:10,cost_microusd:412000,research_from_cache:3,content_reused:1}};
+  let started=false;
+  vi.stubGlobal("fetch",vi.fn(async(url:URL|string,init?:RequestInit)=>{
+   const path=new URL(String(url)).pathname;calls.push(path+" "+String(init?.body));
+   if(path.endsWith("brain_dashboard"))return Response.json(started?{...overview,runs:[building]}:overview);
+   if(path.endsWith("brain_analysis_page"))return Response.json([item]);
+   if(path.endsWith("/yawmiyati-brain")){const b=JSON.parse(String(init?.body));if(b.action==="build_store")started=true;return Response.json({run:building,spent_today_microusd:412000});}
+   return Response.json({});
+  }));
+  render(<BrainPanel market="sa" origin="https://x.supabase.co" publicKey="pk" token="tok"/>);
+  const count=await screen.findByLabelText("Number of products to build") as HTMLInputElement;
+  expect(count.value).toBe("100");
+  fireEvent.change(count,{target:{value:"10"}});
+  fireEvent.click(screen.getByRole("button",{name:"Build store"}));
+  await waitFor(()=>expect(calls.some(c=>c.includes("/yawmiyati-brain")&&c.includes('"action":"build_store"')&&c.includes('"count":10'))).toBe(true));
+  expect(await screen.findByText(/4 of 10 pages written/)).toBeInTheDocument();
+  expect(screen.getByText(/this build so far \$0\.41/)).toBeInTheDocument();
+  expect(screen.getByText(/4 reused at no cost/)).toBeInTheDocument();
+  expect(screen.getByRole("progressbar",{name:"Build progress"})).toHaveAttribute("aria-valuenow","4");
+  // Out-of-range numbers are clamped, never sent.
+  fireEvent.change(screen.getByLabelText("Number of products to build"),{target:{value:"999"}});
+  expect((screen.getByLabelText("Number of products to build") as HTMLInputElement).value).toBe("200");
+ });
+});
+
 describe("pick list for the Taager add button",()=>{
  it("lists approved Taager product ids for the market",async()=>{
   const {pickList}=await import("@/components/owner/BrainPanel");

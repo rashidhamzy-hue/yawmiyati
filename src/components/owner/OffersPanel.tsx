@@ -23,6 +23,8 @@ export function OffersPanel({ market, origin, publicKey, token, request }: { mar
   const [saleNotes, setSaleNotes] = useState<{ title: string; reason: string; banked_profit_usd: number; normal_profit_usd: number }[]>([]);
   const load = useCallback(async () => { try { setOffers(await client.list(market)); setReport(await client.freeDeliveryReport(market).catch(() => null)); } catch (e) { setOffers([]); setError(String((e as Error).message ?? e)); } }, [client, market]);
   useEffect(() => { setNote(""); setError(""); setOffers(null); setSaleNotes([]); void load(); }, [load]);
+  // The brain panel files proposals right after "Publish approved": show them here without a reload.
+  useEffect(() => { const on = () => void load(); window.addEventListener("yawmiyati:offers-updated", on); return () => window.removeEventListener("yawmiyati:offers-updated", on); }, [load]);
   const proven = (offers ?? []).some((o) => o.taager_discounts_proven === true);
   async function act(fn: () => Promise<unknown>) { setBusy(true); setError(""); try { await fn(); await load(); } catch (e) { setError(String((e as Error).message ?? e)); } finally { setBusy(false); } }
   const propose = () => act(async () => {
@@ -39,7 +41,7 @@ export function OffersPanel({ market, origin, publicKey, token, request }: { mar
     { kind: "quantity", title: "Quantity discounts", hint: "\"2 for X\", \"3 for X\" on one product.", Icon: BadgePercent },
   ];
   const waiting = (offers ?? []).filter((o) => o.status === "proposed" && !o.problem).length;
-  return <section className="space-y-4 rounded-3xl border bg-card p-5 shadow-soft" aria-label="Offers approval">
+  return <section id="offers" className="scroll-mt-32 space-y-4 rounded-3xl border bg-card p-5 shadow-soft" aria-label="Offers approval">
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <h2 className="text-lg font-extrabold">Bundles, discounts and offers</h2>

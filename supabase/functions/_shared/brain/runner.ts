@@ -340,6 +340,21 @@ async function stageDecide(d: Deps, run: Run, m: MarketFacts, settings: Settings
   if (!chosen.length) run.status = "awaiting_review";
 }
 
+/** The latest earlier page for the same product in this store that still passes today's rules against today's facts. */
+async function reusablePage(d: Deps, run: Run, a: Analysis, market: Market, sourceText: string): Promise<Record<string, unknown> | null> {
+  try {
+    const rows = await d.db.select<{ run_id: string; content: Record<string, unknown> | null; updated_at: string }>("brain_product_analysis",
+      `select=run_id,content,updated_at&store_code=eq.${run.store_code}&product_id=eq.${a.product_id}&variation_id=eq.${a.variation_id}&stage=eq.selected&order=updated_at.desc&limit=5`);
+    for (const r of rows) {
+      if (r.run_id === run.id || !r.content || typeof r.content.title !== "string" || r.content.error) continue;
+      const again = parseContent(r.content, { market, sourceText });
+      if (again.issues.includes("needs_fix")) continue;
+      return { ...r.content, issues: again.issues, reused_from_run: r.run_id };
+    }
+  } catch { /* nothing to reuse */ }
+  return null;
+}
+
 async function stageContent(d: Deps, run: Run, m: MarketFacts, settings: Settings, deadline: number) {
   if (!d.anthropicKey) throw Error("missing_anthropic_key");
   const conc = d.concurrency ?? 4;
@@ -349,6 +364,7 @@ async function stageContent(d: Deps, run: Run, m: MarketFacts, settings: Setting
     const est = estimateMax(settings.content_model, 4200, 2500, 0) * batch.length * 2; // one possible rewrite each
     if (!(await budgetOk(d, run, settings, est))) { run.status = "paused_budget"; return; }
     const offers = await loadOffersByKeys(d.db, run.store_code, batch, runSource(run));
+    let reused = 0;
     await pool(batch, conc, async (a) => {
       const o = offers.get(key(a));
       let content: Record<string, unknown>, cost = 0;
@@ -364,6 +380,10 @@ async function stageContent(d: Deps, run: Run, m: MarketFacts, settings: Setting
           deliveryText: `${minorToDecimal(m.shippingMinor, m.minorDigits)} ${m.currency} per order, paid on delivery`, returnsText: "per the store's returns page",
           research: research?.summary ?? "", facts, buyerQuestions: research?.buyer_questions ?? [] };
         const sourceText = contentSourceText(o, ctx);
+        // Idempotent builds: a page already written for this product and still valid against today's facts is reused, not paid for again.
+        const earlier = await reusablePage(d, run, a, m.code, sourceText);
+        if (earlier) { content = { ...earlier, reused: true, cost_microusd: 0 }; reused++; }
+        else {
         const write = async (fix?: string[]) => {
           const res = await callClaude({ apiKey: d.anthropicKey!, model: settings.content_model, maxTokens: 2500, temperature: 0.4, fetchImpl: d.fetchImpl, ...contentPrompt(o, m, { ...ctx, fix }) });
           await recordCost(d.db, run, "content", key(a), res.metered);
@@ -374,9 +394,10 @@ async function stageContent(d: Deps, run: Run, m: MarketFacts, settings: Setting
         // One rewrite when the draft breaks a rule (invented number, wrong dialect, layout). A second failure stays flagged for the owner.
         if (page.issues.includes("needs_fix")) { const again = await write(page.issues.filter((i) => i !== "needs_fix")); if (!again.issues.includes("needs_fix") || again.issues.length < page.issues.length) page = again; }
         content = { ...page, model: settings.content_model, cost_microusd: cost, facts_used: facts.length };
+        }
         // Picture rule (M11): clean pictures first, promo artwork never the face of the product. One small vision call.
         const pics = o.images.map((i) => /^https:\/\/media\.taager\.com\/([0-9a-f-]{36}\.(?:jpe?g|png|webp))$/.exec(i.src)?.[1]).filter((x): x is string => !!x).slice(0, 12);
-        if (pics.length > 1) {
+        if (pics.length > 1 && !content.pictures) {
           try {
             const seen = await callClaude({ apiKey: d.anthropicKey!, model: settings.research_model, maxTokens: 600, temperature: 0, fetchImpl: d.fetchImpl,
               images: pics.map((id) => `https://media.taager.com/360x360/${id}`), ...picturePrompt(pics) });
@@ -391,6 +412,7 @@ async function stageContent(d: Deps, run: Run, m: MarketFacts, settings: Setting
         { content, category: (content.category as string | undefined) ?? a.category, cost_microusd: Number(a.cost_microusd ?? 0) + cost, updated_at: new Date().toISOString() });
     });
     run.progress.content_written = Number(run.progress.content_written ?? 0) + batch.length;
+    run.progress.content_reused = Number(run.progress.content_reused ?? 0) + reused;
   }
 }
 
@@ -426,6 +448,14 @@ async function stageMerchandise(d: Deps, run: Run) {
   run.status = "awaiting_review";
 }
 
+/** Products a "Build store" run must deliver (1-200), or null for an ordinary run. */
+export function buildTarget(summary: Record<string, unknown>): number | null {
+  const n = (summary.build as { target?: unknown } | undefined)?.target;
+  return typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= 200 ? n : null;
+}
+/** Research half as many again as the target (blocked prices, weak research and near-duplicates fall out), at most 400. */
+export const buildShortlist = (target: number) => Math.min(400, Math.max(target + 10, Math.ceil(target * 1.5)));
+
 /** Advance a run as far as the time budget allows. Returns the saved run. */
 export async function step(d: Deps, runId: string): Promise<Run> {
   const started = (d.now ?? Date.now)();
@@ -440,6 +470,9 @@ export async function step(d: Deps, runId: string): Promise<Run> {
   const run = claimed[0];
   const m = MARKETS[d.market];
   const settings = (await d.db.select<Settings>("brain_settings", `select=*&store_code=eq.${run.store_code}`))[0];
+  // "Build store → N products": the run carries its own target; the shortlist is sized so N survive pricing and review.
+  const target = buildTarget(run.summary);
+  if (target) { settings.selection_size = target; settings.shortlist_size = buildShortlist(target); }
   try {
     let guard = 0;
     while (run.status === "running" && Date.now() < deadline && guard++ < 10) {
@@ -458,6 +491,12 @@ export async function step(d: Deps, runId: string): Promise<Run> {
     run.status = "failed";
     (run as Run & { error?: string }).error = String(e).slice(0, 500);
   }
+  // Live cost of this run in micro-dollars, and how far the build is, for the progress line in /admin.
+  try {
+    const ledger = await d.db.select<{ cost_microusd: number }>("brain_cost_ledger", `select=cost_microusd&run_id=eq.${run.id}&limit=5000`);
+    run.progress.cost_microusd = ledger.reduce((s, l) => s + Number(l.cost_microusd), 0);
+    if (target) run.progress.target = target;
+  } catch { /* progress only */ }
   const saved = await d.db.patch<Run>("brain_runs", `id=eq.${run.id}`, {
     stage: run.stage, status: run.status, cursor: run.cursor, progress: run.progress, summary: run.summary,
     error: (run as Run & { error?: string }).error ?? null, locked_until: null, updated_at: new Date().toISOString(),

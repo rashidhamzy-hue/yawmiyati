@@ -4,7 +4,7 @@ import { markets, type MarketCode } from "./markets";
 
 export type BrainRun = {
   id: string; stage: string; status: "running" | "paused_budget" | "awaiting_review" | "done" | "failed" | "cancelled";
-  progress: { ingested?: number; woo_total_products?: number | null; researched?: number; content_written?: number };
+  progress: { ingested?: number; woo_total_products?: number | null; researched?: number; content_written?: number; target?: number; cost_microusd?: number; research_from_cache?: number; content_reused?: number };
   summary: { capability?: any; prefilter?: any; decision?: any; cost?: any; merchandising?: any }; error: string | null; created_at: string; finished_at: string | null;
 };
 export type BrainSettings = { autopilot_enabled: boolean; daily_budget_microusd: number; research_model: string; content_model: string; shortlist_size: number; selection_size: number; field_mapping: Record<string, unknown> };
@@ -68,6 +68,8 @@ export function brainClient(origin: string, publicKey: string, token: string, re
     testWoo: (m: MarketCode) => action<{ ok: boolean; error?: string; products_total?: number | null; currency?: string | null; expected_currency?: string }>(m, "test_woo"),
     testAi: (m: MarketCode) => action<{ ok: boolean; error?: string; cost_microusd?: number }>(m, "test_ai"),
     start: (m: MarketCode) => action<{ run: BrainRun; note?: string }>(m, "start"),
+    /** Build store: pick, research, price and write `count` products (1-200) in one resumable run. */
+    buildStore: (m: MarketCode, count: number) => { if (!Number.isInteger(count) || count < 1 || count > 200) throw Error("Choose 1 to 200 products"); return action<{ run: BrainRun; note?: string }>(m, "build_store", { count }); },
     step: (m: MarketCode, run: string) => action<{ run: BrainRun; spent_today_microusd: number }>(m, "step", { run_id: run }),
     resume: (m: MarketCode, run: string) => action<{ run: BrainRun | null }>(m, "resume", { run_id: run }),
     cancel: (m: MarketCode, run: string) => action<{ run: BrainRun | null }>(m, "cancel", { run_id: run }),
