@@ -8,6 +8,7 @@ import { posthogProxyTarget, proxyPosthog } from "./lib/analytics/posthog-proxy"
 import { handleSeoRequest, robotsHeaderFor } from "./lib/seo/endpoints";
 import { handleEditorialMedia } from "./lib/store/editorial-media";
 import { handleProductMedia } from "./lib/store/product-media";
+import { handleVisitorCountry, rootRedirect } from "./lib/store/visitor-country";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -79,6 +80,10 @@ const handler = {
       catch { return new Response(null, { status: 502 }); }
     }
     const robotsHeader = robotsHeaderFor(new URL(request.url).hostname);
+    // Country handling from Cloudflare's header only (nothing stored): the root sends visitors from our five
+    // countries to their store; store pages are never redirected.
+    const geo = handleVisitorCountry(request) ?? rootRedirect(request);
+    if (geo) return withRobotsHeader(geo, robotsHeader);
     try {
       const seo = await handleSeoRequest(request);
       if (seo) return withRobotsHeader(seo, robotsHeader);

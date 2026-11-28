@@ -1,5 +1,6 @@
 import {useRef,useState} from "react";
-import {Banknote,PhoneCall,ShieldCheck} from "lucide-react";
+import {Banknote,Lock,PhoneCall,ShieldCheck} from "lucide-react";
+import {marketExperience} from "@/lib/store/market-experience";
 import type {MarketCode} from "@/lib/store/markets";
 import {cityLabel,dialCode,phoneExample,validateCod,type CodErrors,type CodField,type CodForm} from "@/lib/store/cod-checkout";
 import {track} from "@/lib/analytics/analytics";
@@ -34,6 +35,11 @@ export function CodCheckoutForm({market,onValidityChange}:{market:MarketCode;onV
    <li className="flex items-center gap-2 rounded-xl bg-primary-soft px-3 py-2 text-primary"><PhoneCall className="h-4 w-4" aria-hidden="true"/>{copy.formCall}</li>
    <li className="flex items-center gap-2 rounded-xl bg-primary-soft px-3 py-2 text-primary"><ShieldCheck className="h-4 w-4" aria-hidden="true"/>{copy.formNoCard}</li>
   </ul>
+  {/* The delivery country is the store's country and cannot be changed: orders for another country go to that country's store. */}
+  <div className="rounded-xl border border-border bg-muted/50 px-3.5 py-3" data-delivery-country={market}>
+   <p className="flex items-center justify-between gap-3 text-sm"><span className="font-extrabold">{copy.formCountry}</span><span className="inline-flex items-center gap-1.5 font-bold"><Lock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true"/>{marketExperience[market].regionName}</span></p>
+   <p className="mt-1 text-xs leading-5 text-muted-foreground">{copy.formCountryFixed(marketExperience[market].regionName)} · {copy.formGiftNote}</p>
+  </div>
   <div><label htmlFor="cod-name" className="block text-sm font-extrabold">{copy.formName}</label>
    <input id="cod-name" className={field} name="name" autoComplete="name" value={form.name} onChange={e=>update("name",e.target.value)} onBlur={()=>blur("name")} {...described("name")}/>{err("name")}</div>
   <div><label htmlFor="cod-phone" className="block text-sm font-extrabold">{copy.formPhone}</label>

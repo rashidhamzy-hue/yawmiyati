@@ -39,13 +39,14 @@ type HeadLink={rel:string;href:string;hrefLang?:string};
 /**
  * Canonical + hreflang alternates for a page that exists in every market.
  * All five stores are Arabic; the region subtag tells Google which country
- * each one serves. x-default goes to the default market.
+ * each one serves. x-default: the store chooser for home pages, the default market otherwise.
  */
 export function sharedPageLinks(market:MarketCode,suffix=""):HeadLink[]{
  return [
   {rel:"canonical",href:marketUrl(market,suffix)},
   ...MARKET_CODES.map(m=>({rel:"alternate",hrefLang:markets[m].locale,href:marketUrl(m,suffix)})),
-  {rel:"alternate",hrefLang:"x-default",href:marketUrl(DEFAULT_MARKET,suffix)},
+  // The store chooser at "/" is the page for every other country; deeper shared pages fall back to the default market.
+  {rel:"alternate",hrefLang:"x-default",href:suffix?marketUrl(DEFAULT_MARKET,suffix):SITE_ORIGIN+"/"},
  ];
 }
 
