@@ -4,10 +4,14 @@ import { minorToUsd, type MarketFacts } from "./markets.ts";
 import type { OfferRow } from "./woo-normalize.ts";
 import type { PriceDecision } from "./economics.ts";
 
-export const STORE_CATEGORIES = ["home", "kitchen", "beauty", "fashion", "wellness", "organize"] as const;
+// "kids" (mother & kids) is a brain grouping first: the storefront section opens once it has its photo.
+// Until then published kids items carry no storefront section and appear in all products and search.
+export const STORE_CATEGORIES = ["kids", "home", "kitchen", "beauty", "fashion", "wellness", "organize"] as const;
+export const STOREFRONT_SECTIONS = ["home", "kitchen", "beauty", "fashion", "wellness", "organize"] as const;
 export type StoreCategory = typeof STORE_CATEGORIES[number];
 
 const CATEGORY_WORDS: Record<StoreCategory, RegExp> = {
+  kids: /اطفال|للاطفال|طفل|اطفالك|رضع|للرضع|رضيع|مولود|حديثي الولاده|حفاض|حفاضات|رضاعه|ببرونه|زجاجه رضاعه|مهد|نونيه|للامهات|حوامل|baby|kids|infant|toddler|newborn|nursing|maternity/,
   kitchen: /مطبخ|طبخ|قهوه|قهوة|شاي|كوب|اكواب|فناجين|اواني|قدر|مقلاه|خلاط|محضر|طاحونه|kitchen|coffee|tea|cook|mug|cup|blender|pan|pot|knife|سكين/,
   organize: /تنظيم|منظم|تخزين|حافظه|علب|رف|ارفف|سله|سلال|شماعه|organi[sz]|storage|rack|shelf|basket|container|hanger/,
   home: /منزل|بيت|ديكور|اناره|اضاءه|سجاد|ستائر|مفارش|وساده|مخده|حمام|غرفه|home|decor|lamp|light|rug|curtain|bedding|pillow|bath|candle|شموع/,
@@ -166,6 +170,7 @@ export function selectFinal(cands: Candidate[], size: number) {
 const AFFINITY: Record<StoreCategory, StoreCategory[]> = {
   kitchen: ["organize", "home"], organize: ["kitchen", "home"], home: ["organize", "wellness"],
   beauty: ["wellness", "fashion"], fashion: ["beauty", "wellness"], wellness: ["beauty", "home"],
+  kids: ["home", "organize"],
 };
 
 /** Featured picks, category order and "complete the set" cross-sells from the selected products. */

@@ -22,6 +22,9 @@ Owner decisions (26 Nov 2026, voice + chat): build the brain before the TasteWP 
 - **Women-only audience** (`audienceCheck` in `selection.ts`, title only): men's products, car accessories, power tools/welding, gaming, fishing/hunting and off-brand gear (surveillance kits, computers, construction, farm, power stations) are excluded with reason `not_for_audience:<kind>`; products outside the six lifestyle departments rank at half weight. Unisex items, "for home and car" items and children's items stay (mothers buy them). On the 27 Nov sync this removes 388 Saudi and 85 Iraqi products.
 - Kill rules narrowed after the 27 Nov Saudi sync (false positives: "micro fiber" as vape, "unisex" as sexual, soil activator, heat/sterilising guns, insect zappers, phone cases, pill organisers).
 
+## Mother & kids grouping (28 Nov 2026)
+`STORE_CATEGORIES` now starts with `kids` (baby, newborn, nursing, mothers, children's items). It ranks at full weight like the six lifestyle departments and the writer may assign it. The storefront still has six sections (`STOREFRONT_SECTIONS`; the publish step stores any other category as null), so published kids items appear in all products and search. **To open the section:** add a photo `cat-kids`, then add `kids` to `PUBLIC_CATEGORY_SLUGS`, `EDITORIAL_CATEGORIES`, the market tiles/captions, the search overlay and the publish whitelist + `brain_listings.category` check (one PR).
+
 ## Planning delivery rate (28 Nov 2026)
 Order of precedence: the owner's `brain_settings.delivery_rate_bps` → Taager's market median from the run's catalogue (`run.summary.prefilter.taager_success_median_bps`, confirmed × delivered over products with data, needs ≥ 20 products) → `MARKETS[m].defaultDeliveryRateBps`. A product with its own Taager figures is blended 50/50 with that base (Taager gives no order counts). 27 Nov sync: Saudi 32%, Iraq 33% of placed orders delivered (cautious reading; G1 and the first real weeks of orders replace it).
 

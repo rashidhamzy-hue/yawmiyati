@@ -142,6 +142,10 @@ describe("selection and safety",()=>{
   expect(riskCheck({title:"سماعات Apple AirPods",categories:[],description:""}).kills).toContain("counterfeit_brands");
   expect(riskCheck({title:"منظف بالوعات",categories:[],description:""}).flags).toContain("chemicals");
   expect(mapCategory({title:"خفاقة حليب للقهوة",categories:[]})).toBe("kitchen");
+  // Mother & kids: grouped by the brain (storefront section opens once it has its photo).
+  for(const title of ["سرير هزاز للنوم، ومهد وأرجوحة مريحة للرضع","مسند البطة المساعد للأمهات للاستحمام وتبديل الحفاض","سكوتر مودرن للاطفال"])
+   expect(mapCategory({title,categories:[]})).toBe("kids");
+  expect(mapCategory({title:"حقيبة سهلة الحمل للسفر",categories:[]})).not.toBe("kids");
   // Real Taager titles that older rules blocked by mistake (27 Nov 2026 Saudi sync).
   for(const title of ["منشفة تجفيف ميكرو فيبر","شعلة فحم كهربائية للمبخرة والعود بدون ولاعة ولا دخان","حقيبة خصر رياضية للجنسين","منشط تربة الحديقة 200 جرام",
     "مسدس حرارة","مسدس تعقيم محمول","مضرب صاعق للحشرات قابل للطي","جراب آيفون مضيء في الظلام","زجاجة مياه مع حقيبة منظم حبوب دواء"])
