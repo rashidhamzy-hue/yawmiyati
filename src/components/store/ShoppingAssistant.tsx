@@ -57,7 +57,9 @@ export function ShoppingAssistant({market,products,productPage}:{market:MarketCo
  const [draft,setDraft]=useState(""),[busy,setBusy]=useState(false);
  const scrollRef=useRef<HTMLDivElement>(null),inputRef=useRef<HTMLInputElement>(null),abortRef=useRef<AbortController|null>(null),queued=useRef("");
  // The catalogue the assistant recommends from: this page's rows when it has them, else the market's released catalogue.
- const catalog=useStoreCatalog(market,open&&!products.length),offers=useStoreOffers(market);
+ // Nothing is fetched until she opens the assistant, and never in the local preview catalogue.
+ const live=open&&!previewCatalogActive();
+ const catalog=useStoreCatalog(market,live&&!products.length),offers=useStoreOffers(market,live);
  const rows=products.length?products:catalog.state==="ready"?catalog.rows:[];
  useEffect(()=>{const el=scrollRef.current;if(el&&typeof el.scrollTo==="function")el.scrollTo({top:el.scrollHeight,behavior:"smooth"});},[messages,busy]);
  useEffect(()=>{if(open)inputRef.current?.focus();else {abortRef.current?.abort();setBusy(false);}},[open]);
