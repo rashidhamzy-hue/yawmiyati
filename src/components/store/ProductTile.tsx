@@ -13,7 +13,7 @@ export const productHref=(market:MarketCode,slug:string)=>`/${market}/p/${encode
 /** One product card for every grid and rail. Shows only what the released listing carries. */
 export function ProductTile({item,market,image,eager=false,showOffer=false,className=""}:{item:PublicListing;market:MarketCode;image?:TileImage;eager?:boolean;showOffer?:boolean;className?:string}){
  const copy=shopCopy(market),picture=image===undefined?listingImage(item):image,href=productHref(market,item.slug);
- return <article className={"group relative min-w-0 "+className} data-product-tile="">
+ return <article className={"group relative min-w-0 "+className} data-product-tile="" data-slug={item.slug}>
   <a href={href} className="flex h-full flex-col rounded-2xl">
    <div className="relative aspect-square overflow-hidden rounded-2xl bg-surface">
     {picture?<img src={picture.url} alt={picture.alt||item.title} width={360} height={360} loading={eager?"eager":"lazy"} decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"/>

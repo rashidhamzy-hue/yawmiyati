@@ -35,7 +35,7 @@ export function BuyBox({market,target,offers}:{market:MarketCode;target:BuyTarge
   {options.length>1&&<fieldset>
    <legend className="mb-2 text-sm font-semibold">{copy.chooseQuantity}</legend>
    <div className="grid gap-2">{options.map(o=>{const on=o.quantity===chosen.quantity;return <label key={o.quantity} className={"flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border px-4 py-2.5 transition-colors "+(on?"border-foreground bg-card ring-1 ring-foreground":"border-border bg-card hover:border-foreground/40")}>
-     <input type="radio" name="quantity" value={o.quantity} checked={on} onChange={()=>setQuantity(o.quantity)} className="h-4 w-4 accent-[var(--foreground)]"/>
+     <input type="radio" name="quantity" value={o.quantity} checked={on} onChange={()=>{setQuantity(o.quantity);if(o.quantity>1)track("offer_selected",{market,slug:target.slug,quantity:o.quantity,value_minor:o.total.toString(),saving_minor:o.saving.toString()});}} className="h-4 w-4 accent-[var(--foreground)]"/>
      <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{label(o.quantity)}</span>{o.saving>0n&&<span className="block text-xs font-medium text-sale">{copy.save(formatPrice(o.saving,market))}</span>}</span>
      {o.saving>0n&&o.saving===bestSaving&&options.length>2&&<span className="ym-chip ym-chip-sand">{copy.bestValue}</span>}
      <span className="ym-price text-base">{formatPrice(o.total,market)}</span>

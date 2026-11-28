@@ -18,7 +18,8 @@ export function AnalyticsRoot(){
   // the analytics library never competes with the hero picture, fonts or hydration on slow phones.
   let done=false;
   const events=["pointerdown","keydown","touchstart","scroll"] as const;
-  const go=()=>{if(done)return;done=true;events.forEach(e=>window.removeEventListener(e,go));void initAnalytics();};
+  // Funnel listeners (cards seen and clicked, product-page scroll) load with the analytics library, never before.
+  const go=()=>{if(done)return;done=true;events.forEach(e=>window.removeEventListener(e,go));void initAnalytics();void import("@/lib/analytics/commerce-tracking").then(m=>{m.startCommerceTracking();}).catch(()=>undefined);};
   events.forEach(e=>window.addEventListener(e,go,{once:true,passive:true}));
   const later=()=>{window.setTimeout(go,6000);};
   if(document.readyState==="complete")later();else window.addEventListener("load",later,{once:true});
