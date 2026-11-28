@@ -1,4 +1,7 @@
+import {useEffect} from "react";
 import {Check,Layers,Truck} from "lucide-react";
+import {bundleNode,graph,serializeJsonLd} from "@/lib/seo/structured-data";
+import {SITE_ORIGIN} from "@/lib/seo/site";
 import type {MarketCode} from "@/lib/store/markets";
 import {formatPrice,type PublicListing} from "@/lib/store/public-catalog";
 import {productMediaPath} from "@/lib/store/product-media";
@@ -74,12 +77,16 @@ export function StoreSetPage({market,slug}:{market:MarketCode;slug:string}){
  const copy=shopCopy(market),service=customerServiceCopy[market],catalog=useStoreCatalog(market),offers=useStoreOffers(market);
  const rows=catalog.state==="ready"?catalog.rows:[];
  const set=resolveSets(offers.bundles,rows).find(s=>s.bundle.slug===slug);
+ const setSlug=set?.bundle.slug;
+ useEffect(()=>{if(setSlug)track("set_viewed",{market,slug:setSlug,pieces:set!.parts.length,value_minor:String(set!.bundle.price_minor)});},[market,setSlug]); // eslint-disable-line react-hooks/exhaustive-deps
+ const ld=set?bundleNode(market,set.bundle,set.parts.map(p=>({title:p.row.title,slug:p.row.slug,quantity:p.quantity,image:p.row.image?SITE_ORIGIN+productMediaPath(p.row.image):null}))):null;
  return <StoreFrame market={market}>
   <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 lg:px-8" data-set-page="">
    <nav aria-label={copy.breadcrumb} className="mb-4 text-sm text-muted-foreground"><a href={"/"+market} className="hover:underline">{copy.breadcrumbHome}</a> / <a href={"/"+market+"/offers"} className="hover:underline">{copy.offersNav}</a></nav>
    {catalog.state==="loading"?<div className="grid gap-6 lg:grid-cols-2" aria-busy="true"><div className="ym-skeleton aspect-[2/1]"/><div className="space-y-3"><div className="ym-skeleton h-8 w-3/4"/><div className="ym-skeleton h-6 w-1/3"/><div className="ym-skeleton h-14"/></div></div>
    :!set?<div className="ym-card px-5 py-12 text-center" role="status"><h1 className="ym-h3">{copy.setNotFoundTitle}</h1><a href={"/"+market+"/offers"} className="btn-outline mt-5">{copy.offersNav}</a></div>
    :<article className="grid gap-6 lg:grid-cols-2 lg:gap-12">
+     {ld&&<script type="application/ld+json" dangerouslySetInnerHTML={{__html:serializeJsonLd(graph(ld))}}/>}
      <div className="min-w-0"><Pieces set={set} size="page"/></div>
      <div className="min-w-0 space-y-5">
       <div className="space-y-2"><span className="ym-chip ym-chip-ink"><Layers className="h-3 w-3" aria-hidden="true"/>{copy.setChip}</span><h1 className="ym-h2 break-words">{set.bundle.title}</h1>{set.bundle.tagline&&<p className="ym-body">{set.bundle.tagline}</p>}<p className="text-sm text-muted-foreground">{copy.setPieces(set.parts.length)}</p></div>

@@ -90,7 +90,9 @@ export async function llmsTxt(read:CatalogReader=defaultCatalog):Promise<string>
    `- Delivery fee: ${copy.shipping}`,
    `- Delivery time: ${copy.delivery}`,
    `- Returns: ${copy.returns}`,
-   `- Payment: ${copy.payment}`);
+   `- Payment: ${copy.payment}`,
+   `- [Store facts (JSON)](${SITE_ORIGIN}/api/store-facts/${market}.json): the same published policies, machine-readable`,
+   `- [Offers and sets](${marketUrl(market,"/offers")})`);
   if(facts.flatShipping)lines.push(`- Delivery fee (machine-readable): ${facts.flatShipping} ${markets[market].currency} per order`);
   for(const slug of SEO_EDITORIAL_SLUGS){
    const page=planCategorySeo(market,slug);
