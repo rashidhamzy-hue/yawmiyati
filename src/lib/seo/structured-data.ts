@@ -65,6 +65,8 @@ export function productNode(market:MarketCode,listing:PublicListing|PublicDetail
   ...(image?.url?.startsWith("https://")?{image:[image.url]}:{}),
   offers:{"@type":"Offer",url,priceCurrency:listing.currency,
    price:minorToDecimal(listing.price_minor,markets[market].minorDigits),
+   // An owner-approved time-limited price carries its real end date (never invented).
+   ...("sale" in listing&&listing.sale?{priceValidUntil:listing.sale.ends_at.slice(0,10)}:{}),
    availability:"https://schema.org/InStock",itemCondition:"https://schema.org/NewCondition",
    acceptedPaymentMethod:{"@type":"PaymentMethod",name:"Cash on delivery"},
    seller:{"@id":ORG_ID},
@@ -72,6 +74,20 @@ export function productNode(market:MarketCode,listing:PublicListing|PublicDetail
    ...(returns?{hasMerchantReturnPolicy:returns}:{})}};
 }
 
+/**
+ * One of our own sets (2-4 published products sold together): a Product whose single Offer lists what it includes.
+ * Built only from the approved set and the released listings of its pieces.
+ */
+export function bundleNode(market:MarketCode,set:{slug:string;title:string;price_minor:number;tagline?:string},pieces:readonly {title:string;slug:string;quantity:number;image?:string|null}[]){
+ if(!/^[a-z0-9][a-z0-9-]{2,119}$/.test(set.slug)||pieces.length<2)return null;
+ const url=marketUrl(market,"/set/"+set.slug),shipping=shippingDetails(market),returns=returnPolicy(market);
+ const images=pieces.map(p=>p.image).filter((i):i is string=>typeof i==="string"&&i.startsWith("https://"));
+ return {"@type":"Product","@id":url+"#set",name:set.title.trim(),url,sku:set.slug,...(set.tagline?{description:set.tagline}:{}),...(images.length?{image:images}:{}),
+  offers:{"@type":"Offer",url,priceCurrency:markets[market].currency,price:minorToDecimal(String(set.price_minor),markets[market].minorDigits),
+   availability:"https://schema.org/InStock",itemCondition:"https://schema.org/NewCondition",acceptedPaymentMethod:{"@type":"PaymentMethod",name:"Cash on delivery"},seller:{"@id":ORG_ID},
+   includesObject:pieces.map(p=>({"@type":"TypeAndQuantityNode",amountOfThisGood:p.quantity,typeOfGood:{"@type":"Product",name:p.title.trim(),...(productSuffix(p.slug)?{url:marketUrl(market,productSuffix(p.slug)!)}:{})}})),
+   ...(shipping?{shippingDetails:shipping}:{}),...(returns?{hasMerchantReturnPolicy:returns}:{})}};
+}
 export function graph(...nodes:(object|null|undefined)[]){
  return {"@context":"https://schema.org","@graph":nodes.filter(Boolean)};
 }

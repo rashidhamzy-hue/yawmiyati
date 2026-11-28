@@ -9,6 +9,7 @@ import {productMediaPath} from "@/lib/store/product-media";
 import {shopCopy} from "@/lib/store/shop-copy";
 import {ProductGallery} from "./ProductGallery";
 import {BuyBox} from "./BuyBox";
+import {track} from "@/lib/analytics/analytics";
 import {OfferUntil} from "./FreeDeliveryBar";
 // The cart-progress bar reads the cart and its offers: loaded after the page, only for products that count.
 const ProductFreeDelivery=lazy(()=>import("./FreeDelivery"));
@@ -26,7 +27,10 @@ export function ProductPageView({page,detail,market}:{page:PublicProductPage;det
  // An approved time-limited price that is still running replaces the normal price everywhere on the page.
  const sale=page.sale&&BigInt(page.sale.price_minor)<BigInt(detail.price_minor)?page.sale:null;
  const price=sale?String(sale.price_minor):detail.price_minor;
- return <article dir="rtl" aria-label="تفاصيل المنتج" className="space-y-10">
+ // Funnel step 1 (view): what the shopper was shown, never who she is.
+ useEffect(()=>{track("product_viewed",{market,slug:detail.slug,value_minor:price,on_offer:!!sale,quantity_offers:page.quantity_offers.length,is_set:page.bundle.length>0,
+  free_delivery:page.free_delivery,delivery_included:page.delivery_included,low_stock:page.stock_signal==="low"});},[market,detail.slug]); // eslint-disable-line react-hooks/exhaustive-deps
+ return <article dir="rtl" aria-label={copy.productDetails} className="space-y-10">
   <div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
    <div className="min-w-0 lg:sticky lg:top-28 lg:self-start"><ProductGallery market={market} images={page.images} videos={page.videos}/></div>
    <div className="min-w-0 space-y-5">

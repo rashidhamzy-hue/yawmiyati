@@ -4,6 +4,8 @@ import type {MarketCode} from "./markets";
  * Service facts (payment, delivery, returns) stay in customer-service-copy.ts (M9); nothing here states a fee or a promise.
  */
 const base={
+ brand:"يومياتي",loadingProducts:"جارٍ تحميل المنتجات",productDetails:"تفاصيل المنتج",breadcrumb:"مسار الصفحة",
+ listSeparator:"، ",cartWith:(n:number)=>"السلة، "+(n===1?"منتج واحد":n===2?"منتجان":n+" منتجات"),
  seeAll:"عرض الكل",allProducts:"كل المنتجات",loadMore:"عرض المزيد",retry:"إعادة المحاولة",
  bundleChip:"طقم",offerChip:"وفّري أكثر",videoChip:"فيديو",
  loadError:"تعذّر تحميل المنتجات الآن.",noResults:"لا توجد نتائج مطابقة.",

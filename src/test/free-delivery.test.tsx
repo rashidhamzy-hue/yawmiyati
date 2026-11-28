@@ -97,3 +97,16 @@ describe("approved offers arrive fail-closed",()=>{
   expect(live.container.textContent).toMatch(/عرض لحد/);expect(live.container.textContent).toMatch(/العرض هيخلص بعد يوم/);
  });
 });
+
+import {bundleNode,productNode} from "../lib/seo/structured-data";
+describe("structured data for offers and sets",()=>{
+ it("a set lists what it includes; an approved offer price carries its real end date",()=>{
+  const node=bundleNode("sa",{slug:"routine-hair-care-3",title:"روتين العناية بالشعر",price_minor:29900,tagline:"كل ما يحتاجه شعرك"},[{title:"مشط",slug:"comb",quantity:1},{title:"زيت",slug:"oil",quantity:2}])!;
+  expect(node.offers.price).toBe("299");expect(node.offers.includesObject).toHaveLength(2);expect(node.offers.includesObject[1]!.amountOfThisGood).toBe(2);
+  expect(node.url).toBe("https://yawmiyati.shop/sa/set/routine-hair-care-3");
+  expect(bundleNode("sa",{slug:"BAD SLUG",title:"x",price_minor:1},[{title:"a",slug:"a",quantity:1},{title:"b",slug:"b",quantity:1}])).toBeNull();
+  const p=productNode("sa",row("blender","12900",{sale:{ends_at:"2026-12-28T19:59:59Z",list_price_minor:"14900"}}))!;
+  expect((p.offers as {priceValidUntil?:string}).priceValidUntil).toBe("2026-12-28");
+  expect((productNode("sa",row("blender","12900"))!.offers as {priceValidUntil?:string}).priceValidUntil).toBeUndefined();
+ });
+});

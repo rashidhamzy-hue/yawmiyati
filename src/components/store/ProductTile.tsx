@@ -17,7 +17,7 @@ export function ProductTile({item,market,image,eager=false,showOffer=false,class
   <a href={href} className="flex h-full flex-col rounded-2xl">
    <div className="relative aspect-square overflow-hidden rounded-2xl bg-surface">
     {picture?<img src={picture.url} alt={picture.alt||item.title} width={360} height={360} loading={eager?"eager":"lazy"} decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"/>
-     :<span className="grid h-full w-full place-items-center font-display text-2xl text-muted-foreground/50" aria-hidden="true">يومياتي</span>}
+     :<span className="grid h-full w-full place-items-center font-display text-2xl text-muted-foreground/50" aria-hidden="true">{copy.brand}</span>}
     {(item.kind==="bundle"||(showOffer&&item.offer)||item.delivery_included||item.is_new)&&<span className="pointer-events-none absolute start-2 top-2 flex flex-col items-start gap-1">
      {item.kind==="bundle"&&<span className="ym-chip ym-chip-ink"><Layers className="h-3 w-3" aria-hidden="true"/>{copy.bundleChip}</span>}
      {showOffer&&item.offer&&item.kind!=="bundle"&&<span className="ym-chip bg-card/95 shadow-sm"><Tag className="h-3 w-3" aria-hidden="true"/>{copy.offerChip}</span>}
@@ -39,8 +39,8 @@ export function TileSkeleton(){
 }
 export const gridClass="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-4 lg:grid-cols-4 lg:gap-x-5 lg:gap-y-8";
 export function ProductGrid({children}:{children:ReactNode}){return <div className={gridClass}>{children}</div>;}
-export function GridSkeleton({count=8}:{count?:number}){
- return <div role="status" aria-live="polite" aria-label="جارٍ تحميل المنتجات" className={gridClass}>{Array.from({length:count},(_,i)=><TileSkeleton key={i}/>)}</div>;
+export function GridSkeleton({count=8,market="sa"}:{count?:number;market?:MarketCode}){
+ return <div role="status" aria-live="polite" aria-label={shopCopy(market).loadingProducts} className={gridClass}>{Array.from({length:count},(_,i)=><TileSkeleton key={i}/>)}</div>;
 }
 /** Horizontal rail: thumb-scrollable on phones, a 4–6 column row on wide screens. */
 export function ProductRail({title,href,linkLabel,children,id}:{title:string;href?:string;linkLabel?:string;children:ReactNode;id?:string}){
