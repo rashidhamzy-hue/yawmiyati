@@ -12,6 +12,8 @@ const base={
  filter:"تصفية",searchInSection:"ابحثي في هذا القسم",priceFrom:"من السعر",priceTo:"إلى السعر",priceRangeError:"تحققي من نطاق السعر.",
  productsCount:(n:number)=>n===1?"منتج واحد":n===2?"منتجان":n<=10?n+" منتجات":n+" منتجاً",
  picksTitle:"اختيارات يومياتي",
+ completeSet:"كمّلي الطقم",completeSetHint:"قطع تليق مع اختيارك",addOne:"أضيفي",addedOne:"أُضيف",
+ relatedTitle:"قد يعجبك أيضاً",viewedTitle:"شاهدتِه مؤخراً",
  orderNow:"اطلبي الآن",addToCart:"أضيفي للسلة",addedToCart:"أُضيف للسلة",viewCart:"عرض السلة",cart:"السلة",
  chooseQuantity:"اختاري الكمية",onePiece:"قطعة واحدة",twoPieces:"قطعتان",pieces:(n:number)=>n+" قطع",
  save:(amount:string)=>"وفّري "+amount,bestValue:"الأوفر",lowStock:"الكمية محدودة",
@@ -23,10 +25,10 @@ const base={
 };
 export type ShopCopy=typeof base;
 const overrides:Record<MarketCode,Partial<ShopCopy>>={
- sa:{twoPieces:"قطعتين",readMore:"اقرئي أكثر",reassureCall:"نتواصل معك لتأكيد الطلب قبل الشحن",watchVideo:"شوفي الفيديو",seeAll:"شوفي الكل",loadMore:"شوفي أكثر",searchInSection:"دوّري في هذا القسم"},
- ae:{orderNow:"اطلبي الحين",twoPieces:"قطعتين",readMore:"اقري أكثر",reassureCall:"بنتواصل وياج لتأكيد الطلب قبل الشحن",watchVideo:"شوفي الفيديو",productNotFoundBody:"يمكن خلص أو تغيّر الرابط. شوفي باقي المنتجات.",seeAll:"شوفي الكل",loadMore:"شوفي أكثر",offerChip:"وفّري أكثر",searchInSection:"دوّري في هالقسم"},
- om:{twoPieces:"قطعتين",reassureCall:"نتواصل معك لتأكيد الطلب قبل الشحن",watchVideo:"شوفي الفيديو",seeAll:"شوفي الكل",loadMore:"شوفي أكثر"},
- eg:{orderNow:"اطلبي دلوقتي",addToCart:"ضيفي للسلة",addedToCart:"اتضاف للسلة",viewCart:"شوفي السلة",twoPieces:"قطعتين",readMore:"اقري أكتر",readLess:"عرض أقل",lowStock:"الكمية محدودة",reassureCall:"هنكلمك نأكد الطلب قبل الشحن",watchVideo:"شوفي الفيديو",productNotFoundTitle:"المنتج ده مش متاح دلوقتي",productNotFoundBody:"ممكن يكون خلص أو الرابط اتغيّر. اتفرّجي على باقي المنتجات.",seeAll:"شوفي الكل",loadMore:"شوفي أكتر",offerChip:"وفّري أكتر",sectionEmptyBody:"اتفرّجي على باقي الأقسام أو كل المنتجات.",searchInSection:"دوّري في القسم ده"},
- iq:{orderNow:"اطلبي هسه",addToCart:"ضيفي للسلة",addedToCart:"انضاف للسلة",viewCart:"شوفي السلة",twoPieces:"قطعتين",readMore:"اقري أكثر",reassureCall:"نتصل بيچ نأكد الطلب قبل الشحن",watchVideo:"شوفي الفيديو",productNotFoundTitle:"هذا المنتج مو متوفر هسه",productNotFoundBody:"يمكن خلص أو تغيّر الرابط. شوفي بقية المنتجات.",seeAll:"شوفي الكل",loadMore:"شوفي أكثر",sectionEmptyBody:"لفّي على بقية الأقسام أو كل المنتجات.",searchInSection:"دوّري بهالقسم"},
+ sa:{relatedTitle:"يمكن يعجبك بعد",viewedTitle:"شفتيه قبل",completeSetHint:"قطع تمشي مع اختيارك",twoPieces:"قطعتين",readMore:"اقرئي أكثر",reassureCall:"نتواصل معك لتأكيد الطلب قبل الشحن",watchVideo:"شوفي الفيديو",seeAll:"شوفي الكل",loadMore:"شوفي أكثر",searchInSection:"دوّري في هذا القسم"},
+ ae:{relatedTitle:"يمكن يعجبج بعد",viewedTitle:"شفتيه قبل",completeSetHint:"قطع تمشي ويا اختيارج",orderNow:"اطلبي الحين",twoPieces:"قطعتين",readMore:"اقري أكثر",reassureCall:"بنتواصل وياج لتأكيد الطلب قبل الشحن",watchVideo:"شوفي الفيديو",productNotFoundBody:"يمكن خلص أو تغيّر الرابط. شوفي باقي المنتجات.",seeAll:"شوفي الكل",loadMore:"شوفي أكثر",offerChip:"وفّري أكثر",searchInSection:"دوّري في هالقسم"},
+ om:{relatedTitle:"يمكن يعجبك بعد",viewedTitle:"شفتيه قبل",twoPieces:"قطعتين",reassureCall:"نتواصل معك لتأكيد الطلب قبل الشحن",watchVideo:"شوفي الفيديو",seeAll:"شوفي الكل",loadMore:"شوفي أكثر"},
+ eg:{completeSet:"كمّلي الطقم",completeSetHint:"حاجات تليق مع اختيارك",addOne:"ضيفي",addedOne:"اتضاف",relatedTitle:"ممكن يعجبك كمان",viewedTitle:"شفتيه قبل كده",orderNow:"اطلبي دلوقتي",addToCart:"ضيفي للسلة",addedToCart:"اتضاف للسلة",viewCart:"شوفي السلة",twoPieces:"قطعتين",readMore:"اقري أكتر",readLess:"عرض أقل",lowStock:"الكمية محدودة",reassureCall:"هنكلمك نأكد الطلب قبل الشحن",watchVideo:"شوفي الفيديو",productNotFoundTitle:"المنتج ده مش متاح دلوقتي",productNotFoundBody:"ممكن يكون خلص أو الرابط اتغيّر. اتفرّجي على باقي المنتجات.",seeAll:"شوفي الكل",loadMore:"شوفي أكتر",offerChip:"وفّري أكتر",sectionEmptyBody:"اتفرّجي على باقي الأقسام أو كل المنتجات.",searchInSection:"دوّري في القسم ده"},
+ iq:{completeSetHint:"قطع تلوگ ويه اختيارچ",addOne:"ضيفي",addedOne:"انضاف",relatedTitle:"يمكن يعجبچ هم",viewedTitle:"شفتيه قبل",orderNow:"اطلبي هسه",addToCart:"ضيفي للسلة",addedToCart:"انضاف للسلة",viewCart:"شوفي السلة",twoPieces:"قطعتين",readMore:"اقري أكثر",reassureCall:"نتصل بيچ نأكد الطلب قبل الشحن",watchVideo:"شوفي الفيديو",productNotFoundTitle:"هذا المنتج مو متوفر هسه",productNotFoundBody:"يمكن خلص أو تغيّر الرابط. شوفي بقية المنتجات.",seeAll:"شوفي الكل",loadMore:"شوفي أكثر",sectionEmptyBody:"لفّي على بقية الأقسام أو كل المنتجات.",searchInSection:"دوّري بهالقسم"},
 };
 export const shopCopy=(market:MarketCode):ShopCopy=>({...base,...overrides[market]});

@@ -1,5 +1,6 @@
 // Prefilter (no AI), kill rules, final selection and merchandising.
 import { familyKey, normalizeTitle, offerKind, economicsInputs, type FieldMapping } from "./catalog-analysis.ts";
+import { SECTION_AFFINITY } from "./affinity.ts";
 import { minorToUsd, type MarketFacts } from "./markets.ts";
 import type { OfferRow } from "./woo-normalize.ts";
 import type { PriceDecision } from "./economics.ts";
@@ -167,11 +168,7 @@ export function selectFinal(cands: Candidate[], size: number) {
   return chosen;
 }
 
-const AFFINITY: Record<StoreCategory, StoreCategory[]> = {
-  kitchen: ["organize", "home"], organize: ["kitchen", "home"], home: ["organize", "wellness"],
-  beauty: ["wellness", "fashion"], fashion: ["beauty", "wellness"], wellness: ["beauty", "home"],
-  kids: ["home", "organize"],
-};
+const AFFINITY: Record<StoreCategory, readonly StoreCategory[]> = SECTION_AFFINITY;
 
 /** Featured picks, category order and "complete the set" cross-sells from the selected products. */
 export function merchandise(selected: { key: string; category: StoreCategory | null; score: number; price_minor: number; images: number }[]) {

@@ -13,7 +13,6 @@ import {brandStory} from "@/lib/store/brand-story";
 import {saudiHomeQuestions} from "@/lib/store/saudi-commerce-content";
 import {recommendOffers} from "@/lib/store/offer-recommendations";
 import {curateCatalog} from "@/lib/store/curated-merchandising";
-import {relatedVerifiedProducts} from "@/lib/store/verified-merchandising";
 import {ReleasedEditorial} from "./EditorialPage";
 import {ReleasedProductPage} from "./ReleasedProductPage";
 import {productMediaPath} from "@/lib/store/product-media";
@@ -26,6 +25,7 @@ import {offerListing} from "@/lib/store/offer-version";
 import {OfferProductPanel,FixtureNotice} from "./OfferProductPanel";
 import {ProductTile,GridSkeleton,gridClass} from "./ProductTile";
 import {HomeShelves} from "./HomeShelves";
+import {ProductRecommendations} from "./ProductRecommendations";
 import {byRank} from "@/lib/store/store-catalog";
 import {shopCopy} from "@/lib/store/shop-copy";
 
@@ -156,7 +156,7 @@ export function MarketPreview({market,slug,searchOnly=false,initialSearch=""}:{m
       <div className="mt-8"><h3 className="mb-4 font-display text-xl font-extrabold">اختيارات أخرى من يومياتي</h3><div className={gridClass}>{recommendOffers(offerVersion,offerVersions).map(v=><ShopCard key={v.listing_id} item={offerListing(v)} market={market} image={v.image}/>)}</div></div></div>
     :slug&&offerVersions?<EmptyProducts title="هذا المنتج غير موجود في الكتالوج" message="قد تتغير حالة المنتجات بحسب اعتماد البيانات والتوافر."/>
     :slug?detail?<div className="mt-2"><ReleasedEditorial key={market+slug} origin={origin} apiKey={key} market={market} slug={slug} fallback={<ReleasedProductPage key={detail.listing_id} origin={origin} apiKey={key} market={market} detail={detail} fallback={<ApprovedProductGallery market={market} detail={detail}/>}/>}/>
-      <div className="mt-8"><h3 className="mb-4 font-display text-xl font-extrabold">اختيارات أخرى من يومياتي</h3>{relatedVerifiedProducts(detail,rows).length?<div className={gridClass}>{relatedVerifiedProducts(detail,rows).map(item=><ShopCard key={item.listing_id} item={item} market={market} image={imageFor(item)}/>)}</div>:<p className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">تصفحي المزيد من الأقسام والمنتجات المعتمدة في يومياتي.</p>}</div></div>
+      <ProductRecommendations market={market} current={detail} rows={rows}/></div>
     :<EmptyProducts title="هذا المنتج غير موجود في الكتالوج" message="قد تتغير حالة المنتجات بحسب اعتماد البيانات والتوافر."/>
     :matching.length?<>{offerVersions&&<div className="mt-5"><FixtureNotice/></div>}{homePage&&!term.trim()&&!offerVersions?<HomeShelves market={market} rows={matching} categories={orderedCategories.map(c=>({slug:c.slug,name:c.name}))}/>:<><div className={"mt-6 "+gridClass}>{matching.slice(0,visibleCount).map((item,i)=><ShopCard key={item.listing_id} item={item} market={market} image={imageFor(item)}/>)}</div>{matching.length>visibleCount&&<div className="mt-8 text-center"><p className="mb-3 text-xs text-muted-foreground">{Math.min(visibleCount,matching.length)} / {matching.length}</p><button type="button" className="btn-outline" onClick={()=>setVisibleCount(n=>n+16)}>عرض المزيد من المنتجات</button></div>}</>}</>
     :<EmptyProducts title={rows.length?"لم نجد منتجات مطابقة":"من هنا تبدأ اختياراتك"} message={rows.length?"جرّبي البحث بكلمة مختلفة.":"تصفّحي الأقسام واستكشفي الأفكار اللي تعجبك."}/>}
