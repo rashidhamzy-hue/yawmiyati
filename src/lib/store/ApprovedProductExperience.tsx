@@ -2,7 +2,8 @@ import {paymentLabel} from "../../../supabase/functions/_shared/payment-policy";
 import { useState } from "react";
 import { ImageOff } from "lucide-react";
 import { parseMinorUnits, type MarketCode } from "./markets";
-import { formatListingPrice, type PublicDetail, type PublicListing } from "./public-catalog";
+import { formatListingPrice, formatPrice, type PublicDetail, type PublicListing } from "./public-catalog";
+import { shopCopy } from "./shop-copy";
 import { filterApprovedListings, presentApprovedDetail, type ApprovedExtra, type ApprovedSort } from "./approved-product-experience";
 
 /**
@@ -39,8 +40,9 @@ export function ApprovedProductGallery({detail,market,extras}:{detail:PublicDeta
   </article>;
 }
 
-export function ApprovedCatalogBrowser({market,products,onOpen,images={}}:{market:MarketCode;products:readonly PublicListing[];onOpen?:(slug:string)=>void;images?:Record<string,{url:string;alt:string}|null|undefined>}) {
-  const [query,setQuery]=useState("");
+export function ApprovedCatalogBrowser({market,products,onOpen,images={},initialQuery=""}:{market:MarketCode;products:readonly PublicListing[];onOpen?:(slug:string)=>void;images?:Record<string,{url:string;alt:string}|null|undefined>;initialQuery?:string}) {
+  const [query,setQuery]=useState(initialQuery);
+  const [filtersOpen,setFiltersOpen]=useState(false);
   const [sort,setSort]=useState<ApprovedSort>("default");
   const [min,setMin]=useState("");
   const [max,setMax]=useState("");
@@ -60,23 +62,20 @@ export function ApprovedCatalogBrowser({market,products,onOpen,images={}}:{marke
   return <section dir="rtl" aria-label="تصفحي جميع المنتجات" className="space-y-5">
     <div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="text-[11px] font-extrabold text-primary">كتالوج يومياتي</p><h1 className="font-display text-xl font-extrabold leading-tight sm:text-2xl">كل المنتجات</h1></div><span className="shrink-0 rounded-full bg-primary-soft px-3 py-2 text-xs font-bold text-primary">{categoryProducts.length} منتج</span></div>
     {availableCategories.length>0&&<nav aria-label="تصفية حسب القسم" className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{["all",...availableCategories].map(slug=><button key={slug} type="button" aria-pressed={category===slug} onClick={()=>{setCategory(slug);setPage(1);}} className={"min-h-10 shrink-0 rounded-full border px-4 text-xs font-bold "+(category===slug?"border-primary bg-primary text-primary-foreground":"bg-card text-foreground")}>{slug==="all"?"كل الأقسام":categoryNames[slug]}</button>)}</nav>}
-    <div className="grid gap-3 rounded-2xl bg-card p-3 ring-1 ring-border sm:grid-cols-2 sm:p-4 lg:grid-cols-4">
-      <label className="text-sm font-bold lg:col-span-2">ابحثي في المنتجات
-        <span className="relative mt-2 block"><input type="search" aria-label="بحث المنتجات" maxLength={120} value={query} onChange={e=>{setQuery(e.target.value);setPage(1);}} placeholder="مثلاً: عناية، مطبخ، تنظيم..." className="field min-h-12 w-full pr-4"/></span>
-      </label>
-      <label className="text-sm font-bold">ترتيب حسب
-        <select aria-label="ترتيب المنتجات" value={sort} onChange={e=>{setSort(e.target.value as ApprovedSort);setPage(1);}} className="field mt-2 min-h-12 w-full">
+    <div className="space-y-2">
+      <input type="search" aria-label="بحث المنتجات" maxLength={120} value={query} onChange={e=>{setQuery(e.target.value);setPage(1);}} placeholder={shopCopy(market).searchInSection} className="field min-h-12 w-full"/>
+      <div className="flex items-center gap-2">
+        <select aria-label="ترتيب المنتجات" value={sort} onChange={e=>{setSort(e.target.value as ApprovedSort);setPage(1);}} className="field min-h-11 min-w-0 flex-1 text-sm sm:max-w-xs">
           <option value="popular">الأكثر رواجاً</option><option value="default">الأكثر صلة</option><option value="price_asc">السعر: الأقل أولاً</option><option value="price_desc">السعر: الأعلى أولاً</option><option value="title">الاسم</option>
         </select>
-      </label>
-      <div className="grid grid-cols-2 gap-2">
-        <label className="text-sm font-bold">من السعر<input inputMode="decimal" aria-label="أقل سعر" placeholder="0" value={min} onChange={e=>{setMin(e.target.value);setPage(1);}} className="field mt-2 min-h-12 w-full"/></label>
-        <label className="text-sm font-bold">إلى السعر<input inputMode="decimal" aria-label="أعلى سعر" placeholder="بدون حد" value={max} onChange={e=>{setMax(e.target.value);setPage(1);}} className="field mt-2 min-h-12 w-full"/></label>
+        <button type="button" aria-expanded={filtersOpen} aria-controls="catalog-price-filter" onClick={()=>setFiltersOpen(v=>!v)} className="btn-quiet shrink-0">{shopCopy(market).filter}{(min||max)?" •":""}</button>
+        {hasFilters&&<button type="button" onClick={reset} className="min-h-10 shrink-0 px-2 text-xs font-bold underline underline-offset-4">مسح التصفية</button>}
       </div>
-      <div className="flex items-center justify-between gap-3 sm:col-span-2 lg:col-span-4">
-        <p role="status" className="text-xs text-muted-foreground">{invalidRange?"تحققي من نطاق السعر وإدخاله بشكل صحيح.":`${result!.total} نتيجة`}</p>
-        {hasFilters&&<button type="button" onClick={reset} className="min-h-10 px-3 text-xs font-bold text-primary underline underline-offset-4">مسح التصفية</button>}
+      <div id="catalog-price-filter" className={(filtersOpen||min||max?"grid":"hidden")+" max-w-sm grid-cols-2 gap-2"}>
+        <input inputMode="decimal" aria-label="أقل سعر" placeholder={shopCopy(market).priceFrom} value={min} onChange={e=>{setMin(e.target.value);setPage(1);}} className="field min-w-0 text-sm"/>
+        <input inputMode="decimal" aria-label="أعلى سعر" placeholder={shopCopy(market).priceTo} value={max} onChange={e=>{setMax(e.target.value);setPage(1);}} className="field min-w-0 text-sm"/>
       </div>
+      <p role="status" className="text-xs text-muted-foreground">{invalidRange?"تحققي من نطاق السعر وإدخاله بشكل صحيح.":`${result!.total} نتيجة`}</p>
     </div>
     {invalidRange?<p role="alert" className="rounded-xl border border-destructive/30 p-4 text-sm">أدخلي سعراً صحيحاً، وتأكدي أن الحد الأدنى لا يتجاوز الحد الأعلى.</p>:result!.total===0?
       <div className="rounded-2xl border bg-card px-5 py-12 text-center"><PackageSearchFallback/><h2 className="mt-3 text-base font-bold">ما لقينا منتجات تطابق اختياراتك</h2><p className="mt-2 text-sm text-muted-foreground">جرّبي تخفيف التصفية أو تغيير كلمة البحث.</p><button type="button" onClick={reset} className="btn-outline mt-4 min-h-11">عرض كل المنتجات</button></div>:
@@ -85,11 +84,10 @@ export function ApprovedCatalogBrowser({market,products,onOpen,images={}}:{marke
           <a href={`/${market}/p/${encodeURIComponent(row.slug)}`} onClick={onOpen?e=>{e.preventDefault();onOpen(row.slug);}:undefined} aria-label={`تفاصيل ${row.title}`} className="block aspect-square overflow-hidden rounded-2xl bg-surface">
             {image?<img src={image.url} alt={image.alt||row.title} loading="lazy" decoding="async" width={360} height={360} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"/>:<div className="flex h-full flex-col items-center justify-center gap-2 text-center text-xs text-muted-foreground"><ImageOff aria-hidden="true" className="h-8 w-8"/><span>الصورة غير متاحة</span></div>}
           </a>
-          <div className="px-0.5 pt-2.5"><h3 className="line-clamp-2 min-h-[2.75rem] font-sans text-[13px] font-medium leading-[1.375rem] sm:text-sm"><a href={`/${market}/p/${encodeURIComponent(row.slug)}`} onClick={onOpen?e=>{e.preventDefault();onOpen(row.slug);}:undefined} className="hover:underline">{row.title}</a></h3><p className="ym-price mt-1.5 text-[15px] sm:text-base">{formatListingPrice(row,market)}</p></div>
+          <div className="px-0.5 pt-2.5"><h3 className="line-clamp-2 font-sans text-[13px] font-medium leading-[1.375rem] sm:text-sm"><a href={`/${market}/p/${encodeURIComponent(row.slug)}`} onClick={onOpen?e=>{e.preventDefault();onOpen(row.slug);}:undefined} className="hover:underline">{row.title}</a></h3><p className="ym-price mt-1 text-[15px] sm:text-base">{formatPrice(row.price_minor,market)}</p></div>
         </article>;})}
       </div>}
     {!invalidRange&&result!.pages>1&&<nav className="flex items-center justify-center gap-3" aria-label="صفحات المنتجات"><button type="button" className="min-h-11 rounded-xl border px-4 disabled:opacity-40" disabled={page===1} onClick={()=>setPage(x=>x-1)}>السابق</button><span className="text-sm">صفحة {page} من {result!.pages}</span><button type="button" className="min-h-11 rounded-xl border px-4 disabled:opacity-40" disabled={page>=result!.pages} onClick={()=>setPage(x=>x+1)}>التالي</button></nav>}
-    <p className="text-xs leading-6 text-muted-foreground">نُظهر المنتجات المنشورة والمعتمدة لهذا السوق فقط. خيارات التصنيف والمخزون تظهر عند توفر بياناتها المعتمدة.</p>
   </section>;
 }
 function PackageSearchFallback(){return <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary-soft text-primary"><ImageOff className="h-7 w-7" aria-hidden="true"/></span>}

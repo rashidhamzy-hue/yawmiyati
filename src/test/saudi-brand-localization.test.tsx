@@ -2,11 +2,11 @@ import {render,screen,fireEvent,within} from "@testing-library/react";
 import {expect,it} from "vitest";
 import {StoreHeader,StoreFooter,StoreFrame} from "../components/store/StoreChrome";
 import {marketIdentity} from "../lib/store/market-identity";
-it("uses Saudi flag and readable local riyal rather than orphan SAR badge",()=>{
+it("names the country and the local riyal in the header, with no emoji flag and no orphan SAR badge",()=>{
  render(<StoreHeader market="sa"/>);
  const chooser=screen.getByText("البلد والعملة: المملكة العربية السعودية، ريال سعودي").closest("summary")!;
  expect(chooser).toBeTruthy();
- expect(chooser.textContent).toContain("🇸🇦");
+ expect(chooser.textContent).toContain("السعودية");expect(chooser.textContent).not.toMatch(/[\u{1F1E6}-\u{1F1FF}]/u);
  expect(chooser.textContent).toContain("ر.س");
  expect(screen.getByRole("button",{name:"افتح بحث يومياتي"})).toBeTruthy();
  fireEvent.click(screen.getByRole("button",{name:"افتح بحث يومياتي"}));

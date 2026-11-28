@@ -199,7 +199,8 @@ summary::-webkit-details-marker { display: none; }
 @media (min-width: 640px) {
   .storefront-hero { min-height: 380px; }
   .storefront-hero-title { font-size: 44px; }
-  .storefront-category-strip { grid-auto-flow: row; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+  /* Every section in one row, however many there are (seven since mother & kids opened). */
+  .storefront-category-strip { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 12px; overflow: visible; }
 }
 @media (min-width: 1024px) {
   .storefront-hero { min-height: 410px; }

@@ -26,8 +26,8 @@ export function ProductTile({item,market,image,eager=false,showOffer=false,class
     </span>}
    </div>
    <div className="flex flex-1 flex-col px-0.5 pt-2.5">
-    <h3 className="line-clamp-2 min-h-[2.75rem] font-sans text-[13px] font-medium leading-[1.375rem] text-foreground group-hover:underline sm:text-sm">{item.title}</h3>
-    <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2"><span className={"ym-price text-[15px] sm:text-base "+(item.sale?"text-sale":"")}>{formatPrice(item.price_minor,market)}</span>
+    <h3 className="line-clamp-2 font-sans text-[13px] font-medium leading-[1.375rem] text-foreground group-hover:underline sm:text-sm">{item.title}</h3>
+    <p className="mt-1 flex flex-wrap items-baseline gap-x-2"><span className={"ym-price text-[15px] sm:text-base "+(item.sale?"text-sale":"")}>{formatPrice(item.price_minor,market)}</span>
      {item.sale?.was_price_minor&&<s className="text-xs text-muted-foreground">{formatPrice(item.sale.was_price_minor,market)}</s>}</p>
     {item.sale&&<p className="mt-0.5 text-[11px] font-medium text-sale" data-offer-until="">{copy.offerUntil(shortDate(item.sale.ends_at,market))}</p>}
    </div>
