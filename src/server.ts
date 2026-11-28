@@ -11,6 +11,9 @@ import { handleEditorialMedia } from "./lib/store/editorial-media";
 import { handleProductMedia } from "./lib/store/product-media";
 import { handleVisitorCountry, rootRedirect } from "./lib/store/visitor-country";
 import { mediaBucket, type MediaContext } from "./lib/store/media-store";
+import { inlineStylesheet } from "./lib/inline-css";
+// The built stylesheet as text, for the server only (it never reaches the browser bundle).
+import storefrontCss from "./styles.css?inline";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -118,7 +121,7 @@ const handler = {
       if (seo) return withRobotsHeader(seo, robotsHeader);
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return withRobotsHeader(await normalizeCatastrophicSsrResponse(response), robotsHeader);
+      return withRobotsHeader(inlineStylesheet(await normalizeCatastrophicSsrResponse(response), import.meta.env.DEV ? "" : storefrontCss), robotsHeader);
     } catch (error) {
       console.error(error);
       Sentry.captureException(error, { tags: { boundary: "worker_fetch" } });
