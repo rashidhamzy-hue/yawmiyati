@@ -4,6 +4,7 @@ import { SECTION_AFFINITY } from "./affinity.ts";
 import { minorToUsd, type MarketFacts } from "./markets.ts";
 import type { OfferRow } from "./woo-normalize.ts";
 import type { PriceDecision } from "./economics.ts";
+import { demandFactor, demandSignals, nearDuplicates, type StockPoint } from "./taager-economics.ts";
 
 // "kids" (mother & kids) is a brain grouping first: the storefront section opens once it has its photo.
 // Until then published kids items carry no storefront section and appear in all products and search.
@@ -91,7 +92,9 @@ export type PrefilterRow = {
 };
 
 /** Deterministic first pass over every offer: who deserves paid research. */
-export function prefilter(offers: OfferRow[], mapping: FieldMapping, m: MarketFacts, shortlistSize: number): PrefilterRow[] {
+export function prefilter(offers: OfferRow[], mapping: FieldMapping, m: MarketFacts, shortlistSize: number, opts: { stockHistory?: Map<string, StockPoint[]>; now?: number } = {}): PrefilterRow[] {
+  const now = opts.now ?? Date.now();
+  const bySkuKey = new Map<string, OfferRow>();
   const rows: PrefilterRow[] = [];
   // Sellable units: simple products, and variations (their parent "variable" row is not itself orderable).
   const sellable = offers.filter((o) => o.product_type !== "variable" && o.product_type !== "grouped");
@@ -101,7 +104,7 @@ export function prefilter(offers: OfferRow[], mapping: FieldMapping, m: MarketFa
     const risk = riskCheck(o);
     const reasons: string[] = [];
     const base = { product_id: o.product_id, variation_id: o.variation_id, title: o.title, family_key: familyKey(o), offer_kind: kind.kind,
-      category: mapCategory(o), economics: { ...econ, pieces_claimed: kind.pieces }, flags: risk.flags };
+      category: mapCategory(o), economics: { ...econ, pieces_claimed: kind.pieces } as Record<string, unknown>, flags: risk.flags };
     if (risk.kills.length) { rows.push({ ...base, stage: "killed", prefilter_score: 0, reasons: risk.kills.map((k) => "kill:" + k) }); continue; }
     for (const a of audienceCheck(o)) reasons.push("not_for_audience:" + a);
     if (o.status && o.status !== "publish") reasons.push("not_published_in_woo");
@@ -121,11 +124,23 @@ export function prefilter(offers: OfferRow[], mapping: FieldMapping, m: MarketFa
     const cat = base.category ? 1 : 0.5;
     const kindFactor = kind.kind === "title_claims_multipack" || kind.kind === "bundle_unverified" ? 0.9 : 1;
     const video = o.videos.length ? 1.05 : 1;
-    const score = Math.round(Math.min(spreadUsd, 25) * media * text * cat * kindFactor * video * 100) / 100;
+    // Demand: stock leaving Taager's warehouse between syncs, Taager's confirmation rate, new arrivals (no data = neutral).
+    const signals = demandSignals({ history: o.sku ? opts.stockHistory?.get(o.sku) : undefined, confirmationRate: o.meta["taager_confirmation_rate"], createdAt: o.meta["taager_created_at"], now });
+    const demand = demandFactor(signals);
+    base.economics = { ...base.economics, demand: { ...signals, factor: demand } };
+    bySkuKey.set(`${o.product_id}:${o.variation_id}`, o);
+    const score = Math.round(Math.min(spreadUsd, 25) * media * text * cat * kindFactor * video * demand * 100) / 100;
     rows.push({ ...base, stage: "shortlisted", prefilter_score: score, reasons: [zeroMin ? `spread≈$${spreadUsd.toFixed(2)} assumed (Taager minimum profit is 0)` : `spread≈$${spreadUsd.toFixed(2)} at Taager minimum`] });
   }
   // Keep the best offer per potential family, then cap categories, then cut to the shortlist size.
   const shortlisted = rows.filter((r) => r.stage === "shortlisted").sort((a, b) => b.prefilter_score - a.prefilter_score);
+  // The same thing under several Taager ids (Taager's own "exact alternatives", one picture, near-identical titles at a
+  // similar cost) is researched once: only the strongest of each group stays on the shortlist.
+  const twins = nearDuplicates(shortlisted.map((r) => {
+    const o = bySkuKey.get(`${r.product_id}:${r.variation_id}`);
+    return { key: `${r.product_id}:${r.variation_id}`, sku: o?.sku ?? null, title: r.title, cost_minor: (r.economics.cost_minor as number | null) ?? null, score: r.prefilter_score,
+      alternatives: o?.meta["taager_alternatives"], first_image: o?.images[0]?.src ?? null };
+  }));
   const seenFamily = new Set<string>();
   const perCat: Record<string, number> = {};
   const capPerCat = Math.ceil(shortlistSize * 0.35);
@@ -133,6 +148,8 @@ export function prefilter(offers: OfferRow[], mapping: FieldMapping, m: MarketFa
   for (const r of shortlisted) {
     const cat = r.category ?? "other";
     if (seenFamily.has(r.family_key)) { r.stage = "excluded"; r.reasons.push("same_family_as_a_stronger_offer"); continue; }
+    const twin = twins.get(`${r.product_id}:${r.variation_id}`);
+    if (twin) { r.stage = "excluded"; r.reasons.push("near_duplicate_of:" + twin); continue; }
     if ((perCat[cat] ?? 0) >= capPerCat) { r.stage = "excluded"; r.reasons.push("category_cap"); continue; }
     if (kept >= shortlistSize) { r.stage = "excluded"; r.reasons.push("below_shortlist_cut"); continue; }
     seenFamily.add(r.family_key); perCat[cat] = (perCat[cat] ?? 0) + 1; kept++;
@@ -142,14 +159,14 @@ export function prefilter(offers: OfferRow[], mapping: FieldMapping, m: MarketFa
 
 export type ResearchSummary = { retailers_found: number; exact_matches: number; demand_signals: number; risks: string[] };
 
-export function finalScore(d: PriceDecision, research: ResearchSummary | null, images: number): number {
+export function finalScore(d: PriceDecision, research: ResearchSummary | null, images: number, demandFactorValue = 1): number {
   if (d.state !== "priced") return 0;
   const exp = Math.max(0, d.expected_profit_usd ?? 0);
   const demand = research ? 0.4 + 0.15 * Math.min(research.retailers_found, 4) + (research.demand_signals > 0 ? 0.1 : 0) : 0.5;
   const confidence = d.competitor_basis === "exact" ? 1 : d.competitor_basis === "similar" ? 0.85 : 0.6;
   const media = images >= 3 ? 1 : images === 2 ? 0.9 : 0.75;
   const fit = d.positioning === "dearer" ? 0.7 : 1;
-  return Math.round(exp * demand * confidence * media * fit * 1000) / 1000;
+  return Math.round(exp * demand * confidence * media * fit * demandFactorValue * 1000) / 1000;
 }
 
 export type Candidate = { product_id: number; variation_id: number; family_key: string; category: StoreCategory | null; score: number; blocked: boolean };

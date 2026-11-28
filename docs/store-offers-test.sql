@@ -1,4 +1,5 @@
 -- Rollback-only fixture test for supabase/migrations/20261128120000_store_offers.sql (staging only).
+-- Updated 29 Nov 2026 for 20261129090000_brain_commerce_v2.sql (free delivery now needs a minimum-margin rule).
 -- Proves: nothing is public before the owner approves it; a loss-making offer cannot be approved; approved offers
 -- are re-checked against the supplier's CURRENT cost and stock on every read; sets never use a supplier bundle
 -- or a hidden product; free delivery is sized on the thinnest basket; anon sees no costs; release flag is restored.
@@ -47,7 +48,7 @@ begin
    jsonb_build_object('kind','quantity','listing_id',la,'quantity',2,'price_minor',25900),
    jsonb_build_object('kind','bundle','slug','set-blender-rack','title','خلاط + رف مطبخ','price_minor',22900,'items',jsonb_build_array(jsonb_build_object('listing_id',la,'quantity',1),jsonb_build_object('listing_id',lb,'quantity',1))),
    jsonb_build_object('kind','bundle','slug','set-blender-ready','title','خلاط + طقم جاهز','price_minor',24900,'items',jsonb_build_array(jsonb_build_object('listing_id',la,'quantity',1),jsonb_build_object('listing_id',lc,'quantity',1))),
-   jsonb_build_object('kind','free_delivery','price_minor',40000)));
+   jsonb_build_object('kind','free_delivery','price_minor',40000,'meta',jsonb_build_object('min_margin_bps',2000))));
  if (res->>'saved')::int<>4 then raise exception 'save %',res; end if;
  pub:=public.public_store_offers('sa');
  if pub->'free_delivery'<>'null'::jsonb or pub->'bundles'<>'[]'::jsonb then raise exception 'proposals are public %',pub; end if;
@@ -72,7 +73,7 @@ begin
  if (pub->'free_delivery'->>'threshold_minor')::bigint<>40000 or jsonb_array_length(pub->'bundles')<>1 or pub->'bundles'->0->>'slug'<>'set-blender-rack' then raise exception 'approved offers %',pub; end if;
  if pub::text ilike '%cost%' or pub::text ilike '%profit%' or pub::text ilike '%taager%' or pub::text like '%FIX%' then raise exception 'leak %',pub; end if;
  pg:=public.public_product_page('sa',sa);
- if pg->'quantity_offers'<>'[{"quantity":2,"price_minor":25900}]'::jsonb then raise exception 'approved quantity offer %',pg->'quantity_offers'; end if;
+ if pg->'quantity_offers'<>'[{"quantity":2,"price_minor":25900,"free_delivery":true}]'::jsonb then raise exception 'approved quantity offer %',pg->'quantity_offers'; end if;
  if not (select offer from public.public_catalog('sa') where listing_id=la) then raise exception 'offer flag'; end if;
 
  -- 5. Supplier raises the cost of A to 135: 2 for 259 would lose money -> that offer vanishes; the product, the set
@@ -85,7 +86,9 @@ begin
  --    basket (A alone: 200 - 135 VAT = 65 on 149) cannot pay for delivery at the threshold -> both vanish.
  update public.taager_catalog set financials=jsonb_set(financials,'{originalPrice}','147') where market='sa' and sku='FIXA';
  pub:=public.public_store_offers('sa');
- if pub->'bundles'<>'[]'::jsonb or pub->'free_delivery'<>'null'::jsonb then raise exception 'losing offers still public %',pub; end if;
+ if pub->'bundles'<>'[]'::jsonb then raise exception 'losing offers still public %',pub; end if;
+ -- Since 20261129090000_brain_commerce_v2 free delivery counts eligible products only: a product whose margin falls leaves
+ -- the eligible set by itself and the rule stays (docs/brain-commerce-v2-test.sql covers it).
  if public.public_product_page('sa',sa) is null then raise exception 'product should still be shown'; end if;
  update public.taager_catalog set financials=jsonb_set(financials,'{originalPrice}','77') where market='sa' and sku='FIXA';
 

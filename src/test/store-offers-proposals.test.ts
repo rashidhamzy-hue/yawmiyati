@@ -38,17 +38,15 @@ describe("offer proposals never lose money",()=>{
   expect(sets[0]!.items.map(i=>i.listing_id)).toEqual(["id-blender","id-rack"]);
   const used=sets.flatMap(s=>s.items.map(i=>i.listing_id));expect(new Set(used).size).toBe(used.length);
  });
- it("sizes free delivery on the least profitable basket and refuses when margins are too thin",()=>{
-  // A loss-making quantity offer on the shelf makes every basket unsafe until it is filtered out (proposeOffers does that).
-  expect(freeDeliveryPlan(shelf,[],sa).plan).toBeNull();
+ it("sizes free delivery on the thinnest ELIGIBLE product and refuses when margins are too thin",()=>{
   const plan=proposeOffers({market:sa,listings:shelf}).free_delivery;
   expect(plan).not.toBeNull();expect(plan!.worst_title).toBe("طقم جاهز من المورد");
   expect(plan!.worst_case_profit_minor).toBeGreaterThan(0);expect(plan!.typical_profit_minor).toBeGreaterThan(plan!.worst_case_profit_minor);
-  expect(Math.floor(plan!.threshold_minor*plan!.worst_margin_bps/10000)-2800).toBeGreaterThan(0);
+  expect(Math.floor(plan!.threshold_minor*plan!.min_margin_bps/10000)-2800).toBe(plan!.worst_case_profit_minor);
   // Iraq-like shelf: 2,000 IQD profit on 16,000 IQD items cannot pay a 7,000 IQD delivery fee on any reachable basket.
   const thin=[1,2,3,4,5].map(i=>L("iq"+i,"home",16000000,14000000,16000000,i));
   const none=freeDeliveryPlan(thin,[],iq);
-  expect(none.plan).toBeNull();expect(none.reason).toMatch(/thinnest margin|4 typical/);
+  expect(none.plan).toBeNull();expect(none.reason).toMatch(/too thin/);
   expect(bundleProposals(thin,iq)).toEqual([]);
   expect(freeDeliveryPlan(shelf.slice(0,3),[],sa).plan).toBeNull();
   expect(worstDeliveryFee(MARKETS.eg)).toBe(10500);

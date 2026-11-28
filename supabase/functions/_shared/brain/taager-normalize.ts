@@ -90,7 +90,13 @@ export function normalizeTaager(store: string, m: MarketFacts, row: TaagerCatalo
     taager_min_profit: profit === null ? null : profit / 10 ** m.minorDigits,
     taager_max_price_minor: maxPrice, taager_tiers: tiers, taager_upsell_discounts: upsell,
     taager_sale: sale ? { price_minor: toMinor(sale.price), profit_minor: toMinor(sale.profit), starts_at: sale.startsAt ?? null, expires_at: sale.expiresAt ?? null } : null,
-    taager_success_rate_bps: success, taager_category_id: num(detail.categoryId), taager_weight: num(variant.weight),
+    taager_success_rate_bps: success,
+    // Demand signals: confirmation rate alone (0 = no data), when Taager introduced the product, its stock bucket now.
+    taager_confirmation_rate: isRec(variant.analytics) && (num(variant.analytics.confirmationRate) ?? 0) > 0 ? num(variant.analytics.confirmationRate) : null,
+    taager_created_at: typeof row.listing.createdAt === "string" ? row.listing.createdAt : null,
+    taager_stock_bucket: isRec(row.listing.stockAvailability) && typeof row.listing.stockAvailability.stockBucket === "string" ? row.listing.stockAvailability.stockBucket
+      : isRec(variant.stockAvailability) && typeof variant.stockAvailability.stockBucket === "string" ? variant.stockAvailability.stockBucket : null,
+    taager_category_id: num(detail.categoryId), taager_weight: num(variant.weight),
     taager_warranty_eligible: detail.warrantyEligible === true, taager_is_primary: variant.isPrimary !== false,
     taager_bundle_items: bundle.length ? bundle : null, taager_alternatives: Array.isArray(row.alternatives) ? row.alternatives.slice(0, 20) : [],
     taager_specifications: specs, taager_how_to_use: howTo, taager_faq: faq, taager_price_changed_at: row.price_changed_at ?? null,

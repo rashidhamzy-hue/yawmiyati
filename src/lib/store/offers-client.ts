@@ -4,12 +4,17 @@ import { proposeOffers, type OfferListing, type OfferProposals } from "../../../
 
 /** Owner-only calls for bundles, discounts and offers. Every function checks store membership in the database. */
 export type OwnerOffer = {
-  id: string; kind: "quantity" | "bundle" | "free_delivery"; status: "proposed" | "approved" | "rejected";
+  id: string; kind: "quantity" | "bundle" | "free_delivery" | "sale" | "delivery_included"; status: "proposed" | "approved" | "rejected";
   listing_id: string | null; quantity: number | null; price_minor: number; price_usd: number | null; slug: string | null; title: string | null;
   items: { listing_id: string; quantity: number }[]; separate_minor: number | null;
   profit_minor: number | null; profit_usd: number | null; profit_if_split_minor: number | null; profit_if_split_usd: number | null;
   problem: string | null; detail: string | null; shown: boolean;
+  /** What the offer earns at the full cost of every piece, and what it earns if Taager applies its own price (unproven until G1). */
+  profit_full_minor?: number | null; profit_full_usd?: number | null; profit_taager_minor?: number | null; profit_taager_usd?: number | null;
+  starts_at?: string | null; ends_at?: string | null; meta?: { min_margin_bps?: number; theme?: string; tagline?: string } | null; was_price_minor?: number | null;
+  taager_discounts_proven?: boolean;
 };
+export type FreeDeliveryReport = { threshold_minor: number; min_margin_bps: number; eligible: number; excluded: { listing_id: string; title: string; margin_bps: number }[] };
 export const OFFER_PROBLEMS: Record<string, string> = {
   product_not_shown: "The product is not on the store right now (hidden, out of stock or stale sync).",
   piece_not_shown: "One of the pieces is not on the store right now.",
@@ -21,7 +26,15 @@ export const OFFER_PROBLEMS: Record<string, string> = {
   loss_if_two_parcels: "Would lose money if Taager ships it as two parcels.",
   earns_less_than_one_single: "Earns less than selling one piece at full price.",
   no_products_shown: "No products are on the store.",
-  loss_on_thinnest_basket: "The least profitable basket would lose money after we pay delivery.",
+  loss_on_thinnest_basket: "The least profitable eligible basket would not pay for delivery.",
+  no_eligible_products: "No product on the store has enough margin for this rule.",
+  too_many_pieces: "A set holds at most four products.",
+  not_started: "Starts later.",
+  ended: "Its end date has passed.",
+  supplier_sale_over: "Taager's sale is over.",
+  supplier_sale_ends_sooner: "Taager's sale now ends less than 3 days after this offer.",
+  price_changed: "The product's price changed since you approved this.",
+  loss_after_delivery: "After paying delivery this product would not earn enough.",
 };
 export function offersClient(origin: string, publicKey: string, token: string, request: typeof fetch = fetch) {
   const base = new URL(origin);
@@ -38,17 +51,22 @@ export function offersClient(origin: string, publicKey: string, token: string, r
   const check = (m: MarketCode) => { if (!Object.hasOwn(markets, m)) throw Error("Invalid market"); };
   return {
     async list(market: MarketCode): Promise<OwnerOffer[]> { check(market); const rows = await rpc<unknown>("brain_offers_list", { p_store: market }); return Array.isArray(rows) ? rows as OwnerOffer[] : []; },
+    /** The owner's switch: on only after G1 proved Taager applies its quantity and add-on prices to our orders. */
+    setDiscountsProven(market: MarketCode, proven: boolean) { check(market); return rpc<boolean>("brain_set_discounts_proven", { p_store: market, p_proven: proven }); },
+    async freeDeliveryReport(market: MarketCode): Promise<FreeDeliveryReport | null> { check(market); const r = await rpc<unknown>("brain_free_delivery_report", { p_store: market }); return r && typeof r === "object" && Array.isArray((r as FreeDeliveryReport).excluded) ? r as FreeDeliveryReport : null; },
     decide(market: MarketCode, id: string, decision: "approved" | "rejected" | "proposed") { check(market); return rpc<unknown>("brain_offer_decide", { p_store: market, p_offer: id, p_decision: decision }); },
     /** Reads the published products with their costs, works out the offers in the browser, stores them as proposals. */
     async propose(market: MarketCode): Promise<OfferProposals> {
       check(market);
-      const inputs = await rpc<{ listings?: unknown }>("brain_offer_inputs", { p_store: market });
+      const inputs = await rpc<{ listings?: unknown; facts?: { taager_discounts_proven?: unknown } }>("brain_offer_inputs", { p_store: market });
       const listings = (Array.isArray(inputs?.listings) ? inputs.listings : []).filter((l): l is OfferListing => !!l && typeof l === "object" && typeof (l as OfferListing).listing_id === "string" && Number.isSafeInteger((l as OfferListing).price_minor) && Number.isSafeInteger((l as OfferListing).cost_minor));
-      const proposals = proposeOffers({ market: MARKETS[market], listings });
+      const proposals = proposeOffers({ market: MARKETS[market], listings, proven: inputs?.facts?.taager_discounts_proven === true });
       const rows = [
         ...proposals.quantity.map((q) => ({ kind: "quantity", listing_id: q.listing_id, quantity: q.quantity, price_minor: q.price_minor })),
-        ...proposals.bundles.map((b) => ({ kind: "bundle", slug: b.slug, title: b.title, price_minor: b.price_minor, items: b.items.map((i) => ({ listing_id: i.listing_id, quantity: i.quantity })) })),
-        ...(proposals.free_delivery ? [{ kind: "free_delivery", price_minor: proposals.free_delivery.threshold_minor }] : []),
+        ...proposals.bundles.map((b) => ({ kind: "bundle", slug: b.slug, title: b.title, price_minor: b.price_minor, meta: { theme: b.theme, tagline: b.tagline }, items: b.items.map((i) => ({ listing_id: i.listing_id, quantity: i.quantity })) })),
+        ...proposals.sales.map((s) => ({ kind: "sale", listing_id: s.listing_id, price_minor: s.price_minor, ends_at: s.ends_at })),
+        ...proposals.delivery_included.map((d) => ({ kind: "delivery_included", listing_id: d.listing_id, price_minor: d.price_minor })),
+        ...(proposals.free_delivery ? [{ kind: "free_delivery", price_minor: proposals.free_delivery.threshold_minor, meta: { min_margin_bps: proposals.free_delivery.min_margin_bps } }] : []),
       ];
       if (rows.length) await rpc<unknown>("brain_offers_save", { p_store: market, p_proposals: rows });
       return proposals;
